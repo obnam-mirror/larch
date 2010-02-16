@@ -41,3 +41,6 @@ class NodeTests(unittest.TestCase):
     def test_has_approximately_right_size(self):
         bytes = sum(len(s) for s in self.keys + self.values)
         self.assert_(bytes <= self.node.size() <= 2 * bytes)
+        
+    def test_finds_value(self):
+        self.assertEqual(self.node.lookup('foo'), 'FOO')

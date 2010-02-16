@@ -30,7 +30,10 @@ class Node(object):
         If key is not in this node, raise KeyError.
         
         '''
-        
+
+        for candidate, value in self.pairs:
+            if candidate == key:
+                return value 
         raise KeyError(key)
 
 
