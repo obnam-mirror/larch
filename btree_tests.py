@@ -3,7 +3,7 @@ import unittest
 import btree
 
 
-class NodeTests(unittest.TestCase):
+class EmptyNodeTests(unittest.TestCase):
 
     def setUp(self):
         self.empty = btree.Node(0, [])
@@ -19,4 +19,3 @@ class NodeTests(unittest.TestCase):
         
     def test_lookup_raises_error_for_nonexistent_key(self):
         self.assertRaises(KeyError, self.empty.lookup, '0')
-
