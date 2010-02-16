@@ -1,21 +1,28 @@
 class Node(object):
 
-    '''A node in a Tree.'''
+    '''A node in a Tree.
+    
+    A node contains some number of key/value pairs. Both keys and
+    values are supposed to be byte strings. All keys are supposed
+    to be the same size.
+    
+    '''
 
     def __init__(self, nodeid, pairs):
-        pass
+        self.id = nodeid
+        self.pairs = pairs
 
     def __len__(self):
         '''Return number of keys in this node.'''
-        return 0
+        return len(self.pairs)
 
     def size(self):
         '''Return number of bytes required to store this node.'''
-        return 0
+        return sum(len(key) + len(value) for key, value in self.pairs)
 
     def keys(self):
         '''Return all keys in this node.'''
-        return []
+        return [key for key, value in self.pairs]
 
     def lookup(self, key):
         '''Return value corresponding to a given key in this node.
