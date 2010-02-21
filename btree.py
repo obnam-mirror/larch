@@ -1,134 +1,101 @@
-class Node(object):
+def size_of_pair(key, value):
+    '''Give size of a pair in bytes, when encoded for on-disk format.'''
+    return len(key) + len(value)
 
-    '''A node in a Tree.
+
+class LeafNode(dict):
+
+    '''A leaf node in a Tree.
     
-    A node contains some number of key/value pairs. Both keys and
-    values are supposed to be byte strings. All keys are supposed
-    to be the same size.
+    A leaf node contains key/value pairs. Both are strings.
     
     '''
-
-    def __init__(self, nodeid, pairs, isleaf):
-        self.id = nodeid
-        self.pairs = pairs
-        self.isleaf = isleaf
-
-    def __len__(self):
-        '''Return number of keys in this node.'''
-        return len(self.pairs)
+    
+    isleaf = True
 
     def size(self):
         '''Return number of bytes required to store this node.'''
-        return sum(len(key) + len(value) for key, value in self.pairs)
+        return sum(size_of_pair(key, value) 
+                   for key, value in self.iteritems())
 
-    def keys(self):
-        '''Return all keys in this node.'''
-        return [key for key, value in self.pairs]
+    def find_surrounding_keys(self, key):
+        keys = sorted(self.keys())
+        if not keys:
+            return None, None
+        if key < keys[0]:
+            return None, keys[0]
+        if key >= keys[-1]:
+            return keys[-1], None
+        for i, k in enumerate(keys):
+            if k <= key < keys[i+1]:
+                return k, keys[i+1]
+        assert False
 
-    def items(self):
-        '''Return list of key/value pairs.'''
-        return self.pairs
-
-    def lookup(self, key):
-        '''Return value corresponding to a given key in this node.
         
-        If key is not in this node, raise KeyError.
-        
-        '''
+class IndexNode(LeafNode):
 
-        for candidate, value in self.pairs:
-            if candidate == key:
-                return value 
-        raise KeyError(key)
+    isleaf = False
 
-    def find_next_highest_key(self, key):
-        '''Return smallest key that is bigger than given key.
-        
-        Raise KeyError if not found.
-        
-        '''
-        
-        for k in sorted(self.keys()):
-            if k > key:
-                return k
-        raise KeyError(key)
-
-    def __contains__(self, key):
-        try:
-            self.lookup(key)
-        except KeyError:
-            return False
-        else:
-            return True
+    def size(self):
+        return sum(size_of_pair('%d' % key, value)
+                   for key, value in self.iteritems())
 
 
 class Btree(object):
 
-    '''A B-tree variant.
-    
-    The tree stores key/value pairs, using Node instances (but
-    this is invisible to the user). The tree is balanced.
-    
-    '''
-
     def __init__(self, nodesize):
         self.nodesize = nodesize
-        self.height = 0
-        self.latest_nodeid = 0
-        self.root = None
+        self.root = IndexNode([])
 
-    def new_node(self, old_node, new_pairs):
-        if old_node:
-            pairs = [(key, old_node.lookup(key)) for key in old_node.keys]
-        else:
-            pairs = []
-        pairs += new_pairs
-        pairs.sort()
-        self.latest_nodeid += 1
-        return Node(self.latest_nodeid, pairs)
-
-    def lookup(self, key):
-        '''Return value associated with key or raise KeyError if missing.'''
+    def __getitem__(self, key):
         node = self.root
-        while node:
-            if node.isleaf:
-                return node.lookup(key)
-            else:
-                keys = node.keys()
-                if key < keys[0]:
-                    break
-                if key > keys[-1]:
-                    node = node.lookup(keys[-1])
-                else:
-                    next = node.find_next_highest_key(key)
-                    node = node.lookup(next)
-        raise KeyError(key)
+        while not node.isleaf:
+            lo, hi = node.find_surrounding_keys(key)
+            if lo is None:
+                raise KeyError(key)
+            node = node.lookup(lo)
+        return node[key]
 
     def insert(self, key, value):
-        '''Insert key/value pair into tree.
-        
-        If key already exists in tree, replace it.
-        
-        '''
-
-        if not self.root:
-            self._root = self.new_node(None, [(key, value)])
+        a, b = self._insert(self.root, key, value)
+        if b is None:
+            self.root = a
         else:
-            self.root = self._insert(self.root, key, value)
-    
+            self.root = Node([a, b])
+
     def _insert(self, node, key, value):
-        if node.size() + len(key) + len(value) < self.nodesize:
-            return self.new_node(node, [(key, value)])
+        if node.isleaf:
+            if self.fits(node, key, len(value)):
+                return Node(node.items() + [(key, value)]), None
+            else:
+                return self.split(node, key, value)
         else:
-            return self.split_node(node, key, value)
+            lo, hi = node.find_surrounding_keys(key)
+            if lo:
+                
+            if self.fits(node, key, self.idsize):
+                if key in self.node:
+                    a, b = self._insert(self.node[key], key, value)
+                    pairs = [(k, v) 
+                             for k, v in node.items() + [(key, 
+                else:
+            else:
 
-    def split_node(self, node, key, value):
-        pairs = sorted(node.items() + [(key, value)])
-        i = len(pairs) / 2
-        assert i > 0
-        n1 = self.new_node(None, pairs[:i])
-        n2 = self.new_node(None, pairs[i:])
-        return self.new_node(None, [(pairs[0][0], n1), (pairs[i][0], n2)])
-            
-#    def remove(self, key):
+    def fits(self, node, key, value_size):
+        more_size = size_of_pair(key, '*' * value_size)
+        return node.size() + more_size <= self.nodesize
+        
+    def split(self, node, key, value):
+        pairs = node.items() + [(key, value)]
+        pairs.sort()
+        for i in range(len(pairs)):
+            n = Node(pairs[:i])
+            if n.size() >= self.nodesize / 2:
+                break
+        return n, Node(pairs[i:])
+
+    def idstr(self, nodeid):
+        return '%0*d' % (self.idsize, nodeid)
+        
+    idsize = 8
 
