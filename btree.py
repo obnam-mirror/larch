@@ -14,15 +14,6 @@ class IndexNode(object):
         self.child2 = child2
         
 
-class Node(object):
-
-    def __init__(self, key, value, child1, child2):
-        self.key = key
-        self.value = value
-        self.child1 = child1
-        self.child2 = child2
-        
-
 class BinarySearchTree(object):
 
     def __init__(self):
@@ -34,11 +25,13 @@ class BinarySearchTree(object):
     def _lookup(self, node, key):
         if node is None:
             raise KeyError(key)
-        elif key == node.key:
-            if node.value is None:
+        elif isinstance(node, LeafNode):
+            if key != node.key or node.value is None:
                 raise KeyError(key)
             return node.value
-        elif key < node.key:
+        elif key < node.key1:
+            raise KeyError(key)
+        elif node.key2 is None or key < node.key2:
             return self._lookup(node.child1, key)
         else:
             return self._lookup(node.child2, key)
@@ -48,15 +41,33 @@ class BinarySearchTree(object):
 
     def _insert(self, node, key, value):
         if node is None:
-            return Node(key, value, None, None)
-        elif node.key == key:
-            return Node(key, value, node.child1, node.child2)
-        elif key < node.key:
-            new_child = self._insert(node.child1, key, value)
-            return Node(node.key, node.value, new_child, node.child2)
+            return LeafNode(key, value)
+        elif isinstance(node, LeafNode):
+            if key == node.key:
+                return LeafNode(key, value)
+            else:
+                new_leaf = LeafNode(key, value)
+                if key < node.key:
+                    return IndexNode(key, new_leaf, node.key, node)
+                else:
+                    return IndexNode(node.key, node, key, new_leaf)
+        elif node.key2 is None:
+            if key < node.key1:
+                new_child = self._insert(None, key, value)
+                return IndexNode(new_child.key1, new_child, 
+                                 node.key1, node.child1)
+            else:
+                new_child = self._insert(node.child1, key, value)
+                return IndexNode(new_child.key1, new_child, None, None)
         else:
-            new_child = self._insert(node.child2, key, value)
-            return Node(node.key, node.value, node.child1, new_child)
+            if key < node.key2:
+                new_child = self._insert(node.child1, key, value)
+                return IndexNode(new_child.key1, new_child,
+                                 node.key2, node.child2)
+            else:
+                new_child = self._insert(node.child2, key, value)
+                return IndexNode(node.key1, node,
+                                 new_child.key1, new_child)
         
     def remove(self, key):
         self.root = self._remove(self.root, key)

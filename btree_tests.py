@@ -64,14 +64,34 @@ class BinarySearchTreeTests(unittest.TestCase):
         self.tree.remove('foo')
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
 
+    def keys(self, node):
+        if node is not None:
+            if isinstance(node, btree.LeafNode):
+                yield node.key
+            else:
+                for key in self.keys(node.child1):
+                    yield key
+                for key in self.keys(node.child2):
+                    yield key
+
     def proper_search_tree(self, node):
         if node is None:
             return True
-        if node.child1 is not None:
-            if node.child1.key > node.key:
+        if isinstance(node, btree.LeafNode):
+            return True
+            
+        if node.key1 > min(self.keys(node.child1)):
+            raise Exception('key1 bigger than child1')
+            return False
+        if node.key2 is not None:
+            if node.key2 > min(self.keys(node.child2)):
+                raise Exception('key2 bigger than child1')
                 return False
-        if node.child2 is not None:
-            if node.child2.key < node.key:
+            if node.key2 <= max(self.keys(node.child1)):
+                raise Exception('key2 <= max(child1)')
+                return False
+            if node.key1 >= node.key2:
+                raise Exception('key1 >= key2')
                 return False
         return True
 
@@ -95,5 +115,7 @@ class BinarySearchTreeTests(unittest.TestCase):
             self.assertEqual(self.tree.lookup(key), value)
             self.tree.remove(key)
             self.assertRaises(KeyError, self.tree.lookup, key)
-            self.assert_(self.proper_search_tree(self.tree.root))
+            self.assert_(self.proper_search_tree(self.tree.root),
+                         msg='insert of %d in %s failed to keep tree ok' %
+                         (i, ints))
 
