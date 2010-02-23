@@ -4,6 +4,18 @@ import unittest
 import btree
 
 
+class LeafNodeTests(unittest.TestCase):
+
+    def setUp(self):
+        self.leaf = btree.LeafNode('foo', 'bar')
+        
+    def test_has_key(self):
+        self.assertEqual(self.leaf.key, 'foo')
+        
+    def test_has_value(self):
+        self.assertEqual(self.leaf.value, 'bar')
+
+
 class BinarySearchTreeTests(unittest.TestCase):
 
     def setUp(self):
