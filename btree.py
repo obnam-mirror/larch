@@ -29,9 +29,7 @@ class BinarySearchTree(object):
             if key != node.key or node.value is None:
                 raise KeyError(key)
             return node.value
-        elif key < node.key1:
-            raise KeyError(key)
-        elif node.key2 is None or key < node.key2:
+        elif key < node.key2:
             return self._lookup(node.child1, key)
         else:
             return self._lookup(node.child2, key)
