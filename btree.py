@@ -5,6 +5,15 @@ class LeafNode(object):
         self.value = value
         
 
+class IndexNode(object):
+
+    def __init__(self, key1, child1, key2, child2):
+        self.key1 = key1
+        self.child1 = child1
+        self.key2 = key2
+        self.child2 = child2
+        
+
 class Node(object):
 
     def __init__(self, key, value, child1, child2):

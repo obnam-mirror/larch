@@ -16,6 +16,26 @@ class LeafNodeTests(unittest.TestCase):
         self.assertEqual(self.leaf.value, 'bar')
 
 
+class IndexNodeTests(unittest.TestCase):
+
+    def setUp(self):
+        self.leaf1 = btree.LeafNode('bar', 'bar')
+        self.leaf2 = btree.LeafNode('foo', 'foo')
+        self.index = btree.IndexNode('bar', self.leaf1, 'foo', self.leaf2)
+        
+    def test_has_key1(self):
+        self.assertEqual(self.index.key1, 'bar')
+        
+    def test_has_child1(self):
+        self.assertEqual(self.index.child1, self.leaf1)
+        
+    def test_has_key2(self):
+        self.assertEqual(self.index.key2, 'foo')
+        
+    def test_has_child2(self):
+        self.assertEqual(self.index.child2, self.leaf2)
+
+
 class BinarySearchTreeTests(unittest.TestCase):
 
     def setUp(self):
