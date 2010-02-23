@@ -56,7 +56,11 @@ class BinarySearchTreeTests(unittest.TestCase):
         self.tree.insert('foo', 'bar')
         self.assertEqual(self.tree.lookup('foo'), 'bar')
 
+    def test_remove_from_empty_tree_raises_keyerror(self):
+        self.assertRaises(KeyError, self.tree.remove, 'foo')
+
     def test_remove_of_missing_key_raises_keyerror(self):
+        self.tree.insert('bar', 'bar')
         self.assertRaises(KeyError, self.tree.remove, 'foo')
 
     def test_remove_removes_key(self):
