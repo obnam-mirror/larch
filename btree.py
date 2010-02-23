@@ -51,22 +51,15 @@ class BinarySearchTree(object):
                     return IndexNode(key, new_leaf, node.key, node)
                 else:
                     return IndexNode(node.key, node, key, new_leaf)
-        elif node.key2 is None:
-            if key < node.key1:
-                new_child = self._insert(None, key, value)
-                return IndexNode(new_child.key1, new_child, 
-                                 node.key1, node.child1)
-            else:
-                new_child = self._insert(node.child1, key, value)
-                return IndexNode(new_child.key1, new_child, None, None)
         else:
+            assert node.key2 is not None
             if key < node.key2:
                 new_child = self._insert(node.child1, key, value)
                 return IndexNode(new_child.key1, new_child,
                                  node.key2, node.child2)
             else:
                 new_child = self._insert(node.child2, key, value)
-                return IndexNode(node.key1, node,
+                return IndexNode(node.key1, node.child1,
                                  new_child.key1, new_child)
         
     def remove(self, key):
