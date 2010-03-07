@@ -155,3 +155,58 @@ class BTreeTests(unittest.TestCase):
             tree.remove(key)
             self.assert_(self.proper_search_tree(self.tree.root))
 
+
+class BTreeBalanceTests(unittest.TestCase):
+
+    def setUp(self):
+        self.fanout = 2
+        self.tree = btree.BTree(self.fanout)
+        self.keys = [str(i) for i in range(100)]
+        self.depth = None
+
+    def leaves_at_same_depth(self, node, depth=0):
+        if isinstance(node, btree.LeafNode):
+            if self.depth is None:
+                self.depth = depth
+            return self.depth == depth
+        else:
+            for key in node:
+                if not self.leaves_at_same_depth(node[key], depth + 1):
+                    return False
+            return True
+            
+    def indexes_filled_right_amount(self, node, isroot=True):
+        if isinstance(node, btree.IndexNode):
+            if not isroot:
+                if len(node) < self.fanout or len(node) > 2 * self.fanout + 1:
+                    return False
+            for key in node:
+                ok = self.indexes_filled_right_amount(node[key], isroot=False)
+                if not ok:
+                    return False
+        return True
+            
+    def test_insert_puts_every_leaf_at_same_depth(self):
+        for key in self.keys:
+            self.tree.insert(key, key)
+            self.assert_(self.leaves_at_same_depth(self.tree.root))
+        
+    def test_insert_fills_every_index_node_the_right_amount(self):
+        for key in self.keys:
+            self.tree.insert(key, key)
+            self.assert_(self.indexes_filled_right_amount(self.tree.root))
+            
+    def test_remove_keeps_every_leaf_at_same_depth(self):
+        for key in self.keys:
+            self.tree.insert(key, key)
+        for key in self.keys:
+            self.tree.remove(key)
+            self.assert_(self.leaves_at_same_depth(self.tree.root))
+        
+    def test_remove_keeps_every_index_node_the_right_amount(self):
+        for key in self.keys:
+            self.tree.insert(key, key)
+        for key in self.keys:
+            self.tree.remove(key)
+            self.assert_(self.indexes_filled_right_amount(self.tree.root))
+
