@@ -10,7 +10,7 @@ class IndexNode(dict):
         return sorted(dict.keys(self))
        
 
-class BinarySearchTree(object):
+class BTree(object):
 
     def __init__(self, fanout):
         self.root = IndexNode([])

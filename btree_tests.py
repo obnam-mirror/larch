@@ -40,11 +40,11 @@ class IndexNodeTests(unittest.TestCase):
         self.assertEqual(self.index['foo'], self.leaf2)
         
 
-class BinarySearchTreeTests(unittest.TestCase):
+class BTreeTests(unittest.TestCase):
 
     def setUp(self):
         self.fanout = 2
-        self.tree = btree.BinarySearchTree(self.fanout)
+        self.tree = btree.BTree(self.fanout)
 
     def test_has_fanout(self):
         self.assertEqual(self.tree.fanout, self.fanout)
@@ -147,7 +147,7 @@ class BinarySearchTreeTests(unittest.TestCase):
     def test_insert_many_remove_many_works(self):
         keys = [str(i) for i in range(100)]
         random.shuffle(keys)
-        tree = btree.BinarySearchTree(self.fanout)
+        tree = btree.BTree(self.fanout)
         for key in keys:
             tree.insert(key, key)
             self.assert_(self.proper_search_tree(self.tree.root))
