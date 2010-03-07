@@ -54,7 +54,7 @@ class BinarySearchTreeTests(unittest.TestCase):
         
     def test_lookup_for_missing_key_raises_error(self):
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
-        
+
     def test_insert_inserts_key(self):
         self.tree.insert('foo', 'bar')
         self.assertEqual(self.tree.lookup('foo'), 'bar')

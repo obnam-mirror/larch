@@ -20,15 +20,14 @@ class BinarySearchTree(object):
         return self._lookup(self.root, key)
 
     def _lookup(self, node, key):
-        if node is None:
-            raise KeyError(key)
-        elif isinstance(node, LeafNode):
+        if isinstance(node, LeafNode):
             return node[key]
         else:
-            for k in reversed(node.keys()):
-                if key >= k:
-                    return self._lookup(node[k], key)
-            raise KeyError(key)
+            k = self.find_key_for_child_containing(node, key)
+            if k is None:
+                raise KeyError(key)
+            else:
+                return self._lookup(node[k], key)
 
     def find_key_for_child_containing(self, node, key):
         for k in reversed(node.keys()):
