@@ -92,9 +92,7 @@ class BinarySearchTree(object):
             self.root = IndexNode([])
         
     def _remove(self, node, key):
-        if node is None:
-            raise KeyError(key)
-        elif isinstance(node, LeafNode):
+        if isinstance(node, LeafNode):
             return self._remove_from_leaf(node, key)
         else:
             return self._remove_from_index(node, key)
