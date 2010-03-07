@@ -144,3 +144,14 @@ class BinarySearchTreeTests(unittest.TestCase):
                          msg='insert of %d in %s failed to keep tree ok' %
                          (i, ints))
 
+    def test_insert_many_remove_many_works(self):
+        keys = [str(i) for i in range(100)]
+        random.shuffle(keys)
+        tree = btree.BinarySearchTree(self.fanout)
+        for key in keys:
+            tree.insert(key, key)
+            self.assert_(self.proper_search_tree(self.tree.root))
+        for key in keys:
+            tree.remove(key)
+            self.assert_(self.proper_search_tree(self.tree.root))
+
