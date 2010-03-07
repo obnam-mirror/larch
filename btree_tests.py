@@ -43,7 +43,7 @@ class IndexNodeTests(unittest.TestCase):
 class BinarySearchTreeTests(unittest.TestCase):
 
     def setUp(self):
-        self.fanout = 4
+        self.fanout = 2
         self.tree = btree.BinarySearchTree(self.fanout)
 
     def test_has_fanout(self):
