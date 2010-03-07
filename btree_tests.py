@@ -7,42 +7,50 @@ import btree
 class LeafNodeTests(unittest.TestCase):
 
     def setUp(self):
-        self.leaf = btree.LeafNode('foo', 'bar')
+        self.leaf = btree.LeafNode([('foo', 'bar')])
         
-    def test_has_key(self):
-        self.assertEqual(self.leaf.key, 'foo')
+    def test_has_keys(self):
+        self.assertEqual(self.leaf.keys(), ['foo'])
         
     def test_has_value(self):
-        self.assertEqual(self.leaf.value, 'bar')
+        self.assertEqual(self.leaf['foo'], 'bar')
+
+    def test_sorts_keys(self):
+        leaf = btree.LeafNode([('foo', 'foo'), ('bar', 'bar')])
+        self.assertEqual(leaf.keys(), sorted(['foo', 'bar']))
 
 
 class IndexNodeTests(unittest.TestCase):
 
     def setUp(self):
-        self.leaf1 = btree.LeafNode('bar', 'bar')
-        self.leaf2 = btree.LeafNode('foo', 'foo')
-        self.index = btree.IndexNode('bar', self.leaf1, 'foo', self.leaf2)
+        self.leaf1 = btree.LeafNode([('bar', 'bar')])
+        self.leaf2 = btree.LeafNode([('foo', 'foo')])
+        self.index = btree.IndexNode([('bar', self.leaf1), 
+                                      ('foo', self.leaf2)])
         
-    def test_has_key1(self):
-        self.assertEqual(self.index.key1, 'bar')
+    def test_has_keys(self):
+        self.assertEqual(self.index.keys(), ['bar', 'foo'])
         
-    def test_has_child1(self):
-        self.assertEqual(self.index.child1, self.leaf1)
-        
-    def test_has_key2(self):
-        self.assertEqual(self.index.key2, 'foo')
-        
-    def test_has_child2(self):
-        self.assertEqual(self.index.child2, self.leaf2)
+    def test_has_children(self):
+        self.assertEqual(sorted(self.index.values()), 
+                         sorted([self.leaf1, self.leaf2]))
 
+    def test_has_indexed_children(self):
+        self.assertEqual(self.index['bar'], self.leaf1)
+        self.assertEqual(self.index['foo'], self.leaf2)
+        
 
 class BinarySearchTreeTests(unittest.TestCase):
 
     def setUp(self):
-        self.tree = btree.BinarySearchTree()
+        self.fanout = 4
+        self.tree = btree.BinarySearchTree(self.fanout)
 
-    def test_tree_is_empty(self):
-        self.assertEqual(self.tree.root, None)
+    def test_has_fanout(self):
+        self.assertEqual(self.tree.fanout, self.fanout)
+
+    def test_is_empty(self):
+        self.assertEqual(self.tree.root.keys(), [])
         
     def test_lookup_for_missing_key_raises_error(self):
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
@@ -68,36 +76,49 @@ class BinarySearchTreeTests(unittest.TestCase):
         self.tree.remove('foo')
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
 
-    def keys(self, node):
-        if node is not None:
-            if isinstance(node, btree.LeafNode):
-                yield node.key
-            else:
-                for key in self.keys(node.child1):
-                    yield key
-                for key in self.keys(node.child2):
-                    yield key
+    def keys_are_in_range(self, node, lower, upper):
+        if isinstance(node, btree.LeafNode):
+            for key in node.keys():
+                if key < lower or key >= upper:
+                    return False
+        else:
+            keys = node.keys()
+            if keys != sorted(keys):
+                return False
+            for i, key in enumerate(keys):
+                if key < lower or key >= upper:
+                    return False
+                if i+1 == len(keys):
+                    up = upper
+                else:
+                    up = keys[i+1]
+                if not self.keys_are_in_range(node[key], key, up):
+                    return False
+        return True
+
+    def find_largest_key(self, node):
+        if isinstance(node, btree.LeafNode):
+            return max(node.keys())
+        else:
+            return max(node.keys() + 
+                       [self.find_largest_key(node[key])
+                        for key in node.keys()])
+
+    def nextkey(self, key):
+        assert type(key) == str
+        if key == '':
+            return '\0'
+        if key[-1] == '\xff':
+            return key + '\0'
+        else:
+            return key[:-1] + chr(ord(key[-1]) + 1)
 
     def proper_search_tree(self, node):
-        if node is None:
+        if not node.keys():
             return True
-        if isinstance(node, btree.LeafNode):
-            return True
-            
-        if node.key1 > min(self.keys(node.child1)):
-            raise Exception('key1 bigger than child1')
-            return False
-        if node.key2 is not None:
-            if node.key2 > min(self.keys(node.child2)):
-                raise Exception('key2 bigger than child1')
-                return False
-            if node.key2 <= max(self.keys(node.child1)):
-                raise Exception('key2 <= max(child1)')
-                return False
-            if node.key1 >= node.key2:
-                raise Exception('key1 >= key2')
-                return False
-        return True
+        minkey = node.keys()[0]
+        maxkey = self.find_largest_key(node)
+        return self.keys_are_in_range(node, minkey, self.nextkey(maxkey))
 
     def test_insert_many_respects_ordering_requirement(self):
         ints = range(100)
