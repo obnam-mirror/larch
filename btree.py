@@ -15,6 +15,7 @@ class BTree(object):
     def __init__(self, fanout):
         self.root = IndexNode([])
         self.fanout = fanout
+        self.max_index_length = 2 * self.fanout + 1
         
     def lookup(self, key):
         return self._lookup(self.root, key)
@@ -35,23 +36,34 @@ class BTree(object):
                 return k
         return None
 
+    def pairs(self, node, exclude=None):
+        if exclude is None:
+            exclude = []
+        return sorted((key, node[key]) for key in node if key not in exclude)
+
+    def first_key(self, node):
+        return node.keys()[0]
+
     def insert(self, key, value):
         a, b = self._insert(self.root, key, value)
         if b is None:
             self.root = a
         else:
-            self.root = IndexNode([(a.keys()[0], a),
-                                   (b.keys()[0], b)])
+            self.root = IndexNode([(self.first_key(a), a),
+                                   (self.first_key(b), b)])
 
     def _insert(self, node, key, value):
         if isinstance(node, LeafNode):
             return self._insert_into_leaf(node, key, value)
+        elif len(node) == 0:
+            return self._insert_into_empty_root(key, value)
+        elif len(node) == self.max_index_length:
+            return self._insert_into_full_index(node, key, value)
         else:
-            return self._insert_into_index(node, key, value)
+            return self._insert_into_nonfull_index(node, key, value)
 
     def _insert_into_leaf(self, leaf, key, value):
-        pairs = [(k, leaf[k]) for k in leaf if k != key] + [(key, value)]
-        pairs.sort()
+        pairs = sorted(self.pairs(leaf, exclude=[key]) + [(key, value)])
         if len(pairs) <= self.fanout:
             return LeafNode(pairs), None
         else:
@@ -60,32 +72,46 @@ class BTree(object):
             leaf2 = LeafNode(pairs[n:])
             return leaf1, leaf2
 
-    def _insert_into_index(self, node, key, value):
+    def _insert_into_empty_root(self, key, value):
+        leaf = LeafNode([(key, value)])
+        return IndexNode([(self.first_key(leaf), leaf)]), None
+
+    def _insert_into_full_index(self, node, key, value):
+        # A full index node needs to be split, then key/value inserted into
+        # one of the halves.
+        pairs = self.pairs(node)
+        n = len(pairs) / 2
+        node1 = IndexNode(pairs[:n])
+        node2 = IndexNode(pairs[n:])
+        if key < self.first_key(node2):
+            a, b = self._insert(node1, key, value)
+            assert b is None
+            return a, node2
+        else:
+            a, b = self._insert(node2, key, value)
+            assert b is None
+            return node1, a
+    
+    def _insert_into_nonfull_index(self, node, key, value):        
+        # Insert into correct child, get up to two replacements for
+        # that child.
+
         k = self.find_key_for_child_containing(node, key)
         if k is None:
-            child = LeafNode([(key, value)])
-            pairs = [(kk, node[kk]) for kk in node] + [(key, child)]
-            pairs.sort()
-            if len(pairs) <= self.fanout:
-                return IndexNode(pairs), None
-            else:
-                n = len(pairs) / 2
-                return IndexNode(pairs[:n]), IndexNode(pairs[n:])
+            k = self.first_key(node)
+
+        a, b = self._insert(node[k], key, value)
+        assert a is not None
+        pairs = self.pairs(node, exclude=[k]) + [(self.first_key(a), a)]
+        if b is not None:
+            pairs += [(self.first_key(b), b)]
+        pairs.sort()
+        if len(pairs) <= self.max_index_length:
+            return IndexNode(pairs), None
         else:
-            a, b = self._insert(node[k], key, value)
-            pairs = [(kk, node[kk]) for kk in node if kk != k]
-            if a is not None:
-                pairs += [(a.keys()[0], a)]
-            if b is not None:
-                pairs += [(b.keys()[0], b)]
-            pairs.sort()
-            if len(pairs) <= self.fanout:
-                return IndexNode(pairs), None
-            else:
-                pairs.sort()
-                n = len(pairs) / 2
-                return IndexNode(pairs[:n]), IndexNode(pairs[n:])
-        
+            n = len(pairs) / 2
+            return IndexNode(pairs[:n]), IndexNode(pairs[n:])
+
     def remove(self, key):
         self.root = self._remove(self.root, key)
         if self.root is None:
