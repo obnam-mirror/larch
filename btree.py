@@ -106,11 +106,8 @@ class BTree(object):
         if b is not None:
             pairs += [(self.first_key(b), b)]
         pairs.sort()
-        if len(pairs) <= self.max_index_length:
-            return IndexNode(pairs), None
-        else:
-            n = len(pairs) / 2
-            return IndexNode(pairs[:n]), IndexNode(pairs[n:])
+        assert len(pairs) <= self.max_index_length
+        return IndexNode(pairs), None
 
     def remove(self, key):
         self.root = self._remove(self.root, key)
