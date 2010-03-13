@@ -145,9 +145,13 @@ class BTree(object):
             raise KeyError(key)
     
     def merge(self, n1, n2):
-        assert isinstance(n1, IndexNode)
-        assert isinstance(n2, IndexNode)
-        return IndexNode(self.pairs(n1) + self.pairs(n2))
+        if isinstance(n1, IndexNode):
+            assert isinstance(n2, IndexNode)
+            return IndexNode(self.pairs(n1) + self.pairs(n2))
+        else:
+            assert isinstance(n1, LeafNode)
+            assert isinstance(n2, LeafNode)
+            return LeafNode(self.pairs(n1) + self.pairs(n2))
 
     def _remove_from_minimal_index(self, node, key, child_key):
         assert len(node) > 1
