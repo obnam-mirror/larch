@@ -154,20 +154,59 @@ class BTree(object):
             assert isinstance(n2, LeafNode)
             return LeafNode(self.pairs(n1) + self.pairs(n2))
 
-    def _remove_from_minimal_index(self, node, key, child_key):
-        assert len(node) > 1
-        assert isinstance(node, IndexNode)
-        keys = node.keys()
-        i = keys.index(child_key)
-        if i+1 >= len(keys) or len(node[keys[i-1]]) <= self.min_index_length + 1:
-            merge_key = keys[i-1]
+    def sibling_length(self, node, keys, index):
+        if index < 0 or index >= len(node):
+            return None
         else:
-            merge_key = keys[i+1]
+            return node[keys[index]]
 
-        child = self.merge(node[merge_key], node[child_key])
-        pairs = self.pairs(node, exclude=[merge_key, child_key])
-        pairs += [(self.first_key(child), child)]
-        return IndexNode(pairs)
+    def _remove_from_minimal_index(self, node, key, child_key):
+        child = self._remove(node[child_key], key)
+        
+        if child is None:
+            others = self.pairs(node, exclude=[child_key])
+            if not others:
+                # Only child got removed.
+                return None
+            else:
+                return IndexNode(others)
+        else:
+            keys = node.keys()
+            child_index = keys.index(child_key)
+            
+            prev_index = child_index - 1
+            next_index = child_index + 1
+            
+            prev_len = self.sibling_length(node, keys, prev_index)
+            next_len = self.sibling_length(node, keys, next_index)
+            
+            prev_ok = (prev_len is not None and 
+                       prev_len < self.max_index_length)
+            next_ok = (next_len is not None and 
+                       next_len < self.max_index_length)
+
+            if keys == [child_key]:
+                return IndexNode([(self.first_key(child), child)])
+            elif prev_ok and next_ok:
+                if prev_len < next_len:
+                    merge_index = prev_index
+                else:
+                    merge_index = next_index
+            elif prev_ok:
+                merge_index = prev_index
+            elif next_ok:
+                merge_index = next_index
+            else:
+                return IndexNode(self.pairs(node, exclude=[child_key]) + 
+                                 [(self.first_key(child), child)])
+
+            assert merge_index
+            
+            merge_key = keys[merge_index]
+            merge_node = node[merge_key]
+            merged = self.merge(child, merge_node)
+            others = self.pairs(node, exclude=[child_key, merge_key])
+            return IndexNode(others + [(self.first_key(merged), merged)])
         
     def _remove_from_nonminimal_index(self, node, key, child_key):
         child = self._remove(node[child_key], key)
