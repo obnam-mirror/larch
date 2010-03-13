@@ -14,8 +14,7 @@ class IndexNode(Node):
     def __init__(self, pairs):
         for key, child in pairs:
             assert type(key) == str
-            assert isinstance(child, IndexNode) or isinstance(child, LeafNode),\
-                'pairs: %s' % repr(pairs)
+            assert isinstance(child, IndexNode) or isinstance(child, LeafNode)
         dict.__init__(self, pairs)
        
 
