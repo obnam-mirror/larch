@@ -46,6 +46,7 @@ class BTreeTests(unittest.TestCase):
     def setUp(self):
         self.fanout = 2
         self.tree = btree.BTree(self.fanout)
+        self.dump = False
 
     def test_has_fanout(self):
         self.assertEqual(self.tree.fanout, self.fanout)
@@ -77,13 +78,16 @@ class BTreeTests(unittest.TestCase):
         self.tree.remove('foo')
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
 
-    def keys_are_in_range(self, node, lower, upper):
+    def keys_are_in_range(self, node, lower, upper, level=0):
+        indent = 2
         if isinstance(node, btree.LeafNode):
+            if self.dump: print '%*sleaf keys %s' % (level*indent, '', node.keys())
             for key in node.keys():
                 if key < lower or key >= upper:
                     return False
         else:
             keys = node.keys()
+            if self.dump: print '%*sin range; index keys = %s' % (level*indent, '', keys), 'lower..upper:', lower, upper
             if keys != sorted(keys):
                 return False
             for i, key in enumerate(keys):
@@ -93,7 +97,8 @@ class BTreeTests(unittest.TestCase):
                     up = upper
                 else:
                     up = keys[i+1]
-                if not self.keys_are_in_range(node[key], key, up):
+                if self.dump: print '%*sin child, keys should be in %s..%s' % (level*indent, '', key, up)
+                if not self.keys_are_in_range(node[key], key, up, level+1):
                     return False
         return True
 
@@ -119,6 +124,7 @@ class BTreeTests(unittest.TestCase):
             return True
         minkey = node.keys()[0]
         maxkey = self.find_largest_key(node)
+        if self.dump: print; print 'proper tree', minkey, self.nextkey(maxkey)
         return self.keys_are_in_range(node, minkey, self.nextkey(maxkey))
 
     def test_insert_many_respects_ordering_requirement(self):
@@ -147,6 +153,8 @@ class BTreeTests(unittest.TestCase):
                          (i, ints))
 
     def dump_tree(self, node, f=sys.stdout, level=0):
+        if not self.dump:
+            return
         indent = 4
         if isinstance(node, btree.LeafNode):
             f.write('%*sLeaf:' % (level*indent, ''))
@@ -164,21 +172,32 @@ class BTreeTests(unittest.TestCase):
         keys = [str(i) for i in range(100)]
         random.shuffle(keys)
         tree = btree.BTree(self.fanout)
+        self.tree = 123
         for key in keys:
             tree.insert(key, key)
-            self.assert_(self.proper_search_tree(self.tree.root))
-        print
-        print
-        self.dump_tree(tree.root)
-        print
-        for key in keys:
-            print
-            print 'removing', key
-            tree.remove(key)
+            self.assert_(self.proper_search_tree(tree.root))
+        if self.dump:
             print
             print
             self.dump_tree(tree.root)
-            self.assert_(self.proper_search_tree(self.tree.root))
+            print
+        for key in keys:
+            if self.dump:
+                print
+                print 'removing', key
+                self.dump_tree(tree.root)
+            try:
+                tree.remove(key)
+            except:
+                self.dump = True
+                self.dump_tree(tree.root)
+                ret = self.proper_search_tree(tree.root)
+                print 'is it?', ret
+                raise
+            self.assert_(self.proper_search_tree(tree.root))
+            if self.dump:
+                print
+                print
 
 
 class BTreeBalanceTests(unittest.TestCase):
