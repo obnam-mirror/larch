@@ -3,6 +3,9 @@ class Node(dict):
     def keys(self):
         return sorted(dict.keys(self))
 
+    def first_key(self):
+        return self.keys()[0]
+
     def pairs(self, exclude=None):
         if exclude is None:
             exclude = []
@@ -50,16 +53,13 @@ class BTree(object):
             else:
                 return self._lookup(node[k], key)
 
-    def first_key(self, node):
-        return node.keys()[0]
-
     def insert(self, key, value):
         a, b = self._insert(self.root, key, value)
         if b is None:
             self.root = a
         else:
-            self.root = IndexNode([(self.first_key(a), a),
-                                   (self.first_key(b), b)])
+            self.root = IndexNode([(a.first_key(), a),
+                                   (b.first_key(), b)])
 
     def _insert(self, node, key, value):
         if isinstance(node, LeafNode):
@@ -83,7 +83,7 @@ class BTree(object):
 
     def _insert_into_empty_root(self, key, value):
         leaf = LeafNode([(key, value)])
-        return IndexNode([(self.first_key(leaf), leaf)]), None
+        return IndexNode([(leaf.first_key(), leaf)]), None
 
     def _insert_into_full_index(self, node, key, value):
         # A full index node needs to be split, then key/value inserted into
@@ -92,7 +92,7 @@ class BTree(object):
         n = len(pairs) / 2
         node1 = IndexNode(pairs[:n])
         node2 = IndexNode(pairs[n:])
-        if key < self.first_key(node2):
+        if key <  node2.first_key():
             a, b = self._insert(node1, key, value)
             assert b is None
             return a, node2
@@ -107,13 +107,13 @@ class BTree(object):
 
         k = node.find_key_for_child_containing(key)
         if k is None:
-            k = self.first_key(node)
+            k = node.first_key()
 
         a, b = self._insert(node[k], key, value)
         assert a is not None
-        pairs = node.pairs(exclude=[k]) + [(self.first_key(a), a)]
+        pairs = node.pairs(exclude=[k]) + [(a.first_key(), a)]
         if b is not None:
-            pairs += [(self.first_key(b), b)]
+            pairs += [(b.first_key(), b)]
         pairs.sort()
         assert len(pairs) <= self.max_index_length
         return IndexNode(pairs), None
@@ -175,8 +175,7 @@ class BTree(object):
         
         others = node.pairs(exclude=exclude)
         if others + new_ones:
-            return IndexNode(others + 
-                                [(self.first_key(n), n) for n in new_ones])
+            return IndexNode(others + [(n.first_key(), n) for n in new_ones])
         else:
             return None
 
@@ -184,7 +183,7 @@ class BTree(object):
         child = self._remove(node[child_key], key)
         pairs = node.pairs(exclude=[child_key])
         if child is not None:
-            pairs += [(self.first_key(child), child)]
+            pairs += [(child.first_key(), child)]
         pairs.sort()
         assert pairs
         return IndexNode(pairs)
