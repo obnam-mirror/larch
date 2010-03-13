@@ -198,6 +198,7 @@ class BTreeTests(unittest.TestCase):
             if self.dump:
                 print
                 print
+        self.assertEqual(tree.root.keys(), [])
 
 
 class BTreeBalanceTests(unittest.TestCase):
