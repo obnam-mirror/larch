@@ -6,6 +6,13 @@ class LeafNode(dict):
 
 class IndexNode(dict):
 
+    def __init__(self, pairs):
+        for key, child in pairs:
+            assert type(key) == str
+            assert isinstance(child, IndexNode) or isinstance(child, LeafNode),\
+                'pairs: %s' % repr(pairs)
+        dict.__init__(self, pairs)
+
     def keys(self):
         return sorted(dict.keys(self))
        
@@ -15,6 +22,7 @@ class BTree(object):
     def __init__(self, fanout):
         self.root = IndexNode([])
         self.fanout = fanout
+        self.min_index_length = self.fanout
         self.max_index_length = 2 * self.fanout + 1
         
     def lookup(self, key):
@@ -118,30 +126,52 @@ class BTree(object):
         if isinstance(node, LeafNode):
             return self._remove_from_leaf(node, key)
         else:
-            return self._remove_from_index(node, key)
+            k = self.find_key_for_child_containing(node, key)
+            if k is None:
+                raise KeyError(key)
+            elif len(node[k]) <= self.min_index_length and len(node) > 1:
+                return self._remove_from_minimal_index(node, key, k) 
+            else:
+                return self._remove_from_nonminimal_index(node, key, k)
 
     def _remove_from_leaf(self, node, key):
         if key in node:
-            pairs = [(k, node[k]) for k in node if k != key]
+            pairs = self.pairs(node, exclude=[key])
             if pairs:
                 return LeafNode(pairs)
             else:
                 return None
         else:
             raise KeyError(key)
+    
+    def merge(self, n1, n2):
+        assert isinstance(n1, IndexNode)
+        assert isinstance(n2, IndexNode)
+        return IndexNode(self.pairs(n1) + self.pairs(n2))
 
-    def _remove_from_index(self, node, key):
-        k = self.find_key_for_child_containing(node, key)
-        if k is None:
-            raise KeyError(key)
+    def _remove_from_minimal_index(self, node, key, child_key):
+        assert len(node) > 1
+        assert isinstance(node, IndexNode)
+        keys = node.keys()
+        i = keys.index(child_key)
+        if i+1 >= len(keys) or len(node[keys[i-1]]) <= self.min_index_length + 1:
+            merge_key = keys[i-1]
         else:
-            child = self._remove(node[k], key)
-            pairs = [(kk, node[kk]) for kk in node if kk != k]
-            if child is not None:
-                pairs += [(child.keys()[0], child)]
-            pairs.sort()
-            if pairs:
-                return IndexNode(pairs)
-            else:
-                return None
+            merge_key = keys[i+1]
+
+        child = self.merge(node[merge_key], node[child_key])
+        pairs = self.pairs(node, exclude=[merge_key, child_key])
+        pairs += [(self.first_key(child), child)]
+        return IndexNode(pairs)
+        
+    def _remove_from_nonminimal_index(self, node, key, child_key):
+        child = self._remove(node[child_key], key)
+        pairs = self.pairs(node, exclude=[child_key])
+        if child is not None:
+            pairs += [(self.first_key(child), child)]
+        pairs.sort()
+        if pairs:
+            return IndexNode(pairs)
+        else:
+            return None
 

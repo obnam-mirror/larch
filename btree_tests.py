@@ -139,7 +139,7 @@ class BTreeTests(unittest.TestCase):
             self.assert_(self.proper_search_tree(self.tree.root),
                          'key#%d failed' % (1 + ints.index(i)))
 
-    def xtest_remove_many_works(self):
+    def test_remove_many_works(self):
         ints = range(100)
         random.shuffle(ints)
         for i in ints:
@@ -153,7 +153,7 @@ class BTreeTests(unittest.TestCase):
                          msg='insert of %d in %s failed to keep tree ok' %
                          (i, ints))
 
-    def xtest_insert_many_remove_many_works(self):
+    def test_insert_many_remove_many_works(self):
         keys = [str(i) for i in range(100)]
         random.shuffle(keys)
         tree = btree.BTree(self.fanout)
@@ -181,7 +181,9 @@ class BTreeBalanceTests(unittest.TestCase):
                 print; print "depth is", depth, "should be", self.depth
             return self.depth == depth
         else:
+            assert isinstance(node, btree.IndexNode)
             for key in node:
+                print "xx", repr(node), repr(key)
                 if not self.leaves_at_same_depth(node[key], depth + 1):
                     return False
             return True
@@ -211,17 +213,10 @@ class BTreeBalanceTests(unittest.TestCase):
             self.tree.insert(key, key)
             self.assert_(self.indexes_filled_right_amount(self.tree.root))
             
-    def xtest_remove_keeps_every_leaf_at_same_depth(self):
+    def test_remove_keeps_every_leaf_at_same_depth(self):
         for key in self.keys:
             self.tree.insert(key, key)
         for key in self.keys:
             self.tree.remove(key)
             self.assert_(self.leaves_at_same_depth(self.tree.root))
-        
-    def xtest_remove_keeps_every_index_node_the_right_amount(self):
-        for key in self.keys:
-            self.tree.insert(key, key)
-        for key in self.keys:
-            self.tree.remove(key)
-            self.assert_(self.indexes_filled_right_amount(self.tree.root))
 
