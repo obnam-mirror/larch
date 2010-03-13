@@ -162,7 +162,7 @@ class BTree(object):
             keys = node.keys()
             i = keys.index(child_key)
 
-            # Try to merge with left sibling.            
+            # If possible, merge with left or right sibling.
             if i > 0 and len(node[keys[i-1]]) < self.max_index_length:
                 new_ones.append(self.merge(node[keys[i-1]], child))
                 exclude.append(keys[i-1])
