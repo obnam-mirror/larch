@@ -1,10 +1,15 @@
-class LeafNode(dict):
+class Node(dict):
 
     def keys(self):
         return sorted(dict.keys(self))
 
 
-class IndexNode(dict):
+class LeafNode(Node):
+
+    pass
+
+
+class IndexNode(Node):
 
     def __init__(self, pairs):
         for key, child in pairs:
@@ -12,9 +17,6 @@ class IndexNode(dict):
             assert isinstance(child, IndexNode) or isinstance(child, LeafNode),\
                 'pairs: %s' % repr(pairs)
         dict.__init__(self, pairs)
-
-    def keys(self):
-        return sorted(dict.keys(self))
        
 
 class BTree(object):
