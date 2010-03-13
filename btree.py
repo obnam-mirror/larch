@@ -16,6 +16,12 @@ class IndexNode(Node):
             assert type(key) == str
             assert isinstance(child, IndexNode) or isinstance(child, LeafNode)
         dict.__init__(self, pairs)
+
+    def find_key_for_child_containing(self, key):
+        for k in reversed(self.keys()):
+            if key >= k:
+                return k
+        return None
        
 
 class BTree(object):
@@ -33,17 +39,11 @@ class BTree(object):
         if isinstance(node, LeafNode):
             return node[key]
         else:
-            k = self.find_key_for_child_containing(node, key)
+            k = node.find_key_for_child_containing(key)
             if k is None:
                 raise KeyError(key)
             else:
                 return self._lookup(node[k], key)
-
-    def find_key_for_child_containing(self, node, key):
-        for k in reversed(node.keys()):
-            if key >= k:
-                return k
-        return None
 
     def pairs(self, node, exclude=None):
         if exclude is None:
@@ -105,7 +105,7 @@ class BTree(object):
         # Insert into correct child, get up to two replacements for
         # that child.
 
-        k = self.find_key_for_child_containing(node, key)
+        k = node.find_key_for_child_containing(key)
         if k is None:
             k = self.first_key(node)
 
@@ -127,7 +127,7 @@ class BTree(object):
         if isinstance(node, LeafNode):
             return self._remove_from_leaf(node, key)
         else:
-            k = self.find_key_for_child_containing(node, key)
+            k = node.find_key_for_child_containing(key)
             if k is None:
                 raise KeyError(key)
             elif len(node[k]) <= self.min_index_length:
