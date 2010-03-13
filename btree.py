@@ -159,7 +159,16 @@ class BTree(object):
         child = self._remove(node[child_key], key)
 
         if child is not None:
-            new_ones.append(child)
+            keys = node.keys()
+            i = keys.index(child_key)
+
+            # Try to merge with left sibling.            
+            if i > 0 and len(node[keys[i-1]]) < self.max_index_length:
+                exclude.append(keys[i-1])
+                merged = self.merge(node[keys[i-1]], child)
+                new_ones.append(merged)
+            else:
+                new_ones.append(child)
         
         others = self.pairs(node, exclude=exclude)
         if others + new_ones:
