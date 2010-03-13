@@ -179,7 +179,6 @@ class BTree(object):
         else:
             return None
 
-        
     def _remove_from_nonminimal_index(self, node, key, child_key):
         child = self._remove(node[child_key], key)
         pairs = self.pairs(node, exclude=[child_key])
