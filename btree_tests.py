@@ -80,10 +80,6 @@ class BTreeTests(unittest.TestCase):
         if isinstance(node, btree.LeafNode):
             for key in node.keys():
                 if key < lower or key >= upper:
-                    if key < lower:
-                        print; print "key is < lower"
-                    else:
-                        print; print "key is >= upper"
                     return False
         else:
             keys = node.keys()
@@ -91,10 +87,6 @@ class BTreeTests(unittest.TestCase):
                 return False
             for i, key in enumerate(keys):
                 if key < lower or key >= upper:
-                    if key < lower:
-                        print; print "index key < lower"
-                    else:
-                        print; print "index key >= upper"
                     return False
                 if i+1 == len(keys):
                     up = upper
@@ -177,13 +169,10 @@ class BTreeBalanceTests(unittest.TestCase):
         if isinstance(node, btree.LeafNode):
             if self.depth is None:
                 self.depth = depth
-            if self.depth != depth:
-                print; print "depth is", depth, "should be", self.depth
             return self.depth == depth
         else:
             assert isinstance(node, btree.IndexNode)
             for key in node:
-                print "xx", repr(node), repr(key)
                 if not self.leaves_at_same_depth(node[key], depth + 1):
                     return False
             return True
