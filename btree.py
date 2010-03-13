@@ -142,6 +142,7 @@ class BTree(object):
             else:
                 return None
         else:
+            print; print 'key %s not in %s' % (key, node.keys())
             raise KeyError(key)
     
     def merge(self, n1, n2):

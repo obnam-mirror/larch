@@ -1,4 +1,5 @@
 import random
+import sys
 import unittest
 
 import btree
@@ -145,6 +146,20 @@ class BTreeTests(unittest.TestCase):
                          msg='insert of %d in %s failed to keep tree ok' %
                          (i, ints))
 
+    def dump_tree(self, node, f=sys.stdout, level=0):
+        indent = 4
+        if isinstance(node, btree.LeafNode):
+            f.write('%*sLeaf:' % (level*indent, ''))
+            for key in node.keys():
+                f.write(' %s=%s' % (key, node[key]))
+            f.write('\n')
+        else:
+            assert isinstance(node, btree.IndexNode)
+            f.write('%*sIndex:\n' % (level*indent, ''))
+            for key in node.keys():
+                f.write('%*s%s:\n' % ((level+1)*indent, '', key))
+                self.dump_tree(node[key], level=level+2)
+
     def test_insert_many_remove_many_works(self):
         keys = [str(i) for i in range(100)]
         random.shuffle(keys)
@@ -152,8 +167,17 @@ class BTreeTests(unittest.TestCase):
         for key in keys:
             tree.insert(key, key)
             self.assert_(self.proper_search_tree(self.tree.root))
+        print
+        print
+        self.dump_tree(tree.root)
+        print
         for key in keys:
+            print
+            print 'removing', key
             tree.remove(key)
+            print
+            print
+            self.dump_tree(tree.root)
             self.assert_(self.proper_search_tree(self.tree.root))
 
 
