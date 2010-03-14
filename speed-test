@@ -1,0 +1,59 @@
+#!/usr/bin/python
+#
+# Excercise my btree implementation, for simple benchmarking purposes.
+
+
+import random
+import sys
+import time
+
+import btree
+
+
+def measure(keys, func):
+    start = time.clock()
+    for key in keys:
+        func(key)
+    end = time.clock()
+    return end - start
+
+
+_need_header = True
+def report(n, fanout, loop, insert, lookup, remove):
+    global _need_header
+    
+    if _need_header:
+        _need_header = False
+        sys.stdout.write('B-tree speed test (%d keys)\n' % n)
+        sys.stdout.write('%6s  %6s  %6s  %6s\n' %
+                         ('fanout', 'insert', 'lookup', 'remove'))
+    sys.stdout.write('%6d  %6.3f  %6.3f  %6.3f\n' %
+                     (fanout, insert, lookup, remove))
+
+
+def main():
+    n = int(sys.argv[1])
+    
+    # Create list of keys.
+    keys = ['%08d' % i for i in xrange(n)]
+    
+    # Calibrate.
+    looptime = measure(keys, lambda key: None)
+
+    for fanout in [int(i) for i in sys.argv[2:]]:
+        tree = btree.BTree(fanout)
+        
+        random.shuffle(keys)
+        insert_time = measure(keys, lambda key: tree.insert(key, key)) - looptime
+        
+        random.shuffle(keys)
+        lookup_time = measure(keys, lambda key: tree.lookup(key)) - looptime
+        
+        random.shuffle(keys)
+        remove_time = measure(keys, lambda key: tree.remove(key)) - looptime
+        
+        report(n, fanout, looptime, insert_time, lookup_time, remove_time)
+
+
+if __name__ == '__main__':
+    main()
