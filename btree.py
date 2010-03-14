@@ -1,4 +1,6 @@
-'''A simple B-tree implementation. Some notes:
+'''A simple B-tree implementation.
+
+Some notes:
 
 * No nodes are modified, everything is done copy-on-write. This is because
   eventually this code will be used to handle on-disk data structures where
