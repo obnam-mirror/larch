@@ -1,0 +1,65 @@
+#!/usr/bin/python
+#
+# Excercise my btree implementation, for simple benchmarking purposes.
+
+
+import random
+import sys
+import time
+
+import btree
+
+
+def measure(keys, func):
+    start = time.clock()
+    for key in keys:
+        func(key)
+    end = time.clock()
+    return end - start
+
+
+def main():
+    n = int(sys.argv[1])
+    fanout = int(sys.argv[2])
+    
+    # Create tree.
+    tree = btree.BTree(fanout)
+    
+    # Create list of keys.
+    keys = ['%08d' % i for i in xrange(n)]
+    
+    # Calibrate.
+    looptime = measure(keys, lambda key: None)
+    
+    # Insert keys.
+    random.shuffle(keys)
+    insert_time = measure(keys, lambda key: tree.insert(key, key)) - looptime
+    
+    # Lookup keys.
+    random.shuffle(keys)
+    lookup_time = measure(keys, lambda key: tree.lookup(key)) - looptime
+    
+    # Remove keys.
+    random.shuffle(keys)
+    remove_time = measure(keys, lambda key: tree.remove(key)) - looptime
+    
+    # Report
+    sys.stdout.write('''\
+fanout = %(fanout)d
+num_keys = %(count)d
+looptime = %(looptime)f seconds
+insert_time = %(insert_time)f seconds
+lookup_time = %(lookup_time)f seconds
+remove_time = %(remove_time)f seconds
+''' % {
+    'count': n,
+    'fanout': fanout,
+    'looptime': looptime,
+    'insert_time': insert_time,
+    'lookup_time': lookup_time,
+    'remove_time': remove_time,
+})
+
+
+if __name__ == '__main__':
+    main()
