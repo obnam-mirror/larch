@@ -1,12 +1,43 @@
+'''A simple B-tree implementation. Some notes:
+
+* No nodes are modified, everything is done copy-on-write. This is because
+  eventually this code will be used to handle on-disk data structures where
+  copy-on-write is essential.
+* The fullness of leaf and index nodes is determined by number of keys.
+  This is appropriate for now, but eventually we will want to inspect the
+  size in bytes of the nodes instead. This is also for on-disk data
+  structures, where fixed-sized disk sectors or such are used to store
+  the nodes.
+
+'''
+
+
 class Node(dict):
 
+    '''Abstract base class for index and leaf nodes.
+    
+    A node may be initialized with a list of (key, value) pairs. For
+    leaf nodes, the values are the actual values. For index nodes, they
+    are references to other nodes.
+    
+    '''
+
     def keys(self):
+        '''Return keys in the node, sorted.'''
         return sorted(dict.keys(self))
 
     def first_key(self):
+        '''Return smallest key in the node.'''
         return self.keys()[0]
 
     def pairs(self, exclude=None):
+        '''Return (key, value) pairs in the node.
+        
+        ``exclude`` can be set to a list of keys that should be excluded
+        from the list.
+        
+        '''
+
         if exclude is None:
             exclude = []
         return sorted((key, self[key]) for key in self if key not in exclude)
@@ -14,10 +45,23 @@ class Node(dict):
 
 class LeafNode(Node):
 
+    '''Leaf node in the tree.
+    
+    A leaf node contains key/value pairs, and has no children.
+    
+    '''
+
     pass
 
 
 class IndexNode(Node):
+
+    '''Index node in the tree.
+    
+    An index node contains pairs of keys and references to other nodes.
+    The other nodes may be either index nodes or leaf nodes.
+    
+    '''
 
     def __init__(self, pairs):
         for key, child in pairs:
@@ -26,6 +70,7 @@ class IndexNode(Node):
         dict.__init__(self, pairs)
 
     def find_key_for_child_containing(self, key):
+        '''Return key for the child that contains ``key``.'''
         for k in reversed(self.keys()):
             if key >= k:
                 return k
@@ -34,6 +79,17 @@ class IndexNode(Node):
 
 class BTree(object):
 
+    '''B-tree.
+    
+    The tree is balanced, and has a fan-out factor given to the initializer
+    as its only argument. The fan-out factor determines how aggressively
+    the tree expands at each level.
+    
+    Three basic operations are available to the tree: lookup, insert, and
+    remove.
+    
+    '''
+
     def __init__(self, fanout):
         self.root = IndexNode([])
         self.fanout = fanout
@@ -41,6 +97,12 @@ class BTree(object):
         self.max_index_length = 2 * self.fanout + 1
         
     def lookup(self, key):
+        '''Return value corresponding to ``key``.
+        
+        If the key is not in the tree, raise ``KeyError``.
+        
+        '''
+
         return self._lookup(self.root, key)
 
     def _lookup(self, node, key):
@@ -54,6 +116,13 @@ class BTree(object):
                 return self._lookup(node[k], key)
 
     def insert(self, key, value):
+        '''Insert a new key/value pair into the tree.
+        
+        If the key already existed in the tree, the old value is silently
+        forgotten.
+        
+        '''
+
         a, b = self._insert(self.root, key, value)
         if b is None:
             self.root = a
@@ -119,6 +188,12 @@ class BTree(object):
         return IndexNode(pairs), None
 
     def remove(self, key):
+        '''Remove ``key`` and its associated value from tree.
+        
+        If key is not in the tree, ``KeyValue`` is raised.
+        
+        '''
+        
         self.root = self._remove(self.root, key)
         if self.root is None:
             self.root = IndexNode([])
