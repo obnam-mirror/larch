@@ -14,6 +14,8 @@ class NodeStoreMemory(btree.NodeStore):
         self.nodes = dict()
         
     def put_node(self, node_id, encoded_node):
+        if len(encoded_node) > self.node_size:
+            raise btree.NodeTooBig(node_id, len(encoded_node))
         self.nodes[node_id] = encoded_node
         
     def get_node(self, node_id):
