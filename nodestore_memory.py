@@ -27,7 +27,10 @@ class NodeStoreMemory(btree.NodeStore):
             raise btree.NodeMissing(node_id)
     
     def remove_node(self, node_id):
-        del self.nodes[node_id]
+        if node_id in self.nodes:
+            del self.nodes[node_id]
+        else:
+            raise btree.NodeMissing(node_id)
         
     def list_nodes(self):
         return self.nodes.keys()
