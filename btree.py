@@ -280,6 +280,18 @@ class NodeMissing(Exception): # pragma: no cover
         
     def __str__(self):
         return 'Node %d cannot be found in the node store' % self.node_id
+
+
+class NodeTooBig(Exception): # pragma: no cover
+
+    '''User tried to put a node that was too big into the store.'''
+    
+    def __init__(self, node_id, node_size):
+        self.node_id = node_id
+        self.node_size = node_size
+        
+    def __str__(self):
+        return 'Node %d is too big (%d bytes)' % (self.node_id, self.node_size)
         
         
 class NodeStore(object): # pragma: no cover
@@ -382,4 +394,8 @@ class NodeStoreTests(object): # pragma: no cover
         encoded = LeafNode().encode()
         self.ns.put_node(0, encoded)
         self.assertEqual(self.ns.list_nodes(), [0])
+
+    def test_put_refuses_too_large_a_node(self):
+        self.assertRaises(NodeTooBig, self.ns.put_node, 0, 
+                          'x' * (self.node_size + 1))
 
