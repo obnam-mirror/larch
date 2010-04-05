@@ -415,3 +415,5 @@ class NodeStoreTests(object): # pragma: no cover
         self.ns.put_node(0, encoded)
         self.assertRaises(NodeExists, self.ns.put_node, 0, encoded)
 
+    def test_remove_raises_nodemissing_if_node_does_not_exist(self):
+        self.assertRaises(NodeMissing, self.ns.remove_node, 0)
