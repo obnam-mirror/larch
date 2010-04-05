@@ -294,6 +294,17 @@ class NodeTooBig(Exception): # pragma: no cover
         return 'Node %d is too big (%d bytes)' % (self.node_id, self.node_size)
         
         
+class NodeExists(Exception): # pragma: no cover
+
+    '''User tried to put a node that already exists in the store.'''
+    
+    def __init__(self, node_id):
+        self.node_id = node_id
+        
+    def __str__(self):
+        return 'Node %d is already in the store' % self.node_id
+        
+        
 class NodeStore(object): # pragma: no cover
 
     '''Abstract base class for storing nodes externally.
@@ -382,7 +393,7 @@ class NodeStoreTests(object): # pragma: no cover
         encoded = LeafNode().encode()
         self.ns.put_node(0, encoded)
         self.assertEqual(self.ns.get_node(0), encoded)
-        
+
     def test_removes_node(self):
         encoded = LeafNode().encode()
         self.ns.put_node(0, encoded)
@@ -398,4 +409,9 @@ class NodeStoreTests(object): # pragma: no cover
     def test_put_refuses_too_large_a_node(self):
         self.assertRaises(NodeTooBig, self.ns.put_node, 0, 
                           'x' * (self.node_size + 1))
+
+    def test_put_refuses_to_overwrite_a_node(self):
+        encoded = 'x'
+        self.ns.put_node(0, encoded)
+        self.assertRaises(NodeExists, self.ns.put_node, 0, encoded)
 
