@@ -44,6 +44,11 @@ class Node(dict):
             exclude = []
         return sorted((key, self[key]) for key in self if key not in exclude)
 
+    def encode(self): # pragma: no cover
+        '''Encode the node as a byte string.'''
+        
+        return 'FIXME'
+
 
 class LeafNode(Node):
 
@@ -264,6 +269,17 @@ class BTree(object):
         pairs.sort()
         assert pairs
         return IndexNode(pairs)
+
+
+class NodeMissing(Exception): # pragma: no cover
+
+    '''A node cannot be found from a NodeStore.'''
+    
+    def __init__(self, node_id):
+        self.node_id = node_id
+        
+    def __str__(self):
+        return 'Node %d cannot be found in the node store' % self.node_id
         
         
 class NodeStore(object): # pragma: no cover
@@ -347,23 +363,23 @@ class NodeStoreTests(object): # pragma: no cover
     def test_has_no_node_zero_initially(self):
         self.assertRaises(NodeMissing, self.ns.get_node, 0)
 
-    def test_find_no_nodes_initially(self):
-        self.assertEqual(self.ns.find_nodes(), [])
+    def test_lists_no_nodes_initially(self):
+        self.assertEqual(self.ns.list_nodes(), [])
         
     def test_puts_and_gets_same(self):
         encoded = LeafNode().encode()
-        self.ns.put(0, encoded)
+        self.ns.put_node(0, encoded)
         self.assertEqual(self.ns.get_node(0), encoded)
         
     def test_removes_node(self):
         encoded = LeafNode().encode()
-        self.ns.put(0, encoded)
+        self.ns.put_node(0, encoded)
         self.ns.remove_node(0)
         self.assertRaises(NodeMissing, self.ns.get_node, 0)
-        self.assertEqual(self.ns.find_nodes(), [])
+        self.assertEqual(self.ns.list_nodes(), [])
 
-    def test_finds_node_zero(self):
+    def test_lists_node_zero(self):
         encoded = LeafNode().encode()
-        self.ns.put(0, encoded)
-        self.assertEqual(self.ns.find_nodes(), [0])
+        self.ns.put_node(0, encoded)
+        self.assertEqual(self.ns.list_nodes(), [0])
 
