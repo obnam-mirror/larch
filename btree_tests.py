@@ -57,6 +57,11 @@ class BTreeTests(unittest.TestCase):
         self.tree = btree.BTree(self.fanout)
         self.dump = False
 
+    def test_new_node_ids_grow(self):
+        id1 = self.tree.new_id()
+        id2 = self.tree.new_id()
+        self.assertEqual(id1 + 1, id2)
+
     def test_has_fanout(self):
         self.assertEqual(self.tree.fanout, self.fanout)
 

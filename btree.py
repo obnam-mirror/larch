@@ -109,6 +109,12 @@ class BTree(object):
         self.fanout = fanout
         self.min_index_length = self.fanout
         self.max_index_length = 2 * self.fanout + 1
+        self.last_id = 0
+        
+    def new_id(self):
+        '''Generate a new node identifier.'''
+        self.last_id += 1
+        return self.last_id
         
     def lookup(self, key):
         '''Return value corresponding to ``key``.
