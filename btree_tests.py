@@ -8,7 +8,11 @@ import btree
 class LeafNodeTests(unittest.TestCase):
 
     def setUp(self):
-        self.leaf = btree.LeafNode([('foo', 'bar')])
+        self.node_id = 12765
+        self.leaf = btree.LeafNode(self.node_id, [('foo', 'bar')])
+
+    def test_has_id(self):
+        self.assertEqual(self.leaf.id, self.node_id)
         
     def test_has_keys(self):
         self.assertEqual(self.leaf.keys(), ['foo'])
@@ -17,17 +21,22 @@ class LeafNodeTests(unittest.TestCase):
         self.assertEqual(self.leaf['foo'], 'bar')
 
     def test_sorts_keys(self):
-        leaf = btree.LeafNode([('foo', 'foo'), ('bar', 'bar')])
+        leaf = btree.LeafNode(0, [('foo', 'foo'), ('bar', 'bar')])
         self.assertEqual(leaf.keys(), sorted(['foo', 'bar']))
 
 
 class IndexNodeTests(unittest.TestCase):
 
     def setUp(self):
-        self.leaf1 = btree.LeafNode([('bar', 'bar')])
-        self.leaf2 = btree.LeafNode([('foo', 'foo')])
-        self.index = btree.IndexNode([('bar', self.leaf1), 
+        self.leaf1 = btree.LeafNode(0, [('bar', 'bar')])
+        self.leaf2 = btree.LeafNode(1, [('foo', 'foo')])
+        self.index_id = 1234
+        self.index = btree.IndexNode(self.index_id,
+                                     [('bar', self.leaf1), 
                                       ('foo', self.leaf2)])
+
+    def test_has_id(self):
+        self.assertEqual(self.index.id, self.index_id)
         
     def test_has_keys(self):
         self.assertEqual(self.index.keys(), ['bar', 'foo'])
