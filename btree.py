@@ -102,16 +102,35 @@ class BTree(object):
     '''
 
     def __init__(self, fanout):
-        self.root = IndexNode(0, [])
         self.fanout = fanout
         self.min_index_length = self.fanout
         self.max_index_length = 2 * self.fanout + 1
         self.last_id = 0
-        
+        self.nodes = dict()
+        self.root = self.new_root([])
+
     def new_id(self):
         '''Generate a new node identifier.'''
         self.last_id += 1
         return self.last_id
+        
+    def new_leaf(self, pairs):
+        '''Create a new leaf node and keep track of it.'''
+        leaf = LeafNode(self.new_id(), pairs)
+        self.nodes[leaf.id] = leaf
+        return leaf
+        
+    def new_index(self, pairs):
+        '''Create a new index node and keep track of it.'''
+        index = IndexNode(self.new_id(), pairs)
+        self.nodes[index.id] = index
+        return index
+        
+    def new_root(self, pairs):
+        '''Create a new root node and keep track of it.'''
+        root = IndexNode(0, pairs)
+        self.nodes[root.id] = root
+        return root
         
     def lookup(self, key):
         '''Return value corresponding to ``key``.
@@ -144,9 +163,8 @@ class BTree(object):
         if b is None:
             self.root = a
         else:
-            self.root = IndexNode(self.new_id(),
-                                  [(a.first_key(), a),
-                                   (b.first_key(), b)])
+            self.root = self.new_root([(a.first_key(), a),
+                                       (b.first_key(), b)])
 
     def _insert(self, node, key, value):
         if isinstance(node, LeafNode):
@@ -161,24 +179,24 @@ class BTree(object):
     def _insert_into_leaf(self, leaf, key, value):
         pairs = sorted(leaf.pairs(exclude=[key]) + [(key, value)])
         if len(pairs) <= self.fanout:
-            return LeafNode(self.new_id(), pairs), None
+            return self.new_leaf(pairs), None
         else:
             n = len(pairs) / 2
-            leaf1 = LeafNode(self.new_id(), pairs[:n])
-            leaf2 = LeafNode(self.new_id(), pairs[n:])
+            leaf1 = self.new_leaf(pairs[:n])
+            leaf2 = self.new_leaf(pairs[n:])
             return leaf1, leaf2
 
     def _insert_into_empty_root(self, key, value):
-        leaf = LeafNode(self.new_id(), [(key, value)])
-        return IndexNode(self.new_id(), [(leaf.first_key(), leaf)]), None
+        leaf = self.new_leaf([(key, value)])
+        return self.new_index([(leaf.first_key(), leaf)]), None
 
     def _insert_into_full_index(self, node, key, value):
         # A full index node needs to be split, then key/value inserted into
         # one of the halves.
         pairs = node.pairs()
         n = len(pairs) / 2
-        node1 = IndexNode(self.new_id(), pairs[:n])
-        node2 = IndexNode(self.new_id(), pairs[n:])
+        node1 = self.new_index(pairs[:n])
+        node2 = self.new_index(pairs[n:])
         if key <  node2.first_key():
             a, b = self._insert(node1, key, value)
             assert b is None
@@ -203,7 +221,7 @@ class BTree(object):
             pairs += [(b.first_key(), b)]
         pairs.sort()
         assert len(pairs) <= self.max_index_length
-        return IndexNode(self.new_id(), pairs), None
+        return self.new_index(pairs), None
 
     def remove(self, key):
         '''Remove ``key`` and its associated value from tree.
@@ -214,7 +232,7 @@ class BTree(object):
         
         self.root = self._remove(self.root, key)
         if self.root is None:
-            self.root = IndexNode(self.new_id(), [])
+            self.root = self.new_index([])
         
     def _remove(self, node, key):
         if isinstance(node, LeafNode):
@@ -232,7 +250,7 @@ class BTree(object):
         if key in node:
             pairs = node.pairs(exclude=[key])
             if pairs:
-                return LeafNode(self.new_id(), pairs)
+                return self.new_leaf(pairs)
             else:
                 return None
         else:
@@ -241,11 +259,11 @@ class BTree(object):
     def _merge(self, n1, n2):
         if isinstance(n1, IndexNode):
             assert isinstance(n2, IndexNode)
-            return IndexNode(self.new_id(), n1.pairs() + n2.pairs())
+            return self.new_index(n1.pairs() + n2.pairs())
         else:
             assert isinstance(n1, LeafNode)
             assert isinstance(n2, LeafNode)
-            return LeafNode(self.new_id(), n1.pairs() + n2.pairs())
+            return self.new_leaf(n1.pairs() + n2.pairs())
 
     def _remove_from_minimal_index(self, node, key, child_key):
         exclude = [child_key]
@@ -268,8 +286,8 @@ class BTree(object):
         
         others = node.pairs(exclude=exclude)
         if others + new_ones:
-            return IndexNode(self.new_id(), 
-                             others + [(n.first_key(), n) for n in new_ones])
+            return self.new_index(others + 
+                                  [(n.first_key(), n) for n in new_ones])
         else:
             return None
 
@@ -280,7 +298,7 @@ class BTree(object):
             pairs += [(child.first_key(), child)]
         pairs.sort()
         assert pairs
-        return IndexNode(self.new_id(), pairs)
+        return self.new_index(pairs)
 
 
 class NodeMissing(Exception): # pragma: no cover
