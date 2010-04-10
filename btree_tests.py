@@ -62,6 +62,22 @@ class BTreeTests(unittest.TestCase):
         id2 = self.tree.new_id()
         self.assertEqual(id1 + 1, id2)
 
+    def test_creates_leaf(self):
+        leaf = self.tree.new_leaf([])
+        self.assertEqual(leaf, self.tree.get_node(leaf.id))
+
+    def test_creates_index(self):
+        index = self.tree.new_index([])
+        self.assertEqual(index, self.tree.get_node(index.id))
+
+    def test_creates_root_with_id_zero(self):
+        root = self.tree.new_root([])
+        self.assertEqual(root.id, 0)
+
+    def test_creates_root(self):
+        root = self.tree.new_root([])
+        self.assertEqual(root, self.tree.get_node(0))
+
     def test_has_fanout(self):
         self.assertEqual(self.tree.fanout, self.fanout)
 

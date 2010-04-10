@@ -131,6 +131,10 @@ class BTree(object):
         root = IndexNode(0, pairs)
         self.nodes[root.id] = root
         return root
+
+    def get_node(self, node_id):
+        '''Return node corresponding to a node id.'''
+        return self.nodes[node_id]
         
     def lookup(self, key):
         '''Return value corresponding to ``key``.
