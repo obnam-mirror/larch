@@ -107,7 +107,7 @@ class BTree(object):
         self.max_index_length = 2 * self.fanout + 1
         self.last_id = 0
         self.nodes = dict()
-        self.root = self.new_root([])
+        self.new_root([])
 
     def new_id(self):
         '''Generate a new node identifier.'''
@@ -130,13 +130,13 @@ class BTree(object):
         '''Create a new root node and keep track of it.'''
         root = IndexNode(0, pairs)
         self.nodes[root.id] = root
-        return root
 
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
         return self.nodes[node_id]
 
-    def get_root(self):
+    @property
+    def root(self):
         '''Return the root node.'''
         return self.get_node(0)
         
@@ -169,10 +169,9 @@ class BTree(object):
 
         a, b = self._insert(self.root, key, value)
         if b is None:
-            self.root = a
+            self.new_root(a.pairs())
         else:
-            self.root = self.new_root([(a.first_key(), a),
-                                       (b.first_key(), b)])
+            self.new_root([(a.first_key(), a), (b.first_key(), b)])
 
     def _insert(self, node, key, value):
         if isinstance(node, LeafNode):
@@ -238,9 +237,11 @@ class BTree(object):
         
         '''
         
-        self.root = self._remove(self.root, key)
-        if self.root is None:
-            self.root = self.new_index([])
+        a = self._remove(self.root, key)
+        if a is None:
+            self.new_root([])
+        else:
+            self.new_root(a.pairs())
         
     def _remove(self, node, key):
         if isinstance(node, LeafNode):

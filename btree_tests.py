@@ -70,13 +70,12 @@ class BTreeTests(unittest.TestCase):
         index = self.tree.new_index([])
         self.assertEqual(index, self.tree.get_node(index.id))
 
-    def test_creates_root_with_id_zero(self):
-        root = self.tree.new_root([])
-        self.assertEqual(root.id, 0)
+    def test_new_root_does_not_return_it(self):
+        self.assertEqual(self.tree.new_root([]), None)
 
-    def test_creates_root(self):
-        root = self.tree.new_root([])
-        self.assertEqual(root, self.tree.get_root())
+    def test_creates_root_with_id_zero(self):
+        self.tree.new_root([])
+        self.assertEqual(self.tree.root.id, 0)
 
     def test_has_fanout(self):
         self.assertEqual(self.tree.fanout, self.fanout)
