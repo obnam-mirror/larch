@@ -76,7 +76,7 @@ class BTreeTests(unittest.TestCase):
 
     def test_creates_root(self):
         root = self.tree.new_root([])
-        self.assertEqual(root, self.tree.get_node(0))
+        self.assertEqual(root, self.tree.get_root())
 
     def test_has_fanout(self):
         self.assertEqual(self.tree.fanout, self.fanout)
