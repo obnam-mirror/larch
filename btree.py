@@ -281,7 +281,9 @@ class BTree(object):
         else:
             raise KeyError(key)
     
-    def _merge(self, n1, n2):
+    def _merge(self, id1, id2):
+        n1 = self.get_node(id1)
+        n2 = self.get_node(id2)
         if isinstance(n1, IndexNode):
             assert isinstance(n2, IndexNode)
             return self.new_index(self.get_index_pairs(n1) + 
@@ -304,13 +306,11 @@ class BTree(object):
             # If possible, merge with left or right sibling.
             if (i > 0 and 
                 len(self.get_node(node[keys[i-1]])) < self.max_index_length):
-                left = self.get_node(node[keys[i-1]])
-                new_ones.append(self._merge(left, child))
+                new_ones.append(self._merge(node[keys[i-1]], child.id))
                 exclude.append(keys[i-1])
             elif (i+1 < len(keys) and 
                   len(self.get_node(node[keys[i+1]])) < self.max_index_length):
-                right = self.get_node(node[keys[i+1]])
-                new_ones.append(self._merge(right, child))
+                new_ones.append(self._merge(node[keys[i+1]], child.id))
                 exclude.append(keys[i+1])
             else:
                 new_ones.append(child)
