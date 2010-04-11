@@ -251,25 +251,27 @@ class BTree(object):
         
         '''
         
-        a = self._remove(self.root, key)
+        a = self._remove(self.root.id, key)
         if a is None:
             self.new_root([])
         else:
             self.new_root(self.get_index_pairs(a))
         
-    def _remove(self, node, key):
+    def _remove(self, node_id, key):
+        node = self.get_node(node_id)
         if isinstance(node, LeafNode):
-            return self._remove_from_leaf(node, key)
+            return self._remove_from_leaf(node_id, key)
         else:
             k = node.find_key_for_child_containing(key)
             if k is None:
                 raise KeyError(key)
             elif len(self.get_node(node[k])) <= self.min_index_length:
-                return self._remove_from_minimal_index(node, key, k) 
+                return self._remove_from_minimal_index(node_id, key, k) 
             else:
-                return self._remove_from_nonminimal_index(node, key, k)
+                return self._remove_from_nonminimal_index(node_id, key, k)
 
-    def _remove_from_leaf(self, node, key):
+    def _remove_from_leaf(self, node_id, key):
+        node = self.get_node(node_id)
         if key in node:
             pairs = node.pairs(exclude=[key])
             if pairs:
@@ -289,10 +291,11 @@ class BTree(object):
             assert isinstance(n2, LeafNode)
             return self.new_leaf(n1.pairs() + n2.pairs())
 
-    def _remove_from_minimal_index(self, node, key, child_key):
+    def _remove_from_minimal_index(self, node_id, key, child_key):
+        node = self.get_node(node_id)
         exclude = [child_key]
         new_ones = []
-        child = self._remove(self.get_node(node[child_key]), key)
+        child = self._remove(node[child_key], key)
 
         if child is not None:
             keys = node.keys()
@@ -320,8 +323,9 @@ class BTree(object):
         else:
             return None
 
-    def _remove_from_nonminimal_index(self, node, key, child_key):
-        child = self._remove(self.get_node(node[child_key]), key)
+    def _remove_from_nonminimal_index(self, node_id, key, child_key):
+        node = self.get_node(node_id)
+        child = self._remove(node[child_key], key)
         pairs = node.pairs(exclude=[child_key])
         pairs = [(key, self.get_node(child_id)) for key, child_id in pairs]
         if child is not None:
