@@ -174,23 +174,25 @@ class BTree(object):
         
         '''
 
-        a, b = self._insert(self.root, key, value)
+        a, b = self._insert(self.root.id, key, value)
         if b is None:
             self.new_root(self.get_index_pairs(a))
         else:
             self.new_root([(a.first_key(), a), (b.first_key(), b)])
 
-    def _insert(self, node, key, value):
+    def _insert(self, node_id, key, value):
+        node = self.get_node(node_id)
         if isinstance(node, LeafNode):
-            return self._insert_into_leaf(node, key, value)
+            return self._insert_into_leaf(node_id, key, value)
         elif len(node) == 0:
             return self._insert_into_empty_root(key, value)
         elif len(node) == self.max_index_length:
-            return self._insert_into_full_index(node, key, value)
+            return self._insert_into_full_index(node_id, key, value)
         else:
-            return self._insert_into_nonfull_index(node, key, value)
+            return self._insert_into_nonfull_index(node_id, key, value)
 
-    def _insert_into_leaf(self, leaf, key, value):
+    def _insert_into_leaf(self, leaf_id, key, value):
+        leaf = self.get_node(leaf_id)
         pairs = sorted(leaf.pairs(exclude=[key]) + [(key, value)])
         if len(pairs) <= self.fanout:
             return self.new_leaf(pairs), None
@@ -204,32 +206,34 @@ class BTree(object):
         leaf = self.new_leaf([(key, value)])
         return self.new_index([(leaf.first_key(), leaf)]), None
 
-    def _insert_into_full_index(self, node, key, value):
+    def _insert_into_full_index(self, node_id, key, value):
         # A full index node needs to be split, then key/value inserted into
         # one of the halves.
+        node = self.get_node(node_id)
         pairs = self.get_index_pairs(node)
         n = len(pairs) / 2
         node1 = self.new_index(pairs[:n])
         node2 = self.new_index(pairs[n:])
         if key < node2.first_key():
-            a, b = self._insert(node1, key, value)
+            a, b = self._insert(node1.id, key, value)
             assert b is None
             return a, node2
         else:
-            a, b = self._insert(node2, key, value)
+            a, b = self._insert(node2.id, key, value)
             assert b is None
             return node1, a
     
-    def _insert_into_nonfull_index(self, node, key, value):        
+    def _insert_into_nonfull_index(self, node_id, key, value):        
         # Insert into correct child, get up to two replacements for
         # that child.
 
+        node = self.get_node(node_id)
         k = node.find_key_for_child_containing(key)
         if k is None:
             k = node.first_key()
 
         child = self.get_node(node[k])
-        a, b = self._insert(child, key, value)
+        a, b = self._insert(child.id, key, value)
         assert a is not None
         pairs = node.pairs(exclude=[k])
         pairs = [(key, self.get_node(child_id)) for key, child_id in pairs]
