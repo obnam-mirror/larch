@@ -153,9 +153,10 @@ class BTree(object):
         
         '''
 
-        return self._lookup(self.root, key)
+        return self._lookup(self.root.id, key)
 
-    def _lookup(self, node, key):
+    def _lookup(self, node_id, key):
+        node = self.get_node(node_id)
         if isinstance(node, LeafNode):
             return node[key]
         else:
@@ -163,7 +164,7 @@ class BTree(object):
             if k is None:
                 raise KeyError(key)
             else:
-                return self._lookup(self.get_node(node[k]), key)
+                return self._lookup(node[k], key)
 
     def insert(self, key, value):
         '''Insert a new key/value pair into the tree.
