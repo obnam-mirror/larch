@@ -1,3 +1,6 @@
+import struct
+
+
 '''A simple B-tree implementation.
 
 Some notes:
@@ -48,11 +51,6 @@ class Node(dict):
             exclude = []
         return sorted((key, self[key]) for key in self if key not in exclude)
 
-    def encode(self): # pragma: no cover
-        '''Encode the node as a byte string.'''
-        
-        return 'FIXME'
-
 
 class LeafNode(Node):
 
@@ -86,6 +84,79 @@ class IndexNode(Node):
             if key >= k:
                 return k
         return None
+
+
+class NodeCodec(object):
+
+    '''Encode and decode nodes from their binary format.
+    
+    Node identifiers are assumed to fit into 64 bits.
+    
+    Leaf node values are assumed to fit into 65535 bytes.
+    
+    '''
+    
+    def __init__(self, keybits):
+        key_bytes = (keybits + 7) / 8        
+        self.index_format = '!%dsQ' % key_bytes
+        self.leaf_format = '!%dsH%%ds' % key_bytes
+        
+        self.id_size = struct.calcsize('!Q')
+
+    def encode(self, node):
+        '''Encode the node as a byte string.'''
+        
+        parts = [struct.pack('!Q', node.id)]
+        if isinstance(node, LeafNode):
+            for key, value in node.iteritems():
+                parts.append(self.format_leaf_pair(key, value))
+        else:
+            for key, child_id in node.iteritems():
+                parts.append(self.format_index_pair(key, child_id))
+        
+        return ''.join(parts)
+
+    def format_index_pair(self, key, child_id):
+        return struct.pack(self.index_format, key, child_id)
+
+    def format_leaf_pair(self, key, value):
+        return struct.pack(self.leaf_format % len(value), 
+                           key, len(value), value)
+        
+    def decode_id(self, encoded):
+        '''Return leading node identifier.'''
+        assert len(encoded) >= self.id_size
+        node_id = struct.unpack('!Q', encoded[:self.id_size])
+        return node_id, encoded[self.id_size:]
+        
+    def decode_leaf(self, encoded):
+        '''Decode a leaf node from its encoded byte string.'''
+        node_id, rest = self.decode_id(encoded)
+        
+        pairs = []
+        while rest:
+            n = struct.calcsize(self.leaf_format % 0)
+            (key, value_size, value) = struct.unpack(self.leaf_format % 0 ,
+                                                     rest[:n])
+            n += value_size
+            s, rest = rest[:n], rest[n:]
+            (key, value_size, value) = \
+                struct.unpack(self.leaf_format % value_size, s)
+            pairs.append((key, value))
+        
+        return LeafNode(node_id, pairs)
+        
+    def decode_index(self, encoded):
+        '''Decode an index node from its encoded byte string.'''
+        node_id, rest = self.decode_id(encoded)
+        
+        pairs = []
+        pair_size = struct.calcsize(self.index_format)
+        while rest:
+            s, rest = rest[:pair_size], rest[pair_size:]
+            pairs.append(struct.unpack(self.index_format, s))
+        
+        return IndexNode(node_id, pairs)
        
 
 class BTree(object):
@@ -444,19 +515,19 @@ class NodeStoreTests(object): # pragma: no cover
         self.assertEqual(self.ns.list_nodes(), [])
         
     def test_puts_and_gets_same(self):
-        encoded = LeafNode(0).encode()
+        encoded = 'asdfadsfafd'
         self.ns.put_node(0, encoded)
         self.assertEqual(self.ns.get_node(0), encoded)
 
     def test_removes_node(self):
-        encoded = LeafNode(0).encode()
+        encoded = 'asdfafdafd'
         self.ns.put_node(0, encoded)
         self.ns.remove_node(0)
         self.assertRaises(NodeMissing, self.ns.get_node, 0)
         self.assertEqual(self.ns.list_nodes(), [])
 
     def test_lists_node_zero(self):
-        encoded = LeafNode(0).encode()
+        encoded = 'adsfafdafd'
         self.ns.put_node(0, encoded)
         self.assertEqual(self.ns.list_nodes(), [0])
 

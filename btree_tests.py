@@ -48,7 +48,25 @@ class IndexNodeTests(unittest.TestCase):
     def test_has_indexed_children(self):
         self.assertEqual(self.index['bar'], self.leaf1.id)
         self.assertEqual(self.index['foo'], self.leaf2.id)
-        
+
+
+class NodeCodecTests(unittest.TestCase):
+
+    def setUp(self):
+        self.leaf = btree.LeafNode(1234, [('foo', 'bar')])
+        self.index = btree.IndexNode(5678,
+                                     [('bar', 1234), 
+                                      ('foo', 7890)])
+        self.codec = btree.NodeCodec(3*8)
+
+    def test_leaf_round_trip_ok(self):
+        encoded = self.codec.encode(self.leaf)
+        self.assertEqual(self.codec.decode_leaf(encoded), self.leaf)
+
+    def test_index_round_trip_ok(self):
+        encoded = self.codec.encode(self.index)
+        self.assertEqual(self.codec.decode_index(encoded), self.index)
+
 
 class BTreeTests(unittest.TestCase):
 
