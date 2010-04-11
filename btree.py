@@ -96,25 +96,41 @@ class NodeCodec(object):
     
     '''
     
-    def __init__(self, keybits):
-        key_bytes = (keybits + 7) / 8        
+    def __init__(self, key_bytes):
+        self.key_bytes = key_bytes
         self.index_format = '!%dsQ' % key_bytes
         self.leaf_format = '!%dsH%%ds' % key_bytes
         
         self.id_size = struct.calcsize('!Q')
+        self.index_pair_size = struct.calcsize(self.index_format)
+
+    def leaf_size(self, pairs):
+        '''Return size of a leaf node with the given pairs.'''
+        return (struct.calcsize('!Q') +
+                sum(struct.calcsize(self.leaf_format % len(value))
+                    for key, value in pairs))
+
+    def encode_leaf(self, node):
+        '''Encode a leaf node as a byte string.'''
+        
+        parts = ['L', struct.pack('!Q', node.id)]
+        for key, value in node.iteritems():
+            parts.append(self.format_leaf_pair(key, value))
+        return ''.join(parts)
+
+    def encode_index(self, node):
+        '''Encode an index node as a byte string.'''
+        
+        parts = ['I', struct.pack('!Q', node.id)]
+        for key, child_id in node.iteritems():
+            parts.append(self.format_index_pair(key, child_id))
+        return ''.join(parts)
 
     def encode(self, node):
-        '''Encode the node as a byte string.'''
-        
-        parts = [struct.pack('!Q', node.id)]
         if isinstance(node, LeafNode):
-            for key, value in node.iteritems():
-                parts.append(self.format_leaf_pair(key, value))
+            return self.encode_leaf(node)
         else:
-            for key, child_id in node.iteritems():
-                parts.append(self.format_index_pair(key, child_id))
-        
-        return ''.join(parts)
+            return self.encode_index(node)
 
     def format_index_pair(self, key, child_id):
         return struct.pack(self.index_format, key, child_id)
@@ -122,16 +138,18 @@ class NodeCodec(object):
     def format_leaf_pair(self, key, value):
         return struct.pack(self.leaf_format % len(value), 
                            key, len(value), value)
-        
+
     def decode_id(self, encoded):
         '''Return leading node identifier.'''
         assert len(encoded) >= self.id_size
-        node_id = struct.unpack('!Q', encoded[:self.id_size])
+        (node_id,) = struct.unpack('!Q', encoded[:self.id_size])
         return node_id, encoded[self.id_size:]
         
     def decode_leaf(self, encoded):
         '''Decode a leaf node from its encoded byte string.'''
-        node_id, rest = self.decode_id(encoded)
+
+        assert encoded.startswith('L')
+        node_id, rest = self.decode_id(encoded[1:])
         
         pairs = []
         while rest:
@@ -148,7 +166,9 @@ class NodeCodec(object):
         
     def decode_index(self, encoded):
         '''Decode an index node from its encoded byte string.'''
-        node_id, rest = self.decode_id(encoded)
+
+        assert encoded.startswith('I')
+        node_id, rest = self.decode_id(encoded[1:])
         
         pairs = []
         pair_size = struct.calcsize(self.index_format)
@@ -157,28 +177,53 @@ class NodeCodec(object):
             pairs.append(struct.unpack(self.index_format, s))
         
         return IndexNode(node_id, pairs)
+
+    def decode(self, encoded):
+        if encoded.startswith('L'):
+            return self.decode_leaf(encoded)
+        else:
+            return self.decode_index(encoded)
+
+
+class KeySizeMismatch(Exception):
+
+    def __init__(self, key, wanted_size):
+        self.key = key
+        self.wanted_size = wanted_size
+        
+    def __str__(self):
+        return 'Key %s is of wrong length (%d, should be %d)' % \
+                (repr(self.key), len(self.key), self.wanted_size)
        
 
 class BTree(object):
 
     '''B-tree.
     
-    The tree is balanced, and has a fan-out factor given to the initializer
-    as its only argument. The fan-out factor determines how aggressively
-    the tree expands at each level.
+    The nodes are stored in an external node store; see the NodeStore
+    class. Key sizes are fixed, and given in bytes.
+    
+    The tree is balanced.
     
     Three basic operations are available to the tree: lookup, insert, and
     remove.
     
     '''
 
-    def __init__(self, fanout):
-        self.fanout = fanout
-        self.min_index_length = self.fanout
-        self.max_index_length = 2 * self.fanout + 1
+    def __init__(self, node_store, key_bytes):
+        self.node_store = node_store
+        self.codec = NodeCodec(key_bytes)
+
+        max_pairs = self.node_store.node_size / self.codec.index_pair_size
+        self.min_index_length = max_pairs / 2
+        self.max_index_length = max_pairs
+
         self.last_id = 0
-        self.nodes = dict()
         self.new_root([])
+
+    def check_key_size(self, key):
+        if len(key) != self.codec.key_bytes:
+            raise KeySizeMismatch(key, self.codec.key_bytes)
 
     def new_id(self):
         '''Generate a new node identifier.'''
@@ -188,23 +233,24 @@ class BTree(object):
     def new_leaf(self, pairs):
         '''Create a new leaf node and keep track of it.'''
         leaf = LeafNode(self.new_id(), pairs)
-        self.nodes[leaf.id] = leaf
+        self.node_store.put_node(leaf.id, self.codec.encode(leaf))
         return leaf
         
     def new_index(self, pairs):
         '''Create a new index node and keep track of it.'''
         index = IndexNode(self.new_id(), pairs)
-        self.nodes[index.id] = index
+        self.node_store.put_node(index.id, self.codec.encode(index))
         return index
         
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
         root = IndexNode(0, pairs)
-        self.nodes[root.id] = root
+        self.node_store.put_node(root.id, self.codec.encode(root))
 
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
-        return self.nodes[node_id]
+        encoded = self.node_store.get_node(node_id)
+        return self.codec.decode(encoded)
 
     @property
     def root(self):
@@ -218,6 +264,7 @@ class BTree(object):
         
         '''
 
+        self.check_key_size(key)
         return self._lookup(self.root.id, key)
 
     def _lookup(self, node_id, key):
@@ -239,6 +286,7 @@ class BTree(object):
         
         '''
 
+        self.check_key_size(key)
         a, b = self._insert(self.root.id, key, value)
         if b is None:
             self.new_root(a.pairs())
@@ -259,7 +307,7 @@ class BTree(object):
     def _insert_into_leaf(self, leaf_id, key, value):
         leaf = self.get_node(leaf_id)
         pairs = sorted(leaf.pairs(exclude=[key]) + [(key, value)])
-        if len(pairs) <= self.fanout:
+        if self.codec.leaf_size(pairs) <= self.node_store.node_size:
             return self.new_leaf(pairs), None
         else:
             n = len(pairs) / 2
@@ -315,6 +363,7 @@ class BTree(object):
         
         '''
         
+        self.check_key_size(key)
         a = self._remove(self.root.id, key)
         if a is None:
             self.new_root([])

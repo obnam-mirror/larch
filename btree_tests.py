@@ -5,6 +5,19 @@ import unittest
 import btree
 
 
+class DummyNodeStore(object):
+
+    def __init__(self, node_size):
+        self.node_size = node_size
+        self.nodes = dict()
+    
+    def put_node(self, node_id, encoded):
+        self.nodes[node_id] = encoded
+        
+    def get_node(self, node_id):
+        return self.nodes[node_id]
+
+
 class LeafNodeTests(unittest.TestCase):
 
     def setUp(self):
@@ -57,22 +70,36 @@ class NodeCodecTests(unittest.TestCase):
         self.index = btree.IndexNode(5678,
                                      [('bar', 1234), 
                                       ('foo', 7890)])
-        self.codec = btree.NodeCodec(3*8)
+        self.codec = btree.NodeCodec(3)
 
     def test_leaf_round_trip_ok(self):
-        encoded = self.codec.encode(self.leaf)
+        encoded = self.codec.encode_leaf(self.leaf)
         self.assertEqual(self.codec.decode_leaf(encoded), self.leaf)
 
     def test_index_round_trip_ok(self):
-        encoded = self.codec.encode(self.index)
+        encoded = self.codec.encode_index(self.index)
         self.assertEqual(self.codec.decode_index(encoded), self.index)
+
+
+class KeySizeMismatchTests(unittest.TestCase):
+
+    def setUp(self):
+        self.err = btree.KeySizeMismatch('foo', 4)
+        
+    def test_error_message_contains_key(self):
+        self.assert_('foo' in str(self.err))
+        
+    def test_error_message_contains_wanted_size(self):
+        self.assert_('4' in str(self.err))
 
 
 class BTreeTests(unittest.TestCase):
 
     def setUp(self):
-        self.fanout = 2
-        self.tree = btree.BTree(self.fanout)
+        # We use a small node size so that all code paths are traversed
+        # during testing. Use coverage.py to make sure they do.
+        ns = DummyNodeStore(64)
+        self.tree = btree.BTree(ns, 3)
         self.dump = False
 
     def test_new_node_ids_grow(self):
@@ -95,14 +122,14 @@ class BTreeTests(unittest.TestCase):
         self.tree.new_root([])
         self.assertEqual(self.tree.root.id, 0)
 
-    def test_has_fanout(self):
-        self.assertEqual(self.tree.fanout, self.fanout)
-
     def test_is_empty(self):
         self.assertEqual(self.tree.root.keys(), [])
         
     def test_lookup_for_missing_key_raises_error(self):
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
+
+    def test_lookup_with_wrong_size_key_raises_error(self):
+        self.assertRaises(btree.KeySizeMismatch, self.tree.lookup, '')
 
     def test_insert_inserts_key(self):
         self.tree.insert('foo', 'bar')
@@ -112,6 +139,9 @@ class BTreeTests(unittest.TestCase):
         self.tree.insert('foo', 'foo')
         self.tree.insert('foo', 'bar')
         self.assertEqual(self.tree.lookup('foo'), 'bar')
+
+    def test_insert_with_wrong_size_key_raises_error(self):
+        self.assertRaises(btree.KeySizeMismatch, self.tree.insert, '', '')
 
     def test_remove_from_empty_tree_raises_keyerror(self):
         self.assertRaises(KeyError, self.tree.remove, 'foo')
@@ -124,6 +154,9 @@ class BTreeTests(unittest.TestCase):
         self.tree.insert('foo', 'bar')
         self.tree.remove('foo')
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
+
+    def test_remove_with_wrong_size_key_raises_error(self):
+        self.assertRaises(btree.KeySizeMismatch, self.tree.remove, '')
 
     def keys_are_in_range(self, node, lower, upper, level=0):
         indent = 2
@@ -179,7 +212,7 @@ class BTreeTests(unittest.TestCase):
         ints = range(100)
         random.shuffle(ints)
         for i in ints:
-            key = str(i)
+            key = '%03d' % i
             value = key
             self.tree.insert(key, value)
             self.assertEqual(self.tree.lookup(key), value)
@@ -190,7 +223,7 @@ class BTreeTests(unittest.TestCase):
         ints = range(100)
         random.shuffle(ints)
         for i in ints:
-            key = str(i)
+            key = '%03d' % i
             value = key
             self.tree.insert(key, value)
             self.assertEqual(self.tree.lookup(key), value)
@@ -217,9 +250,8 @@ class BTreeTests(unittest.TestCase):
                 self.dump_tree(self.tree.get_node(node[key]), level=level+2)
 
     def test_insert_many_remove_many_works(self):
-        keys = [str(i) for i in range(100)]
+        keys = ['%03d' % i for i in range(100)]
         random.shuffle(keys)
-        self.tree = btree.BTree(self.fanout)
         for key in keys:
             self.tree.insert(key, key)
             self.assert_(self.proper_search_tree(self.tree.root))
@@ -251,9 +283,9 @@ class BTreeTests(unittest.TestCase):
 class BTreeBalanceTests(unittest.TestCase):
 
     def setUp(self):
-        self.fanout = 2
-        self.tree = btree.BTree(self.fanout)
-        self.keys = [str(i) for i in range(10)]
+        ns = DummyNodeStore(4096)
+        self.tree = btree.BTree(ns, 2)
+        self.keys = ['%02d' % i for i in range(10)]
         self.depth = None
 
     def leaves_at_same_depth(self, node, depth=0):
