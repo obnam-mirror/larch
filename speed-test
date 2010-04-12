@@ -1,13 +1,25 @@
 #!/usr/bin/python
 #
 # Excercise my btree implementation, for simple benchmarking purposes.
+# The benchmark gets a location and an operation count as command line
+# arguments.
+#
+# If the location is the empty string, an in-memory node store is used.
+# Otherwise it must be a non-existent directory name.
+#
+# The benchmark will do the given number of insertions into the tree, and
+# measure the speed of that. Then it will look up each of those.
 
 
+import os
 import random
+import shutil
 import sys
 import time
 
 import btree
+import nodestore_disk
+import nodestore_memory
 
 
 def measure(keys, func):
@@ -18,21 +30,19 @@ def measure(keys, func):
     return end - start
 
 
-_need_header = True
-def report(n, fanout, loop, insert, lookup, remove):
-    global _need_header
-    
-    if _need_header:
-        _need_header = False
-        sys.stdout.write('B-tree speed test (%d keys)\n' % n)
-        sys.stdout.write('%6s  %6s  %6s  %6s\n' %
-                         ('fanout', 'insert', 'lookup', 'remove'))
-    sys.stdout.write('%6d  %6.3f  %6.3f  %6.3f\n' %
-                     (fanout, insert, lookup, remove))
-
-
 def main():
-    n = int(sys.argv[1])
+    location = sys.argv[1]
+    n = int(sys.argv[2])
+    
+    node_size = 4096
+    if location == '':
+        ns = nodestore_memory.NodeStoreMemory(4096)
+    else:
+        if os.path.exists(location):
+            raise Exception('%s exists already' % location)
+        os.mkdir(location)
+        ns = nodestore_disk.NodeStoreDisk(location, 4096)
+    tree = btree.BTree(ns, 8)
     
     # Create list of keys.
     keys = ['%08d' % i for i in xrange(n)]
@@ -40,20 +50,23 @@ def main():
     # Calibrate.
     looptime = measure(keys, lambda key: None)
 
-    for fanout in [int(i) for i in sys.argv[2:]]:
-        tree = btree.BTree(fanout)
-        
-        random.shuffle(keys)
-        insert_time = measure(keys, lambda key: tree.insert(key, key)) - looptime
-        
-        random.shuffle(keys)
-        lookup_time = measure(keys, lambda key: tree.lookup(key)) - looptime
-        
-        random.shuffle(keys)
-        remove_time = measure(keys, lambda key: tree.remove(key)) - looptime
-        
-        report(n, fanout, looptime, insert_time, lookup_time, remove_time)
+    # Measure inserts.
+    random.shuffle(keys)
+    value = 'x' * 128
+    insert_time = measure(keys, lambda key: tree.insert(key, value)) - looptime
 
+    # Measure lookups.
+    random.shuffle(keys)
+    lookup_time = measure(keys, lambda key: tree.lookup(key)) - looptime
+
+    # Report
+    print 'num_operations: %d' % n
+    print 'insert: %.3f s (%.1f/s)' % (insert_time, n/insert_time)
+    print 'lookup-time: %.3f s (%.1f/s)' % (lookup_time, n/lookup_time)
+
+    # Clean up
+    if location:
+        shutil.rmtree(location)
 
 if __name__ == '__main__':
     main()
