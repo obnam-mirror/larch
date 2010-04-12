@@ -16,6 +16,9 @@ class DummyNodeStore(object):
         
     def get_node(self, node_id):
         return self.nodes[node_id]
+        
+    def find_nodes(self):
+        return self.nodes.keys()
 
 
 class LeafNodeTests(unittest.TestCase):
@@ -98,8 +101,8 @@ class BTreeTests(unittest.TestCase):
     def setUp(self):
         # We use a small node size so that all code paths are traversed
         # during testing. Use coverage.py to make sure they do.
-        ns = DummyNodeStore(64)
-        self.tree = btree.BTree(ns, 3)
+        self.ns = DummyNodeStore(64)
+        self.tree = btree.BTree(self.ns, 3)
         self.dump = False
 
     def test_new_node_ids_grow(self):
@@ -278,6 +281,11 @@ class BTreeTests(unittest.TestCase):
                 print
                 print
         self.assertEqual(self.tree.root.keys(), [])
+        
+    def test_persists(self):
+        self.tree.insert('foo', 'bar')
+        tree2 = btree.BTree(self.ns, 3)
+        self.assertEqual(tree2.lookup('foo'), 'bar')
 
 
 class BTreeBalanceTests(unittest.TestCase):

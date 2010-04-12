@@ -219,7 +219,9 @@ class BTree(object):
         self.max_index_length = max_pairs
 
         self.last_id = 0
-        self.new_root([])
+        
+        if 0 not in self.node_store.find_nodes():
+            self.new_root([])
 
     def check_key_size(self, key):
         if len(key) != self.codec.key_bytes:
