@@ -15,7 +15,7 @@ class DummyNodeStore(object):
     def get_metadata(self):
         return self.metadata
         
-    def put_metadata(self, blob):
+    def set_metadata(self, blob):
         self.metadata = blob
     
     def put_node(self, node_id, encoded):

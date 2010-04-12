@@ -232,7 +232,7 @@ class BTree(object):
     
     def store_metadata(self):
         blob = struct.pack('!Q', self.last_id)
-        self.node_store.put_metadata(blob)
+        self.node_store.set_metadata(blob)
 
     def check_key_size(self, key):
         if len(key) != self.codec.key_bytes:
@@ -619,8 +619,13 @@ class NodeStoreTests(object): # pragma: no cover
 
     def test_put_refuses_to_overwrite_a_node(self):
         encoded = 'x'
-        self.ns.put_node(0, encoded)
-        self.assertRaises(NodeExists, self.ns.put_node, 0, encoded)
+        self.ns.put_node(1, encoded)
+        self.assertRaises(NodeExists, self.ns.put_node, 1, encoded)
+
+    def test_put_allows_overwrite_of_node_zero(self):
+        self.ns.put_node(0, 'foo')
+        self.ns.put_node(0, 'bar')
+        self.assertEqual(self.ns.get_node(0), 'bar')
 
     def test_remove_raises_nodemissing_if_node_does_not_exist(self):
         self.assertRaises(NodeMissing, self.ns.remove_node, 0)

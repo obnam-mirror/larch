@@ -32,7 +32,7 @@ class NodeStoreDisk(btree.NodeStore):
         if len(encoded_node) > self.node_size:
             raise btree.NodeTooBig(node_id, len(encoded_node))
         name = self.pathname(node_id)
-        if os.path.exists(name):
+        if node_id != 0 and os.path.exists(name):
             raise btree.NodeExists(node_id)
         file(name, 'w').write(encoded_node)
         

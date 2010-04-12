@@ -23,7 +23,7 @@ class NodeStoreMemory(btree.NodeStore):
     def put_node(self, node_id, encoded_node):
         if len(encoded_node) > self.node_size:
             raise btree.NodeTooBig(node_id, len(encoded_node))
-        if node_id in self.nodes:
+        if node_id != 0 and node_id in self.nodes:
             raise btree.NodeExists(node_id)
         self.nodes[node_id] = encoded_node
         
