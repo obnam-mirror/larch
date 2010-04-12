@@ -219,9 +219,20 @@ class BTree(object):
         self.max_index_length = max_pairs
 
         self.last_id = 0
-        
-        if 0 not in self.node_store.find_nodes():
+        if not self.read_metadata():
             self.new_root([])
+
+    def read_metadata(self):
+        blob = self.node_store.get_metadata()
+        if blob:
+            (self.last_id,) = struct.unpack('!Q', blob)
+            return True
+        else:
+            return False
+    
+    def store_metadata(self):
+        blob = struct.pack('!Q', self.last_id)
+        self.node_store.put_metadata(blob)
 
     def check_key_size(self, key):
         if len(key) != self.codec.key_bytes:
@@ -236,18 +247,21 @@ class BTree(object):
         '''Create a new leaf node and keep track of it.'''
         leaf = LeafNode(self.new_id(), pairs)
         self.node_store.put_node(leaf.id, self.codec.encode(leaf))
+        self.store_metadata()
         return leaf
         
     def new_index(self, pairs):
         '''Create a new index node and keep track of it.'''
         index = IndexNode(self.new_id(), pairs)
         self.node_store.put_node(index.id, self.codec.encode(index))
+        self.store_metadata()
         return index
         
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
         root = IndexNode(0, pairs)
         self.node_store.put_node(root.id, self.codec.encode(root))
+        self.store_metadata()
 
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
@@ -518,6 +532,16 @@ class NodeStore(object): # pragma: no cover
     def __init__(self, node_size):
         self.node_size = node_size
         
+    def set_metadata(self, blob):
+        '''Set metadata as a blob.
+        
+        The blob must fit into a node.
+        
+        '''
+        
+    def get_metadata(self):
+        '''Return metadata as a blob.'''
+        
     def put_node(self, node_id, encoded_node):
         '''Put a new node into the store.'''
         
@@ -558,6 +582,13 @@ class NodeStoreTests(object): # pragma: no cover
     
     def test_sets_node_size(self):
         self.assertEqual(self.ns.node_size, self.node_size)
+
+    def test_has_no_metadata_initially(self):
+        self.assertEqual(self.ns.get_metadata(), '')
+        
+    def test_sets_metadata(self):
+        self.ns.set_metadata('foo')
+        self.assertEqual(self.ns.get_metadata(), 'foo')
         
     def test_has_no_node_zero_initially(self):
         self.assertRaises(NodeMissing, self.ns.get_node, 0)

@@ -14,6 +14,16 @@ class NodeStoreDisk(btree.NodeStore):
     def __init__(self, dirname, node_size):
         btree.NodeStore.__init__(self, node_size)
         self.dirname = dirname
+        self.metadata_name = os.path.join(dirname, 'metadata')
+
+    def set_metadata(self, blob):
+        file(self.metadata_name, 'w').write(blob)
+
+    def get_metadata(self):
+        if os.path.exists(self.metadata_name):
+            return file(self.metadata_name).read()
+        else:
+            return ''
 
     def pathname(self, node_id):
         return os.path.join(self.dirname, '%d.node' % node_id)

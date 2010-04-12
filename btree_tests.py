@@ -10,6 +10,13 @@ class DummyNodeStore(object):
     def __init__(self, node_size):
         self.node_size = node_size
         self.nodes = dict()
+        self.metadata = ''
+        
+    def get_metadata(self):
+        return self.metadata
+        
+    def put_metadata(self, blob):
+        self.metadata = blob
     
     def put_node(self, node_id, encoded):
         self.nodes[node_id] = encoded
@@ -286,6 +293,12 @@ class BTreeTests(unittest.TestCase):
         self.tree.insert('foo', 'bar')
         tree2 = btree.BTree(self.ns, 3)
         self.assertEqual(tree2.lookup('foo'), 'bar')
+
+    def test_last_node_id_persists(self):
+        node1 = self.tree.new_leaf([])
+        tree2 = btree.BTree(self.ns, 3)
+        node2 = tree2.new_leaf([])
+        self.assertEqual(node1.id + 1, node2.id)
 
 
 class BTreeBalanceTests(unittest.TestCase):
