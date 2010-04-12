@@ -98,22 +98,26 @@ class NodeCodec(object):
     
     def __init__(self, key_bytes):
         self.key_bytes = key_bytes
+        self.index_header_format = '!cQ'
         self.index_format = '!%dsQ' % key_bytes
+        self.leaf_header_format = '!cQ'
         self.leaf_format = '!%dsH%%ds' % key_bytes
         
         self.id_size = struct.calcsize('!Q')
+        self.index_header_size = struct.calcsize(self.index_header_format)
         self.index_pair_size = struct.calcsize(self.index_format)
+        self.leaf_header_size = struct.calcsize(self.leaf_header_format)
 
     def leaf_size(self, pairs):
         '''Return size of a leaf node with the given pairs.'''
-        return (struct.calcsize('!Q') +
+        return (self.leaf_header_size +
                 sum(struct.calcsize(self.leaf_format % len(value))
                     for key, value in pairs))
 
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
         
-        parts = ['L', struct.pack('!Q', node.id)]
+        parts = [struct.pack(self.leaf_header_format, 'L', node.id)]
         for key, value in node.iteritems():
             parts.append(self.format_leaf_pair(key, value))
         return ''.join(parts)
@@ -121,7 +125,7 @@ class NodeCodec(object):
     def encode_index(self, node):
         '''Encode an index node as a byte string.'''
         
-        parts = ['I', struct.pack('!Q', node.id)]
+        parts = [struct.pack(self.index_header_format, 'I', node.id)]
         for key, child_id in node.iteritems():
             parts.append(self.format_index_pair(key, child_id))
         return ''.join(parts)
@@ -214,7 +218,8 @@ class BTree(object):
         self.node_store = node_store
         self.codec = NodeCodec(key_bytes)
 
-        max_pairs = self.node_store.node_size / self.codec.index_pair_size
+        max_pairs = ((self.node_store.node_size - self.codec.index_header_size)
+                     / self.codec.index_pair_size)
         self.min_index_length = max_pairs / 2
         self.max_index_length = max_pairs
 
