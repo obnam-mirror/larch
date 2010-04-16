@@ -22,6 +22,16 @@ class LeafNodeTests(unittest.TestCase):
         leaf = btree.LeafNode(0, [('foo', 'foo'), ('bar', 'bar')])
         self.assertEqual(leaf.keys(), sorted(['foo', 'bar']))
 
+    def test_returns_first_key(self):
+        leaf = btree.LeafNode(0, [('foo', 'foo'), ('bar', 'bar')])
+        self.assertEqual(leaf.first_key(), 'bar')
+
+    def test_returns_pairs(self):
+        self.assertEqual(self.leaf.pairs(), [('foo', 'bar')])
+
+    def test_does_not_return_excluded_pairs(self):
+        self.assertEqual(self.leaf.pairs(exclude=['foo']), [])
+
 
 class IndexNodeTests(unittest.TestCase):
 
@@ -46,4 +56,11 @@ class IndexNodeTests(unittest.TestCase):
     def test_has_indexed_children(self):
         self.assertEqual(self.index['bar'], self.leaf1.id)
         self.assertEqual(self.index['foo'], self.leaf2.id)
+
+    def test_finds_child_containing_key(self):
+        self.assertEqual(self.index.find_key_for_child_containing('barbar'),
+                         'bar')
+
+    def test_returns_none_when_no_child_contains_key(self):
+        self.assertEqual(self.index.find_key_for_child_containing('a'), None)
 
