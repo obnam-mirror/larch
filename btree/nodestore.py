@@ -69,6 +69,10 @@ class NodeStore(object): # pragma: no cover
     def __init__(self, node_size, codec):
         self.node_size = node_size
         self.codec = codec
+      
+    def max_index_pairs(self): # pragma: no cover
+        return ((self.node_size - self.codec.index_header_size)
+                / self.codec.index_pair_size)
         
     def set_metadata(self, blob):
         '''Set metadata as a blob.

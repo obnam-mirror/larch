@@ -47,11 +47,8 @@ class BTree(object):
     def __init__(self, node_store):
         self.node_store = node_store
 
-        # FIXME: this should go into the codec.
-        max_pairs = ((self.node_store.node_size - self.node_store.codec.index_header_size)
-                     / self.node_store.codec.index_pair_size)
-        self.min_index_length = max_pairs / 2
-        self.max_index_length = max_pairs
+        self.max_index_length = self.node_store.max_index_pairs()
+        self.min_index_length = self.max_index_length / 2
 
         self.last_id = 0
         if not self.read_metadata():

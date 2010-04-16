@@ -12,7 +12,10 @@ class DummyNodeStore(object):
         self.codec = codec
         self.nodes = dict()
         self.metadata = ''
-        
+
+    def max_index_pairs(self):
+        return 4
+
     def get_metadata(self):
         return self.metadata
         
