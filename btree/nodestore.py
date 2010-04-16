@@ -66,8 +66,9 @@ class NodeStore(object): # pragma: no cover
     
     '''
     
-    def __init__(self, node_size):
+    def __init__(self, node_size, codec):
         self.node_size = node_size
+        self.codec = codec
         
     def set_metadata(self, blob):
         '''Set metadata as a blob.
@@ -116,6 +117,8 @@ class NodeStoreTests(object): # pragma: no cover
     * self.node_size to the node size
     
     '''
+    
+    key_bytes = 3
     
     def test_sets_node_size(self):
         self.assertEqual(self.ns.node_size, self.node_size)

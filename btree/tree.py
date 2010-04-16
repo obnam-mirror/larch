@@ -44,12 +44,12 @@ class BTree(object):
     
     '''
 
-    def __init__(self, node_store, key_bytes):
+    def __init__(self, node_store):
         self.node_store = node_store
-        self.codec = btree.NodeCodec(key_bytes)
 
-        max_pairs = ((self.node_store.node_size - self.codec.index_header_size)
-                     / self.codec.index_pair_size)
+        # FIXME: this should go into the codec.
+        max_pairs = ((self.node_store.node_size - self.node_store.codec.index_header_size)
+                     / self.node_store.codec.index_pair_size)
         self.min_index_length = max_pairs / 2
         self.max_index_length = max_pairs
 
@@ -70,8 +70,8 @@ class BTree(object):
         self.node_store.set_metadata(blob)
 
     def check_key_size(self, key):
-        if len(key) != self.codec.key_bytes:
-            raise KeySizeMismatch(key, self.codec.key_bytes)
+        if len(key) != self.node_store.codec.key_bytes:
+            raise KeySizeMismatch(key, self.node_store.codec.key_bytes)
 
     def new_id(self):
         '''Generate a new node identifier.'''
@@ -81,27 +81,27 @@ class BTree(object):
     def new_leaf(self, pairs):
         '''Create a new leaf node and keep track of it.'''
         leaf = btree.LeafNode(self.new_id(), pairs)
-        self.node_store.put_node(leaf.id, self.codec.encode(leaf))
+        self.node_store.put_node(leaf.id, self.node_store.codec.encode(leaf))
         self.store_metadata()
         return leaf
         
     def new_index(self, pairs):
         '''Create a new index node and keep track of it.'''
         index = btree.IndexNode(self.new_id(), pairs)
-        self.node_store.put_node(index.id, self.codec.encode(index))
+        self.node_store.put_node(index.id, self.node_store.codec.encode(index))
         self.store_metadata()
         return index
         
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
         root = btree.IndexNode(0, pairs)
-        self.node_store.put_node(root.id, self.codec.encode(root))
+        self.node_store.put_node(root.id, self.node_store.codec.encode(root))
         self.store_metadata()
 
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
         encoded = self.node_store.get_node(node_id)
-        return self.codec.decode(encoded)
+        return self.node_store.codec.decode(encoded)
 
     @property
     def root(self):
@@ -158,7 +158,7 @@ class BTree(object):
     def _insert_into_leaf(self, leaf_id, key, value):
         leaf = self.get_node(leaf_id)
         pairs = sorted(leaf.pairs(exclude=[key]) + [(key, value)])
-        if self.codec.leaf_size(pairs) <= self.node_store.node_size:
+        if self.node_store.codec.leaf_size(pairs) <= self.node_store.node_size:
             return self.new_leaf(pairs), None
         else:
             n = len(pairs) / 2

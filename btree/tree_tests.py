@@ -7,8 +7,9 @@ import btree
 
 class DummyNodeStore(object):
 
-    def __init__(self, node_size):
+    def __init__(self, node_size, codec):
         self.node_size = node_size
+        self.codec = codec
         self.nodes = dict()
         self.metadata = ''
         
@@ -45,8 +46,9 @@ class BTreeTests(unittest.TestCase):
     def setUp(self):
         # We use a small node size so that all code paths are traversed
         # during testing. Use coverage.py to make sure they do.
-        self.ns = DummyNodeStore(64)
-        self.tree = btree.BTree(self.ns, 3)
+        self.codec = btree.NodeCodec(3)
+        self.ns = DummyNodeStore(64, self.codec)
+        self.tree = btree.BTree(self.ns)
         self.dump = False
 
     def test_new_node_ids_grow(self):
@@ -228,12 +230,12 @@ class BTreeTests(unittest.TestCase):
         
     def test_persists(self):
         self.tree.insert('foo', 'bar')
-        tree2 = btree.BTree(self.ns, 3)
+        tree2 = btree.BTree(self.ns)
         self.assertEqual(tree2.lookup('foo'), 'bar')
 
     def test_last_node_id_persists(self):
         node1 = self.tree.new_leaf([])
-        tree2 = btree.BTree(self.ns, 3)
+        tree2 = btree.BTree(self.ns)
         node2 = tree2.new_leaf([])
         self.assertEqual(node1.id + 1, node2.id)
 
@@ -241,8 +243,8 @@ class BTreeTests(unittest.TestCase):
 class BTreeBalanceTests(unittest.TestCase):
 
     def setUp(self):
-        ns = DummyNodeStore(4096)
-        self.tree = btree.BTree(ns, 2)
+        ns = DummyNodeStore(4096, btree.NodeCodec(2))
+        self.tree = btree.BTree(ns)
         self.keys = ['%02d' % i for i in range(10)]
         self.depth = None
 

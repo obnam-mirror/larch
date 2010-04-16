@@ -9,8 +9,8 @@ class NodeStoreMemory(btree.NodeStore):
     
     '''
     
-    def __init__(self, node_size):
-        btree.NodeStore.__init__(self, node_size)
+    def __init__(self, node_size, codec):
+        btree.NodeStore.__init__(self, node_size, codec)
         self.nodes = dict()
         self.metadata = ''
         

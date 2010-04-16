@@ -11,8 +11,8 @@ class NodeStoreDisk(btree.NodeStore):
     
     '''
     
-    def __init__(self, dirname, node_size):
-        btree.NodeStore.__init__(self, node_size)
+    def __init__(self, dirname, node_size, codec):
+        btree.NodeStore.__init__(self, node_size, codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
 
