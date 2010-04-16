@@ -23,3 +23,11 @@ class NodeCodecTests(unittest.TestCase):
         encoded = self.codec.encode_index(self.index)
         self.assertEqual(self.codec.decode_index(encoded), self.index)
 
+    def test_generic_round_trip_ok_for_leaf(self):
+        encoded = self.codec.encode(self.leaf)
+        self.assertEqual(self.codec.decode(encoded), self.leaf)
+
+    def test_generic_round_trip_ok_for_index(self):
+        encoded = self.codec.encode(self.index)
+        self.assertEqual(self.codec.decode(encoded), self.index)
+
