@@ -12,13 +12,19 @@ class NodeStoreMemory(btree.NodeStore):
     def __init__(self, node_size, codec):
         btree.NodeStore.__init__(self, node_size, codec)
         self.nodes = dict()
-        self.metadata = ''
+        self.metadata = dict()
         
-    def get_metadata(self):
-        return self.metadata
+    def get_metadata_keys(self):
+        return self.metadata.keys()
         
-    def set_metadata(self, blob):
-        self.metadata = blob
+    def get_metadata(self, key):
+        return self.metadata[key]
+        
+    def set_metadata(self, key, value):
+        self.metadata[key] = value
+
+    def remove_metadata(self, key):
+        del self.metadata[key]
         
     def put_node(self, node_id, encoded_node):
         if len(encoded_node) > self.node_size:
