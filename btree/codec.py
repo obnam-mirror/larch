@@ -37,12 +37,37 @@ class NodeCodec(object):
 
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
-        
-        parts = [struct.pack(self.leaf_header_format, 'L', node.id)]
-        for key, value in node.iteritems():
-            parts.append(self.format_leaf_pair(key, value))
-        return ''.join(parts)
 
+        pairs = node.pairs()
+        fmt = ('!cQI' + ('%ds' % self.key_bytes) * len(pairs) + 
+                'I' * len(pairs) +
+                ''.join('%ds' % len(value) for key, value in pairs))
+
+        return struct.pack(fmt, *(['L', node.id, len(pairs)] +
+                                    [key for key, value in pairs] +
+                                    [len(value) for key, value in pairs] +
+                                    [value for key, value in pairs]))
+
+    def decode_leaf(self, encoded):
+        '''Decode a leaf node from its encoded byte string.'''
+
+        buf = buffer(encoded)
+        el, node_id, num_pairs = struct.unpack_from('!cQI', buf)
+        fmt = ('!cQI' + ('%ds' % self.key_bytes) * num_pairs + 
+                'I' * num_pairs)
+        items = struct.unpack_from(fmt, buf)
+        keys = items[3:3+num_pairs]
+        lengths = items[3+num_pairs:3+num_pairs*2]
+        offsets = [0]
+        for i in range(1, len(lengths)):
+            offsets.append(offsets[-1] + lengths[i-1])
+
+        values = buffer(encoded, struct.calcsize(fmt))
+        pairs = [(keys[i], values[offsets[i]:offsets[i] + lengths[i]]) 
+                    for i in range(len(keys))]
+
+        return btree.LeafNode(node_id, pairs)
+        
     def encode_index(self, node):
         '''Encode an index node as a byte string.'''
         
@@ -69,25 +94,6 @@ class NodeCodec(object):
         assert len(encoded) >= self.id_size
         (node_id,) = struct.unpack('!Q', encoded[:self.id_size])
         return node_id, encoded[self.id_size:]
-        
-    def decode_leaf(self, encoded):
-        '''Decode a leaf node from its encoded byte string.'''
-
-        assert encoded.startswith('L')
-        node_id, rest = self.decode_id(encoded[1:])
-        
-        pairs = []
-        while rest:
-            n = struct.calcsize(self.leaf_format % 0)
-            (key, value_size, value) = struct.unpack(self.leaf_format % 0 ,
-                                                     rest[:n])
-            n += value_size
-            s, rest = rest[:n], rest[n:]
-            (key, value_size, value) = \
-                struct.unpack(self.leaf_format % value_size, s)
-            pairs.append((key, value))
-        
-        return btree.LeafNode(node_id, pairs)
         
     def decode_index(self, encoded):
         '''Decode an index node from its encoded byte string.'''
