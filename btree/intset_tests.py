@@ -5,9 +5,6 @@ import intset
 
 class IntSetTests(unittest.TestCase):
 
-    def setUp(self):
-        self.set = intset.IntSet()
-
     def test_empty_set_round_trip(self):
         empty = intset.IntSet()
         new = intset.IntSet()
@@ -33,6 +30,14 @@ class IntSetTests(unittest.TestCase):
     def test_large_semidense_set_has_small_string_representation(self):
         a = intset.IntSet(range(1000) + range(10*1000, 100*1000))
         self.assert_(len(str(a)) <= len('0-1000,10000-100000'))
+
+    def test_empty_set_has_None_max(self):
+        a = intset.IntSet()
+        self.assertEqual(a.max, None)
+
+    def test_nonempty_set_has_valid_max(self):
+        a = intset.IntSet([3, 1, 2])
+        self.assertEqual(a.max, 3)
 
 
 class IntSetSetTests(unittest.TestCase):

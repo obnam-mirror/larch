@@ -6,12 +6,23 @@ class IntSet(object):
     there are two additional methods for encoding the set as a text
     string, and decoding from that representation.
 
+    There is also a new property, max, which contains the largest
+    value in the set, or None for an empty set.
+
     '''
 
     def __init__(self, iterable=None):
         self.ranges = []
         for item in iterable or []:
             self.add(item)
+
+    @property
+    def max(self):
+        '''Maximum value in set, or None for empty set.'''
+        if self.ranges:
+            return self.ranges[-1][1]
+        else:
+            return None
 
     def __eq__(self, other):
         return self.ranges == other
