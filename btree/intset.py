@@ -1,4 +1,4 @@
-class IntSet(set):
+class IntSet(object):
 
     '''A dense set of integers.
 
@@ -8,9 +8,54 @@ class IntSet(set):
 
     '''
 
+    def __init__(self, iterable=None):
+        self.ranges = []
+        for item in iterable or []:
+            self.add(item)
+
+    def __eq__(self, other):
+        return self.ranges == other
+
+    def __len__(self):
+        return sum(hi-lo+1 for lo, hi in self.ranges)
+
+    def add(self, item):
+        for i, (lo, hi) in enumerate(self.ranges):
+            if item+1 < lo:
+                self.ranges.insert(i, (item, item))
+                break
+            elif item+1 == lo:
+                self.ranges[i] = (item, hi)
+                break
+            elif lo <= item <= hi:
+                break
+            elif item-1 == hi and i+1 == len(self.ranges):
+                self.ranges[i] = (lo, item)
+                break
+            elif item-1 == hi and item+1 == self.ranges[i+1][0]:
+                lo2, hi2 = self.ranges[i+1]
+                self.ranges[i:i+2] = [(lo, hi2)]
+                break
+        else:
+            self.ranges.append((item, item))
+
     def __str__(self):
-        return ''
+        parts = []
+        for lo, hi in self.ranges:
+            if lo == hi:
+                parts.append('%d' % lo)
+            else:
+                parts.append('%d-%d' % (lo, hi))
+        return ','.join(parts)
 
     def update_from_string(self, string):
         '''Add values from an IntSet represented as a string.'''
+        if string:
+            for part in string.split(','):
+                if '-' in part:
+                    lo, hi = part.split('-')
+                    for i in range(int(lo), int(hi)+1):
+                        self.add(i)
+                else:
+                    self.add(int(part))
 
