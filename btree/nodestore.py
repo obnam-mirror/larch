@@ -125,6 +125,13 @@ class NodeStore(object): # pragma: no cover
     def set_refcount(self, node_id, refcount):
         '''Set the reference count for a node.'''
 
+    def save_refcounts(self):
+        '''Save refcounts to disk.
+
+        This method only applies to node stores that persist.
+
+        '''
+
 
 class NodeStoreTests(object): # pragma: no cover
 
@@ -224,15 +231,15 @@ class NodeStoreTests(object): # pragma: no cover
     def test_remove_raises_nodemissing_if_node_does_not_exist(self):
         self.assertRaises(NodeMissing, self.ns.remove_node, 0)
 
-    def test_raises_keyerror_for_unknown_node_id(self):
-        self.assertRaises(KeyError, self.ns.get_refcount, 0)
+    def test_returns_zero_count_for_unknown_node_id(self):
+        self.assertEqual(self.ns.get_refcount(123), 0)
 
     def test_sets_refcount(self):
         self.ns.set_refcount(0, 123)
         self.assertEqual(self.ns.get_refcount(0), 123)
 
-    def test_setting_refcount_removes_it(self):
+    def test_updates_refcount(self):
         self.ns.set_refcount(0, 123)
         self.ns.set_refcount(0, 0)
-        self.assertRaises(KeyError, self.ns.get_refcount, 0)
+        self.assertEqual(self.ns.get_refcount(0), 0)
 
