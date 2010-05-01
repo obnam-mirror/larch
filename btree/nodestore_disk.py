@@ -85,3 +85,4 @@ class NodeStoreDisk(btree.NodeStore):
         return [int(x[:-len('.node')])
                 for x in os.listdir(self.dirname)
                 if x.endswith('.node')]
+
