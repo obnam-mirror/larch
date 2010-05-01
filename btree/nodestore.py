@@ -231,3 +231,8 @@ class NodeStoreTests(object): # pragma: no cover
         self.ns.set_refcount(0, 123)
         self.assertEqual(self.ns.get_refcount(0), 123)
 
+    def test_setting_refcount_removes_it(self):
+        self.ns.set_refcount(0, 123)
+        self.ns.set_refcount(0, 0)
+        self.assertRaises(KeyError, self.ns.get_refcount, 0)
+

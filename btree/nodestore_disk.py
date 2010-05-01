@@ -91,5 +91,8 @@ class NodeStoreDisk(btree.NodeStore):
         return self.refcounts[node_id]
 
     def set_refcount(self, node_id, refcount):
-        self.refcounts[node_id] = refcount
+        if refcount:
+            self.refcounts[node_id] = refcount
+        elif node_id in self.refcounts:
+            del self.refcounts[node_id]
 
