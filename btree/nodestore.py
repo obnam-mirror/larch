@@ -63,6 +63,11 @@ class NodeStore(object): # pragma: no cover
     It is accessible via the node_size property. Implementations of
     this API must handle that in some suitable way, preferably by 
     inheriting from this class and calling its initializer.
+
+    A node store additionally stores some metadata, as key/value
+    pairs, where both key and value is a shortish string. The whole
+    pair must fit into a node, but more than one node can be used for
+    metadata.
     
     '''
     
@@ -74,15 +79,27 @@ class NodeStore(object): # pragma: no cover
         return ((self.node_size - self.codec.index_header_size)
                 / self.codec.index_pair_size)
         
-    def set_metadata(self, blob):
-        '''Set metadata as a blob.
+    def set_metadata(self, key, value):
+        '''Set a metadata key/value pair.'''
         
-        The blob must fit into a node.
-        
+    def get_metadata(self, key):
+        '''Return value that corresponds to a key.'''
+
+    def get_metadata_keys(self):
+        '''Return list of all metadata keys.'''
+
+    def remove_metadata(self, key):
+        '''Remove a metadata key, and its corresponding value.'''
+
+    def save_metadata(self):
+        '''Save metadata persistently, if applicable.
+
+        Not all node stores are persistent, and this method is
+        not relevant to them. However, if the user does not call
+        this method, none of the changes they make will be stored
+        persistently even with a persistent store.
+
         '''
-        
-    def get_metadata(self):
-        '''Return metadata as a blob.'''
         
     def put_node(self, node_id, encoded_node):
         '''Put a new node into the store.'''
@@ -128,12 +145,39 @@ class NodeStoreTests(object): # pragma: no cover
         self.assertEqual(self.ns.node_size, self.node_size)
 
     def test_has_no_metadata_initially(self):
-        self.assertEqual(self.ns.get_metadata(), '')
+        self.assertEqual(self.ns.get_metadata_keys(), [])
         
     def test_sets_metadata(self):
-        self.ns.set_metadata('foo')
-        self.assertEqual(self.ns.get_metadata(), 'foo')
+        self.ns.set_metadata('foo', 'bar')
+        self.assertEqual(self.ns.get_metadata_keys(), ['foo'])
+        self.assertEqual(self.ns.get_metadata('foo'), 'bar')
         
+    def test_sets_existing_metadata(self):
+        self.ns.set_metadata('foo', 'bar')
+        self.ns.set_metadata('foo', 'foobar')
+        self.assertEqual(self.ns.get_metadata_keys(), ['foo'])
+        self.assertEqual(self.ns.get_metadata('foo'), 'foobar')
+
+    def test_removes_metadata(self):
+        self.ns.set_metadata('foo', 'bar')
+        self.ns.remove_metadata('foo')
+        self.assertEqual(self.ns.get_metadata_keys(), [])
+
+    def test_sets_several_metadata_keys(self):
+        pairs = dict(('%d' % i, '%0128d' % i) for i in range(1024))
+        for key, value in pairs.iteritems():
+            self.ns.set_metadata(key, value)
+        self.assertEqual(sorted(self.ns.get_metadata_keys()), 
+                         sorted(pairs.keys()))
+        for key, value in pairs.iteritems():
+            self.assertEqual(self.ns.get_metadata(key), value)
+
+    def test_raises_error_when_getting_unknown_key(self):
+        self.assertRaises(KeyError, self.ns.get_metadata, 'foo')
+
+    def test_raises_error_when_removing_unknown_key(self):
+        self.assertRaises(KeyError, self.ns.remove_metadata, 'foo')
+
     def test_has_no_node_zero_initially(self):
         self.assertRaises(NodeMissing, self.ns.get_node, 0)
 
