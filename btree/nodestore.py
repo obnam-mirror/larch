@@ -76,8 +76,7 @@ class NodeStore(object): # pragma: no cover
         self.codec = codec
       
     def max_index_pairs(self): # pragma: no cover
-        return ((self.node_size - self.codec.index_header_size)
-                / self.codec.index_pair_size)
+        return self.codec.max_index_pairs(self.node_size)
         
     def set_metadata(self, key, value):
         '''Set a metadata key/value pair.'''
