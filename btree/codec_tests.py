@@ -12,8 +12,8 @@ class NodeCodecTests(unittest.TestCase):
                                       ('foo', 7890)])
         self.codec = btree.NodeCodec(3)
 
-    def test_returns_size_of_header_for_empty_leaf(self):
-        self.assertEqual(self.codec.leaf_size([]), self.codec.leaf_header_size)
+    def test_returns_reasonable_size_for_empty_leaf(self):
+        self.assert_(self.codec.leaf_size([]) > 10)
 
     def test_leaf_round_trip_ok(self):
         encoded = self.codec.encode_leaf(self.leaf)

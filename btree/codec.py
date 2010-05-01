@@ -17,32 +17,30 @@ class NodeCodec(object):
         self.key_bytes = key_bytes
         self.index_header_format = '!cQ'
         self.index_format = '!%dsQ' % key_bytes
-        self.leaf_header_format = '!cQ'
-        self.leaf_format = '!%dsH%%ds' % key_bytes
         
         self.id_size = struct.calcsize('!Q')
         self.index_header_size = struct.calcsize(self.index_header_format)
         self.index_pair_size = struct.calcsize(self.index_format)
-        self.leaf_header_size = struct.calcsize(self.leaf_header_format)
 
     def leaf_size(self, pairs):
         '''Return size of a leaf node with the given pairs.'''
-        return (self.leaf_header_size +
-                sum(struct.calcsize(self.leaf_format % len(value))
-                    for key, value in pairs))
+        fmt = self.leaf_format(pairs)
+        return struct.calcsize(fmt)
 
     def max_index_pairs(self, node_size): # pragma: no cover
         '''Return number of index pairs that fit in a node of a given size.'''
         return (node_size - self.index_header_size) / self.index_pair_size
 
+    def leaf_format(self, pairs):
+        return ('!cQI' + ('%ds' % self.key_bytes) * len(pairs) + 
+                'I' * len(pairs) +
+                ''.join('%ds' % len(value) for key, value in pairs))
+
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
 
         pairs = node.pairs()
-        fmt = ('!cQI' + ('%ds' % self.key_bytes) * len(pairs) + 
-                'I' * len(pairs) +
-                ''.join('%ds' % len(value) for key, value in pairs))
-
+        fmt = self.leaf_format(pairs)
         return struct.pack(fmt, *(['L', node.id, len(pairs)] +
                                     [key for key, value in pairs] +
                                     [len(value) for key, value in pairs] +
@@ -84,10 +82,6 @@ class NodeCodec(object):
 
     def format_index_pair(self, key, child_id):
         return struct.pack(self.index_format, key, child_id)
-
-    def format_leaf_pair(self, key, value):
-        return struct.pack(self.leaf_format % len(value), 
-                           key, len(value), value)
 
     def decode_id(self, encoded):
         '''Return leading node identifier.'''
