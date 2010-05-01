@@ -15,21 +15,11 @@ class NodeCodec(object):
     
     def __init__(self, key_bytes):
         self.key_bytes = key_bytes
-        self.index_header_format = '!cQ'
-        self.index_format = '!%dsQ' % key_bytes
         
-        self.id_size = struct.calcsize('!Q')
-        self.index_header_size = struct.calcsize(self.index_header_format)
-        self.index_pair_size = struct.calcsize(self.index_format)
-
     def leaf_size(self, pairs):
         '''Return size of a leaf node with the given pairs.'''
         fmt = self.leaf_format(pairs)
         return struct.calcsize(fmt)
-
-    def max_index_pairs(self, node_size): # pragma: no cover
-        '''Return number of index pairs that fit in a node of a given size.'''
-        return (node_size - self.index_header_size) / self.index_pair_size
 
     def leaf_format(self, pairs):
         return ('!cQI' + ('%ds' % self.key_bytes) * len(pairs) + 
@@ -65,43 +55,45 @@ class NodeCodec(object):
                     for i in range(len(keys))]
 
         return btree.LeafNode(node_id, pairs)
+
+    def max_index_pairs(self, node_size): # pragma: no cover
+        '''Return number of index pairs that fit in a node of a given size.'''
+        index_header_size = struct.calcsize('!cQI')
+        index_pair_size = struct.calcsize('%dsQ' % self.key_bytes)
+        return (node_size - index_header_size) / index_pair_size
+
+    def index_format(self, pairs):
+        return ('!cQI' + ('%ds' % self.key_bytes) * len(pairs) + 
+                'Q' * len(pairs))
         
     def encode_index(self, node):
         '''Encode an index node as a byte string.'''
-        
-        parts = [struct.pack(self.index_header_format, 'I', node.id)]
-        for key, child_id in node.iteritems():
-            parts.append(self.format_index_pair(key, child_id))
-        return ''.join(parts)
+
+        pairs = node.pairs()
+        fmt = self.index_format(pairs)
+        return struct.pack(fmt, *(['I', node.id, len(pairs)] +
+                                  [key for key, child_id in pairs] +
+                                  [child_id for key, child_id in pairs]))
+
+    def decode_index(self, encoded):
+        '''Decode an index node from its encoded byte string.'''
+
+        buf = buffer(encoded)
+        eye, node_id, num_pairs = struct.unpack_from('!cQI', buf)
+        fmt = ('!cQI' + ('%ds' % self.key_bytes) * num_pairs + 'Q' * num_pairs)
+        items = struct.unpack(fmt, encoded)
+        keys = items[3:3+num_pairs]
+        child_ids = items[3+num_pairs:]
+        assert len(keys) == len(child_ids)
+        for x in child_ids:
+            assert type(x) == int
+        return btree.IndexNode(node_id, zip(keys, child_ids))
 
     def encode(self, node):
         if isinstance(node, btree.LeafNode):
             return self.encode_leaf(node)
         else:
             return self.encode_index(node)
-
-    def format_index_pair(self, key, child_id):
-        return struct.pack(self.index_format, key, child_id)
-
-    def decode_id(self, encoded):
-        '''Return leading node identifier.'''
-        assert len(encoded) >= self.id_size
-        (node_id,) = struct.unpack('!Q', encoded[:self.id_size])
-        return node_id, encoded[self.id_size:]
-        
-    def decode_index(self, encoded):
-        '''Decode an index node from its encoded byte string.'''
-
-        assert encoded.startswith('I')
-        node_id, rest = self.decode_id(encoded[1:])
-        
-        pairs = []
-        pair_size = struct.calcsize(self.index_format)
-        while rest:
-            s, rest = rest[:pair_size], rest[pair_size:]
-            pairs.append(struct.unpack(self.index_format, s))
-        
-        return btree.IndexNode(node_id, pairs)
 
     def decode(self, encoded):
         if encoded.startswith('L'):

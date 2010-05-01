@@ -6,7 +6,7 @@ import btree
 class NodeCodecTests(unittest.TestCase):
 
     def setUp(self):
-        self.leaf = btree.LeafNode(1234, [('foo', 'bar')])
+        self.leaf = btree.LeafNode(1234, [('foo', 'bar'), ('yoo', 'yoyo')])
         self.index = btree.IndexNode(5678,
                                      [('bar', 1234), 
                                       ('foo', 7890)])
