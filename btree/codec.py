@@ -31,6 +31,10 @@ class NodeCodec(object):
                 sum(struct.calcsize(self.leaf_format % len(value))
                     for key, value in pairs))
 
+    def max_index_pairs(self, node_size): # pragma: no cover
+        '''Return number of index pairs that fit in a node of a given size.'''
+        return (node_size - self.index_header_size) / self.index_pair_size
+
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
         
