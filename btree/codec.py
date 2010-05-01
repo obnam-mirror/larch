@@ -12,6 +12,13 @@ class NodeCodec(object):
     Leaf node values are assumed to fit into 65535 bytes.
     
     '''
+
+    # We use the struct module for encoding and decoding. For speed,
+    # we construct the format string all at once, so that there is only
+    # one call to struct.pack or struct.unpack for one node. This brought
+    # a thousand time speedup over doing it one field at a time. However,
+    # the code is not quite as clear as it might be, what with no symbolic
+    # names for anything is used anymore. Patches welcome.
     
     def __init__(self, key_bytes):
         self.key_bytes = key_bytes
