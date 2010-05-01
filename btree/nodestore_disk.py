@@ -1,3 +1,4 @@
+import ConfigParser
 import os
 
 import btree
@@ -15,15 +16,47 @@ class NodeStoreDisk(btree.NodeStore):
         btree.NodeStore.__init__(self, node_size, codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
+        self.metadata = None
 
-    def set_metadata(self, blob):
-        file(self.metadata_name, 'w').write(blob)
+    def _load_metadata(self):
+        if self.metadata is None:
+            self.metadata = ConfigParser.ConfigParser()
+            self.metadata.add_section('metadata')
+            if os.path.exists(self.metadata_name):
+                f = file(self.metadata_name)
+                self.metadata.readfp(f)
+                f.close()
 
-    def get_metadata(self):
-        if os.path.exists(self.metadata_name):
-            return file(self.metadata_name).read()
+    def _save_metadata(self):
+        self._load_metadata()
+        f = file(self.metadata_name + '_new', 'w')
+        self.metadata.write(f)
+        f.close()
+        os.rename(self.metadata_name + '_new', self.metadata_name)
+
+    def get_metadata_keys(self):
+        self._load_metadata()
+        return self.metadata.options('metadata')
+        
+    def get_metadata(self, key):
+        self._load_metadata()
+        if self.metadata.has_option('metadata', key):
+            return self.metadata.get('metadata', key)
         else:
-            return ''
+            raise KeyError(key)
+        
+    def set_metadata(self, key, value):
+        self._load_metadata()
+        self.metadata.set('metadata', key, value)
+        self._save_metadata()
+
+    def remove_metadata(self, key):
+        self._load_metadata()
+        if self.metadata.has_option('metadata', key):
+            self.metadata.remove_option('metadata', key)
+        else:
+            raise KeyError(key)
+        self._save_metadata()
 
     def pathname(self, node_id):
         return os.path.join(self.dirname, '%d.node' % node_id)

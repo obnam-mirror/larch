@@ -163,11 +163,11 @@ class NodeStoreTests(object): # pragma: no cover
             self.assertEqual(self.ns.get_metadata(key), value)
 
     def test_raises_error_when_getting_unknown_key(self):
-        self.assertRaises(KeyError, self.ns.get_metadata('foo'))
+        self.assertRaises(KeyError, self.ns.get_metadata, 'foo')
 
     def test_raises_error_when_removing_unknown_key(self):
-        self.assertRaises(KeyError, self.ns.remove_metadata('foo'))
-        
+        self.assertRaises(KeyError, self.ns.remove_metadata, 'foo')
+
     def test_has_no_node_zero_initially(self):
         self.assertRaises(NodeMissing, self.ns.get_node, 0)
 
