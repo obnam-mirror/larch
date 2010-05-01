@@ -12,6 +12,7 @@ class NodeStoreMemory(btree.NodeStore):
     def __init__(self, node_size, codec):
         btree.NodeStore.__init__(self, node_size, codec)
         self.nodes = dict()
+        self.refcounts = dict()
         self.metadata = dict()
         
     def get_metadata_keys(self):
@@ -47,3 +48,9 @@ class NodeStoreMemory(btree.NodeStore):
         
     def list_nodes(self):
         return self.nodes.keys()
+
+    def get_refcount(self, node_id):
+        return self.refcounts.get(node_id, 0)
+
+    def set_refcount(self, node_id, refcount):
+        self.refcounts[node_id] = refcount
