@@ -5,57 +5,83 @@ import unittest
 import btree
 
 
-class LeafNodeTests(unittest.TestCase):
+class DummyNodeStore(object):
+
+    def __init__(self, node_size, codec):
+        self.node_size = node_size
+        self.codec = codec
+        self.nodes = dict()
+        self.metadata = ''
+
+    def max_index_pairs(self):
+        return 4
+
+    def get_metadata(self):
+        return self.metadata
+        
+    def set_metadata(self, blob):
+        self.metadata = blob
+    
+    def put_node(self, node_id, encoded):
+        self.nodes[node_id] = encoded
+        
+    def get_node(self, node_id):
+        return self.nodes[node_id]
+        
+    def find_nodes(self):
+        return self.nodes.keys()
+
+
+class KeySizeMismatchTests(unittest.TestCase):
 
     def setUp(self):
-        self.leaf = btree.LeafNode([('foo', 'bar')])
+        self.err = btree.KeySizeMismatch('foo', 4)
         
-    def test_has_keys(self):
-        self.assertEqual(self.leaf.keys(), ['foo'])
+    def test_error_message_contains_key(self):
+        self.assert_('foo' in str(self.err))
         
-    def test_has_value(self):
-        self.assertEqual(self.leaf['foo'], 'bar')
+    def test_error_message_contains_wanted_size(self):
+        self.assert_('4' in str(self.err))
 
-    def test_sorts_keys(self):
-        leaf = btree.LeafNode([('foo', 'foo'), ('bar', 'bar')])
-        self.assertEqual(leaf.keys(), sorted(['foo', 'bar']))
-
-
-class IndexNodeTests(unittest.TestCase):
-
-    def setUp(self):
-        self.leaf1 = btree.LeafNode([('bar', 'bar')])
-        self.leaf2 = btree.LeafNode([('foo', 'foo')])
-        self.index = btree.IndexNode([('bar', self.leaf1), 
-                                      ('foo', self.leaf2)])
-        
-    def test_has_keys(self):
-        self.assertEqual(self.index.keys(), ['bar', 'foo'])
-        
-    def test_has_children(self):
-        self.assertEqual(sorted(self.index.values()), 
-                         sorted([self.leaf1, self.leaf2]))
-
-    def test_has_indexed_children(self):
-        self.assertEqual(self.index['bar'], self.leaf1)
-        self.assertEqual(self.index['foo'], self.leaf2)
-        
 
 class BTreeTests(unittest.TestCase):
 
     def setUp(self):
-        self.fanout = 2
-        self.tree = btree.BTree(self.fanout)
+        # We use a small node size so that all code paths are traversed
+        # during testing. Use coverage.py to make sure they do.
+        self.codec = btree.NodeCodec(3)
+        self.ns = DummyNodeStore(64, self.codec)
+        self.tree = btree.BTree(self.ns)
         self.dump = False
 
-    def test_has_fanout(self):
-        self.assertEqual(self.tree.fanout, self.fanout)
+    def test_new_node_ids_grow(self):
+        id1 = self.tree.new_id()
+        id2 = self.tree.new_id()
+        self.assertEqual(id1 + 1, id2)
+
+    def test_creates_leaf(self):
+        leaf = self.tree.new_leaf([])
+        self.assertEqual(leaf, self.tree.get_node(leaf.id))
+
+    def test_creates_index(self):
+        index = self.tree.new_index([])
+        self.assertEqual(index, self.tree.get_node(index.id))
+
+    def test_new_root_does_not_return_it(self):
+        self.assertEqual(self.tree.new_root([]), None)
+
+    def test_creates_root_with_id_zero(self):
+        self.tree.new_root([])
+        self.assertEqual(self.tree.root.id, 0)
 
     def test_is_empty(self):
         self.assertEqual(self.tree.root.keys(), [])
         
     def test_lookup_for_missing_key_raises_error(self):
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
+
+    def test_lookup_with_wrong_size_key_raises_error(self):
+        self.assertRaises(btree.KeySizeMismatch, self.tree.lookup, '')
 
     def test_insert_inserts_key(self):
         self.tree.insert('foo', 'bar')
@@ -65,6 +91,9 @@ class BTreeTests(unittest.TestCase):
         self.tree.insert('foo', 'foo')
         self.tree.insert('foo', 'bar')
         self.assertEqual(self.tree.lookup('foo'), 'bar')
+
+    def test_insert_with_wrong_size_key_raises_error(self):
+        self.assertRaises(btree.KeySizeMismatch, self.tree.insert, '', '')
 
     def test_remove_from_empty_tree_raises_keyerror(self):
         self.assertRaises(KeyError, self.tree.remove, 'foo')
@@ -78,10 +107,14 @@ class BTreeTests(unittest.TestCase):
         self.tree.remove('foo')
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
 
+    def test_remove_with_wrong_size_key_raises_error(self):
+        self.assertRaises(btree.KeySizeMismatch, self.tree.remove, '')
+
     def keys_are_in_range(self, node, lower, upper, level=0):
         indent = 2
         if isinstance(node, btree.LeafNode):
-            if self.dump: print '%*sleaf keys %s' % (level*indent, '', node.keys())
+            if self.dump:
+                print '%*sleaf keys %s' % (level*indent, '', node.keys())
             for key in node.keys():
                 if key < lower or key >= upper:
                     return False
@@ -98,7 +131,7 @@ class BTreeTests(unittest.TestCase):
                 else:
                     up = keys[i+1]
                 if self.dump: print '%*sin child, keys should be in %s..%s' % (level*indent, '', key, up)
-                if not self.keys_are_in_range(node[key], key, up, level+1):
+                if not self.keys_are_in_range(self.tree.get_node(node[key]), key, up, level+1):
                     return False
         return True
 
@@ -107,7 +140,7 @@ class BTreeTests(unittest.TestCase):
             return max(node.keys())
         else:
             return max(node.keys() + 
-                       [self.find_largest_key(node[key])
+                       [self.find_largest_key(self.tree.get_node(node[key]))
                         for key in node.keys()])
 
     def nextkey(self, key):
@@ -131,7 +164,7 @@ class BTreeTests(unittest.TestCase):
         ints = range(100)
         random.shuffle(ints)
         for i in ints:
-            key = str(i)
+            key = '%03d' % i
             value = key
             self.tree.insert(key, value)
             self.assertEqual(self.tree.lookup(key), value)
@@ -142,7 +175,7 @@ class BTreeTests(unittest.TestCase):
         ints = range(100)
         random.shuffle(ints)
         for i in ints:
-            key = str(i)
+            key = '%03d' % i
             value = key
             self.tree.insert(key, value)
             self.assertEqual(self.tree.lookup(key), value)
@@ -166,47 +199,56 @@ class BTreeTests(unittest.TestCase):
             f.write('%*sIndex:\n' % (level*indent, ''))
             for key in node.keys():
                 f.write('%*s%s:\n' % ((level+1)*indent, '', key))
-                self.dump_tree(node[key], level=level+2)
+                self.dump_tree(self.tree.get_node(node[key]), level=level+2)
 
     def test_insert_many_remove_many_works(self):
-        keys = [str(i) for i in range(100)]
+        keys = ['%03d' % i for i in range(100)]
         random.shuffle(keys)
-        tree = btree.BTree(self.fanout)
-        self.tree = 123
         for key in keys:
-            tree.insert(key, key)
-            self.assert_(self.proper_search_tree(tree.root))
+            self.tree.insert(key, key)
+            self.assert_(self.proper_search_tree(self.tree.root))
         if self.dump:
             print
             print
-            self.dump_tree(tree.root)
+            self.dump_tree(self.tree.root)
             print
         for key in keys:
             if self.dump:
                 print
                 print 'removing', key
-                self.dump_tree(tree.root)
+                self.dump_tree(self.tree.root)
             try:
-                tree.remove(key)
+                self.tree.remove(key)
             except:
                 self.dump = True
-                self.dump_tree(tree.root)
-                ret = self.proper_search_tree(tree.root)
+                self.dump_tree(self.tree.root)
+                ret = self.proper_search_tree(self.tree.root)
                 print 'is it?', ret
                 raise
-            self.assert_(self.proper_search_tree(tree.root))
+            self.assert_(self.proper_search_tree(self.tree.root))
             if self.dump:
                 print
                 print
-        self.assertEqual(tree.root.keys(), [])
+        self.assertEqual(self.tree.root.keys(), [])
+        
+    def test_persists(self):
+        self.tree.insert('foo', 'bar')
+        tree2 = btree.BTree(self.ns)
+        self.assertEqual(tree2.lookup('foo'), 'bar')
+
+    def test_last_node_id_persists(self):
+        node1 = self.tree.new_leaf([])
+        tree2 = btree.BTree(self.ns)
+        node2 = tree2.new_leaf([])
+        self.assertEqual(node1.id + 1, node2.id)
 
 
 class BTreeBalanceTests(unittest.TestCase):
 
     def setUp(self):
-        self.fanout = 2
-        self.tree = btree.BTree(self.fanout)
-        self.keys = [str(i) for i in range(10)]
+        ns = DummyNodeStore(4096, btree.NodeCodec(2))
+        self.tree = btree.BTree(ns)
+        self.keys = ['%02d' % i for i in range(10)]
         self.depth = None
 
     def leaves_at_same_depth(self, node, depth=0):
@@ -217,7 +259,8 @@ class BTreeBalanceTests(unittest.TestCase):
         else:
             assert isinstance(node, btree.IndexNode)
             for key in node:
-                if not self.leaves_at_same_depth(node[key], depth + 1):
+                child = self.tree.get_node(node[key])
+                if not self.leaves_at_same_depth(child, depth + 1):
                     return False
             return True
             
@@ -227,7 +270,8 @@ class BTreeBalanceTests(unittest.TestCase):
                 if len(node) < self.fanout or len(node) > 2 * self.fanout + 1:
                     return False
             for key in node:
-                ok = self.indexes_filled_right_amount(node[key], isroot=False)
+                child = self.tree.get_node(node[key])
+                ok = self.indexes_filled_right_amount(child, isroot=False)
                 if not ok:
                     return False
         return True
