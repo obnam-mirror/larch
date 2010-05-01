@@ -1,0 +1,18 @@
+#!/bin/sh
+
+python -m timeit \
+    -s 'import btree' \
+    -s 'pairs = [("%019d" % i, "%032d" % i) for i in range(1285)]' \
+    -s 'node = btree.LeafNode(42, pairs)' \
+    -s 'codec = btree.NodeCodec(19)' \
+    'codec.encode_leaf(node)'
+
+python -m timeit \
+    -s 'import btree' \
+    -s 'pairs = [("%019d" % i, "%032d" % i) for i in range(1285)]' \
+    -s 'node = btree.LeafNode(42, pairs)' \
+    -s 'codec = btree.NodeCodec(19)' \
+    -s 'encoded = codec.encode_leaf(node)' \
+    -s 'print "len:", len(encoded)' \
+    'codec.decode(encoded)'
+
