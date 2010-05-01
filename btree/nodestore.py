@@ -90,6 +90,16 @@ class NodeStore(object): # pragma: no cover
 
     def remove_metadata(self, key):
         '''Remove a metadata key, and its corresponding value.'''
+
+    def save_metadata(self):
+        '''Save metadata persistently, if applicable.
+
+        Not all node stores are persistent, and this method is
+        not relevant to them. However, if the user does not call
+        this method, none of the changes they make will be stored
+        persistently even with a persistent store.
+
+        '''
         
     def put_node(self, node_id, encoded_node):
         '''Put a new node into the store.'''

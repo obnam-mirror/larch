@@ -27,13 +27,6 @@ class NodeStoreDisk(btree.NodeStore):
                 self.metadata.readfp(f)
                 f.close()
 
-    def _save_metadata(self):
-        self._load_metadata()
-        f = file(self.metadata_name + '_new', 'w')
-        self.metadata.write(f)
-        f.close()
-        os.rename(self.metadata_name + '_new', self.metadata_name)
-
     def get_metadata_keys(self):
         self._load_metadata()
         return self.metadata.options('metadata')
@@ -48,7 +41,6 @@ class NodeStoreDisk(btree.NodeStore):
     def set_metadata(self, key, value):
         self._load_metadata()
         self.metadata.set('metadata', key, value)
-        self._save_metadata()
 
     def remove_metadata(self, key):
         self._load_metadata()
@@ -56,7 +48,13 @@ class NodeStoreDisk(btree.NodeStore):
             self.metadata.remove_option('metadata', key)
         else:
             raise KeyError(key)
-        self._save_metadata()
+
+    def save_metadata(self):
+        self._load_metadata()
+        f = file(self.metadata_name + '_new', 'w')
+        self.metadata.write(f)
+        f.close()
+        os.rename(self.metadata_name + '_new', self.metadata_name)
 
     def pathname(self, node_id):
         return os.path.join(self.dirname, '%d.node' % node_id)
