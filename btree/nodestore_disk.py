@@ -17,6 +17,7 @@ class NodeStoreDisk(btree.NodeStore):
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
         self.metadata = None
+        self.refcounts = dict()
 
     def _load_metadata(self):
         if self.metadata is None:
@@ -85,4 +86,10 @@ class NodeStoreDisk(btree.NodeStore):
         return [int(x[:-len('.node')])
                 for x in os.listdir(self.dirname)
                 if x.endswith('.node')]
+
+    def get_refcount(self, node_id):
+        return self.refcounts[node_id]
+
+    def set_refcount(self, node_id, refcount):
+        self.refcounts[node_id] = refcount
 

@@ -224,12 +224,10 @@ class NodeStoreTests(object): # pragma: no cover
     def test_remove_raises_nodemissing_if_node_does_not_exist(self):
         self.assertRaises(NodeMissing, self.ns.remove_node, 0)
 
-    def test_has_zero_refcount_initially(self):
-        self.ns.put_node(0, 'foo')
-        self.assertEqual(self.ns.get_refcount(0), 0)
+    def test_raises_keyerror_for_unknown_node_id(self):
+        self.assertRaises(KeyError, self.ns.get_refcount, 0)
 
     def test_sets_refcount(self):
-        self.ns.put_node(0, 'foo')
         self.ns.set_refcount(0, 123)
         self.assertEqual(self.ns.get_refcount(0), 123)
 

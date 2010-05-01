@@ -50,7 +50,7 @@ class NodeStoreMemory(btree.NodeStore):
         return self.nodes.keys()
 
     def get_refcount(self, node_id):
-        return self.refcounts.get(node_id, 0)
+        return self.refcounts[node_id]
 
     def set_refcount(self, node_id, refcount):
         self.refcounts[node_id] = refcount
