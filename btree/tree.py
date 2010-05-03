@@ -52,7 +52,7 @@ class BTree(object):
         self.min_index_length = self.max_index_length / 2
 
         if root_id is None:
-            self.new_root([]) # FIXME: Should not modify?
+            self.root_id = None
         else:
             self.root_id = root_id
 
@@ -92,7 +92,10 @@ class BTree(object):
     @property
     def root(self):
         '''Return the root node.'''
-        return self.get_node(self.root_id)
+        if self.root_id is None:
+            return None
+        else:
+            return self.get_node(self.root_id)
         
     def lookup(self, key):
         '''Return value corresponding to ``key``.
@@ -102,6 +105,8 @@ class BTree(object):
         '''
 
         self.check_key_size(key)
+        if self.root_id is None:
+            raise KeyError(key)
         return self._lookup(self.root.id, key)
 
     def _lookup(self, node_id, key):
@@ -124,6 +129,8 @@ class BTree(object):
         '''
 
         self.check_key_size(key)
+        if self.root_id is None:
+            self.new_root([])
         old_root_id = self.root.id
         a, b = self._insert(self.root.id, key, value)
         if b is None:
@@ -203,6 +210,8 @@ class BTree(object):
         '''
         
         self.check_key_size(key)
+        if self.root_id is None:
+            raise KeyError(key)
         old_root_id = self.root.id
         a = self._remove(self.root.id, key)
         if a is None:
@@ -218,7 +227,7 @@ class BTree(object):
         else:
             k = node.find_key_for_child_containing(key)
             if k is None:
-                raise KeyError(key)
+                raise KeyError(key) # pragma: no cover
             elif len(self.get_node(node[k])) <= self.min_index_length:
                 return self._remove_from_minimal_index(node_id, key, k) 
             else:

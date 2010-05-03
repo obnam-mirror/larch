@@ -94,6 +94,7 @@ class BTreeTests(unittest.TestCase):
         self.assertEqual(self.tree.new_root([]), None)
 
     def test_creates_root_from_nothing(self):
+        self.tree.new_root([])
         self.assertEqual(self.tree.root.id, 1) # first node always id 1
 
     def test_insert_changes_root_id(self):
@@ -101,7 +102,7 @@ class BTreeTests(unittest.TestCase):
         self.assertNotEqual(self.tree.root.id, 0)
 
     def test_is_empty(self):
-        self.assertEqual(self.tree.root.keys(), [])
+        self.assertEqual(self.tree.root, None)
         
     def test_lookup_for_missing_key_raises_error(self):
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
@@ -304,7 +305,6 @@ class BTreeBalanceTests(unittest.TestCase):
         return True
 
     def test_insert_puts_every_leaf_at_same_depth(self):
-        self.assert_(self.leaves_at_same_depth(self.tree.root))
         for key in self.keys:
             self.tree.insert(key, key)
             self.depth = None
