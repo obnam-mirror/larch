@@ -52,7 +52,7 @@ class BTree(object):
         self.min_index_length = self.max_index_length / 2
 
         if root_id is None:
-            self.new_root([])
+            self.new_root([]) # FIXME: Should not modify?
         else:
             self.root_id = root_id
 

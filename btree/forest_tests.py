@@ -70,3 +70,22 @@ class ForestTests(unittest.TestCase):
         self.forest.remove_tree(t1)
         self.assertEqual(self.forest.trees, [])
 
+    def test_changes_work_across_commit(self):
+        t1 = self.forest.new_tree()
+        t1.insert('000', 'foo')
+        t1.insert('001', 'bar')
+        t2 = self.forest.new_tree(t1)
+        t2.insert('002', 'foobar')
+        t2.remove('000')
+        self.forest.commit()
+
+        f2 = btree.Forest(self.ns)
+        t1a, t2a = f2.trees
+        self.assertEqual(t1.root_id, t1a.root_id)
+        self.assertEqual(t2.root_id, t2a.root_id)
+        self.assertEqual(t1a.lookup('000'), 'foo')
+        self.assertEqual(t1a.lookup('001'), 'bar')
+        self.assertRaises(KeyError, t2a.lookup, '000')
+        self.assertEqual(t2a.lookup('001'), 'bar')
+        self.assertEqual(t2a.lookup('002'), 'foobar')
+

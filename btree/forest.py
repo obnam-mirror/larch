@@ -52,6 +52,7 @@ class Forest(object):
 
         if old:
             t = btree.BTree(self, self.node_store, old.root_id)
+            t.increment(t.root_id)
         else:
             t = btree.BTree(self, self.node_store, None)
         self.trees.append(t)
