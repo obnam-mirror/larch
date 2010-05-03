@@ -65,3 +65,8 @@ class ForestTests(unittest.TestCase):
         f2 = btree.Forest(self.ns)
         self.assertEqual([t.root_id for t in f2.trees], [t1.root_id])
 
+    def test_removes_trees(self):
+        t1 = self.forest.new_tree()
+        self.forest.remove_tree(t1)
+        self.assertEqual(self.forest.trees, [])
+

@@ -57,6 +57,10 @@ class Forest(object):
         self.trees.append(t)
         return t
 
+    def remove_tree(self, tree):
+        '''Remove a tree from the forest.'''
+        self.trees.remove(tree)
+
     def commit(self):
         '''Make sure all changes are stored into the node store.'''
         self.node_store.set_metadata('last_id', self.last_id)
