@@ -26,6 +26,11 @@ class ForestTests(unittest.TestCase):
         self.ns = btree.NodeStoreMemory(64, self.codec)
         self.forest = btree.Forest(self.ns)
 
+    def test_new_node_ids_grow(self):
+        id1 = self.forest.new_id()
+        id2 = self.forest.new_id()
+        self.assertEqual(id1 + 1, id2)
+
     def test_has_no_trees_initially(self):
         self.assertEqual(self.forest.trees, [])
 
@@ -44,4 +49,11 @@ class ForestTests(unittest.TestCase):
         t2 = self.forest.new_tree(t1)
         t1.insert('foo', 'foo')
         self.assertNotEqual(t1.root_id, t2.root_id)
+
+    def test_clones_do_not_clash_in_new_node_ids(self):
+        t1 = self.forest.new_tree()
+        t2 = self.forest.new_tree(t1)
+        node1 = t1.new_leaf([])
+        node2 = t2.new_leaf([])
+        self.assertEqual(node1.id + 1, node2.id)
 

@@ -5,6 +5,16 @@ import unittest
 import btree
 
 
+class DummyForest(object):
+
+    def __init__(self):
+        self.last_id = 0
+
+    def new_id(self):
+        self.last_id += 1
+        return self.last_id
+
+
 class DummyNodeStore(object):
 
     def __init__(self, node_size, codec):
@@ -57,13 +67,9 @@ class BTreeTests(unittest.TestCase):
         # during testing. Use coverage.py to make sure they do.
         self.codec = btree.NodeCodec(3)
         self.ns = DummyNodeStore(64, self.codec)
-        self.tree = btree.BTree(self.ns, None)
+        self.forest = DummyForest()
+        self.tree = btree.BTree(self.forest, self.ns, None)
         self.dump = False
-
-    def test_new_node_ids_grow(self):
-        id1 = self.tree.new_id()
-        id2 = self.tree.new_id()
-        self.assertEqual(id1 + 1, id2)
 
     def test_creates_leaf(self):
         leaf = self.tree.new_leaf([])
@@ -242,12 +248,12 @@ class BTreeTests(unittest.TestCase):
         
     def test_persists(self):
         self.tree.insert('foo', 'bar')
-        tree2 = btree.BTree(self.ns, self.tree.root_id)
+        tree2 = btree.BTree(self.forest, self.ns, self.tree.root_id)
         self.assertEqual(tree2.lookup('foo'), 'bar')
 
     def test_last_node_id_persists(self):
         node1 = self.tree.new_leaf([])
-        tree2 = btree.BTree(self.ns, self.tree.root_id)
+        tree2 = btree.BTree(self.forest, self.ns, self.tree.root_id)
         node2 = tree2.new_leaf([])
         self.assertEqual(node1.id + 1, node2.id)
 
@@ -256,7 +262,8 @@ class BTreeBalanceTests(unittest.TestCase):
 
     def setUp(self):
         ns = DummyNodeStore(4096, btree.NodeCodec(2))
-        self.tree = btree.BTree(ns, None)
+        forest = DummyForest()
+        self.tree = btree.BTree(forest, ns, None)
         self.keys = ['%02d' % i for i in range(10)]
         self.depth = None
 

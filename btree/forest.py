@@ -24,6 +24,22 @@ class Forest(object):
     def __init__(self, node_store):
         self.node_store = node_store
         self.trees = []
+        self.last_id = 0
+        self.read_metadata()
+
+    def read_metadata(self):
+        if 'last_id' in self.node_store.get_metadata_keys():
+            self.last_id = int(self.node_store.get_metadata('last_id'))
+    
+    def store_metadata(self):
+        self.node_store.set_metadata('last_id', self.last_id)
+        self.node_store.save_metadata()
+
+    def new_id(self):
+        '''Generate next node id for this forest.'''
+        self.last_id += 1
+        self.store_metadata()
+        return self.last_id
 
     def new_tree(self, old=None):
         '''Create a new tree.
@@ -34,8 +50,8 @@ class Forest(object):
         '''
 
         if old:
-            t = btree.BTree(self.node_store, old.root_id)
+            t = btree.BTree(self, self.node_store, old.root_id)
         else:
-            t = btree.BTree(self.node_store, None)
+            t = btree.BTree(self, self.node_store, None)
         self.trees.append(t)
         return t
