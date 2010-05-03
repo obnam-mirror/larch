@@ -75,15 +75,13 @@ class BTree(object):
         index = btree.IndexNode(self.new_id(), pairs)
         self.node_store.put_node(index.id, self.node_store.codec.encode(index))
         for key, child_id in pairs:
-            refcount = self.node_store.get_refcount(child_id)
-            self.node_store.set_refcount(child_id, refcount + 1)
+            self.increment(child_id)
         return index
         
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
-        self.root_id = self.new_id()
-        root = btree.IndexNode(self.root_id, pairs)
-        self.node_store.put_node(root.id, self.node_store.codec.encode(root))
+        root = self.new_index(pairs)
+        self.root_id = root.id
         self.node_store.set_refcount(root.id, 1)
 
     def get_node(self, node_id):
@@ -126,11 +124,13 @@ class BTree(object):
         '''
 
         self.check_key_size(key)
+        old_root_id = self.root.id
         a, b = self._insert(self.root.id, key, value)
         if b is None:
             self.new_root(a.pairs())
         else:
             self.new_root([(a.first_key(), a.id), (b.first_key(), b.id)])
+        self.decrement(old_root_id)
 
     def _insert(self, node_id, key, value):
         node = self.get_node(node_id)
@@ -203,12 +203,14 @@ class BTree(object):
         '''
         
         self.check_key_size(key)
+        old_root_id = self.root.id
         a = self._remove(self.root.id, key)
         if a is None:
             self.new_root([])
         else:
             self.new_root(a.pairs())
-        
+        self.decrement(old_root_id)
+
     def _remove(self, node_id, key):
         node = self.get_node(node_id)
         if isinstance(node, btree.LeafNode):
@@ -282,4 +284,21 @@ class BTree(object):
         pairs.sort()
         assert pairs
         return self.new_index(pairs)
+
+    def increment(self, node_id):
+        '''Non-recursively increment refcount for a node.'''
+        refcount = self.node_store.get_refcount(node_id)
+        self.node_store.set_refcount(node_id, refcount + 1)
+
+    def decrement(self, node_id): # pragma: no cover
+        '''Recursively, lazily decrement refcounts for a node and children.'''
+        refcount = self.node_store.get_refcount(node_id)
+        if refcount > 1:
+            self.node_store.set_refcount(node_id, refcount - 1)
+        else:
+            node = self.node_store.get_node(node_id)
+            if isinstance(node, btree.IndexNode):
+                for key, child_id in node.pairs():
+                    self.decrement(child_id)
+            self.node_store.remove_node(node_id)
 

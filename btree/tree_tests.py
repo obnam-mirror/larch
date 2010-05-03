@@ -48,6 +48,10 @@ class DummyNodeStore(object):
     def find_nodes(self):
         return self.nodes.keys()
 
+    def remove_node(self, node_id):
+        del self.nodes[node_id]
+        self.set_refcount(node_id, 0)
+
     def get_refcount(self, node_id):
         return self.refcounts.get(node_id, 0)
 

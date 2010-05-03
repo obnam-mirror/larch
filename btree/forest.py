@@ -67,4 +67,5 @@ class Forest(object):
         root_ids = ','.join('%d'% t.root_id for t in self.trees)
         self.node_store.set_metadata('root_ids', root_ids)
         self.node_store.save_metadata()
+        self.node_store.save_refcounts()
 
