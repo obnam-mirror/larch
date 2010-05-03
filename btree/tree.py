@@ -92,7 +92,7 @@ class BTree(object):
         
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
-        root = btree.IndexNode(0, pairs)
+        root = btree.IndexNode(self.root_id, pairs)
         self.node_store.put_node(root.id, self.node_store.codec.encode(root))
         self.store_metadata()
 
@@ -104,7 +104,7 @@ class BTree(object):
     @property
     def root(self):
         '''Return the root node.'''
-        return self.get_node(0)
+        return self.get_node(self.root_id)
         
     def lookup(self, key):
         '''Return value corresponding to ``key``.
