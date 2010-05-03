@@ -28,17 +28,18 @@ class Forest(object):
         self.read_metadata()
 
     def read_metadata(self):
-        if 'last_id' in self.node_store.get_metadata_keys():
+        keys = self.node_store.get_metadata_keys()
+        if 'last_id' in keys:
             self.last_id = int(self.node_store.get_metadata('last_id'))
+        if 'root_ids' in keys:
+            s = self.node_store.get_metadata('root_ids')
+            root_ids = [int(x) for x in s.split(',')]
+            self.trees = [btree.BTree(self, self.node_store, root_id)
+                          for root_id in root_ids]
     
-    def store_metadata(self):
-        self.node_store.set_metadata('last_id', self.last_id)
-        self.node_store.save_metadata()
-
     def new_id(self):
         '''Generate next node id for this forest.'''
         self.last_id += 1
-        self.store_metadata()
         return self.last_id
 
     def new_tree(self, old=None):
@@ -55,3 +56,11 @@ class Forest(object):
             t = btree.BTree(self, self.node_store, None)
         self.trees.append(t)
         return t
+
+    def commit(self):
+        '''Make sure all changes are stored into the node store.'''
+        self.node_store.set_metadata('last_id', self.last_id)
+        root_ids = ','.join('%d'% t.root_id for t in self.trees)
+        self.node_store.set_metadata('root_ids', root_ids)
+        self.node_store.save_metadata()
+

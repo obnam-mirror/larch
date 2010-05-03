@@ -57,3 +57,11 @@ class ForestTests(unittest.TestCase):
         node2 = t2.new_leaf([])
         self.assertEqual(node1.id + 1, node2.id)
 
+    def test_is_persistent(self):
+        t1 = self.forest.new_tree()
+        t1.insert('foo', 'bar')
+        self.forest.commit()
+
+        f2 = btree.Forest(self.ns)
+        self.assertEqual([t.root_id for t in f2.trees], [t1.root_id])
+
