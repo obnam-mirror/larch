@@ -11,16 +11,22 @@ class DummyNodeStore(object):
         self.node_size = node_size
         self.codec = codec
         self.nodes = dict()
-        self.metadata = ''
+        self.metadata = dict()
 
     def max_index_pairs(self):
         return 4
 
-    def get_metadata(self):
-        return self.metadata
+    def get_metadata_keys(self):
+        return self.metadata.keys()
+
+    def get_metadata(self, key):
+        return self.metadata[key]
         
-    def set_metadata(self, blob):
-        self.metadata = blob
+    def set_metadata(self, key, value):
+        self.metadata[key] = value
+
+    def save_metadata(self):
+        pass
     
     def put_node(self, node_id, encoded):
         self.nodes[node_id] = encoded
