@@ -74,6 +74,9 @@ class BTree(object):
         '''Create a new index node and keep track of it.'''
         index = btree.IndexNode(self.new_id(), pairs)
         self.node_store.put_node(index.id, self.node_store.codec.encode(index))
+        for key, child_id in pairs:
+            refcount = self.node_store.get_refcount(child_id)
+            self.node_store.set_refcount(child_id, refcount + 1)
         return index
         
     def new_root(self, pairs):
@@ -81,6 +84,7 @@ class BTree(object):
         self.root_id = self.new_id()
         root = btree.IndexNode(self.root_id, pairs)
         self.node_store.put_node(root.id, self.node_store.codec.encode(root))
+        self.node_store.set_refcount(root.id, 1)
 
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''

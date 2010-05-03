@@ -22,6 +22,7 @@ class DummyNodeStore(object):
         self.codec = codec
         self.nodes = dict()
         self.metadata = dict()
+        self.refcounts = dict()
 
     def max_index_pairs(self):
         return 4
@@ -46,6 +47,12 @@ class DummyNodeStore(object):
         
     def find_nodes(self):
         return self.nodes.keys()
+
+    def get_refcount(self, node_id):
+        return self.refcounts.get(node_id, 0)
+
+    def set_refcount(self, node_id, refcount):
+        self.refcounts[node_id] = refcount
 
 
 class KeySizeMismatchTests(unittest.TestCase):
