@@ -21,5 +21,12 @@ class Forest(object):
 
     '''A collection of BTrees in the same node store.'''
 
-    def __init__(self):
+    def __init__(self, node_store):
+        self.node_store = node_store
         self.trees = []
+
+    def new_tree(self):
+        '''Create a new tree.'''
+        t = btree.BTree(self.node_store, None)
+        self.trees.append(t)
+        return t

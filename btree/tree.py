@@ -50,18 +50,17 @@ class BTree(object):
         self.max_index_length = self.node_store.max_index_pairs()
         self.min_index_length = self.max_index_length / 2
 
-        self.root_id = root_id
-
         self.last_id = 0
-        if not self.read_metadata():
+        self.read_metadata()
+
+        if root_id is None:
             self.new_root([])
+        else:
+            self.root_id = root_id
 
     def read_metadata(self):
         if 'last_id' in self.node_store.get_metadata_keys():
             self.last_id = int(self.node_store.get_metadata('last_id'))
-            return True
-        else:
-            return False
     
     def store_metadata(self):
         self.node_store.set_metadata('last_id', self.last_id)
@@ -92,6 +91,7 @@ class BTree(object):
         
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
+        self.root_id = self.new_id()
         root = btree.IndexNode(self.root_id, pairs)
         self.node_store.put_node(root.id, self.node_store.codec.encode(root))
         self.store_metadata()

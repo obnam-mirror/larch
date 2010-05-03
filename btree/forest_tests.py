@@ -22,7 +22,15 @@ import btree
 class ForestTests(unittest.TestCase):
 
     def setUp(self):
-        self.forest = btree.Forest()
+        self.codec = btree.NodeCodec(3)
+        self.ns = btree.NodeStoreMemory(64, self.codec)
+        self.forest = btree.Forest(self.ns)
 
     def test_has_no_trees_initially(self):
         self.assertEqual(self.forest.trees, [])
+
+    def test_creates_a_tree(self):
+        t = self.forest.new_tree()
+        self.assert_(isinstance(t, btree.BTree))
+        self.assertEqual(self.forest.trees, [t])
+
