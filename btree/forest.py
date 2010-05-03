@@ -25,8 +25,17 @@ class Forest(object):
         self.node_store = node_store
         self.trees = []
 
-    def new_tree(self):
-        '''Create a new tree.'''
-        t = btree.BTree(self.node_store, None)
+    def new_tree(self, old=None):
+        '''Create a new tree.
+
+        If old is None, a completely new tree is created. Otherwise,
+        a clone of an existing one is created.
+
+        '''
+
+        if old:
+            t = btree.BTree(self.node_store, old.root_id)
+        else:
+            t = btree.BTree(self.node_store, None)
         self.trees.append(t)
         return t

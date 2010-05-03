@@ -34,3 +34,14 @@ class ForestTests(unittest.TestCase):
         self.assert_(isinstance(t, btree.BTree))
         self.assertEqual(self.forest.trees, [t])
 
+    def test_clones_a_tree(self):
+        t1 = self.forest.new_tree()
+        t2 = self.forest.new_tree(t1)
+        self.assertEqual(t1.root_id, t2.root_id)
+
+    def test_clones_can_be_changed_independently(self):
+        t1 = self.forest.new_tree()
+        t2 = self.forest.new_tree(t1)
+        t1.insert('foo', 'foo')
+        self.assertNotEqual(t1.root_id, t2.root_id)
+
