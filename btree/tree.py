@@ -44,28 +44,17 @@ class BTree(object):
     
     '''
 
-    def __init__(self, node_store, root_id):
+    def __init__(self, forest, node_store, root_id):
+        self.forest = forest
         self.node_store = node_store
 
         self.max_index_length = self.node_store.max_index_pairs()
         self.min_index_length = self.max_index_length / 2
 
-        self.root_id = root_id
-
-        self.last_id = 0
-        if not self.read_metadata():
-            self.new_root([])
-
-    def read_metadata(self):
-        if 'last_id' in self.node_store.get_metadata_keys():
-            self.last_id = int(self.node_store.get_metadata('last_id'))
-            return True
+        if root_id is None:
+            self.root_id = None
         else:
-            return False
-    
-    def store_metadata(self):
-        self.node_store.set_metadata('last_id', self.last_id)
-        self.node_store.save_metadata()
+            self.root_id = root_id
 
     def check_key_size(self, key):
         if len(key) != self.node_store.codec.key_bytes:
@@ -73,28 +62,27 @@ class BTree(object):
 
     def new_id(self):
         '''Generate a new node identifier.'''
-        self.last_id += 1
-        return self.last_id
+        return self.forest.new_id()
         
     def new_leaf(self, pairs):
         '''Create a new leaf node and keep track of it.'''
         leaf = btree.LeafNode(self.new_id(), pairs)
         self.node_store.put_node(leaf.id, self.node_store.codec.encode(leaf))
-        self.store_metadata()
         return leaf
         
     def new_index(self, pairs):
         '''Create a new index node and keep track of it.'''
         index = btree.IndexNode(self.new_id(), pairs)
         self.node_store.put_node(index.id, self.node_store.codec.encode(index))
-        self.store_metadata()
+        for key, child_id in pairs:
+            self.increment(child_id)
         return index
         
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
-        root = btree.IndexNode(self.root_id, pairs)
-        self.node_store.put_node(root.id, self.node_store.codec.encode(root))
-        self.store_metadata()
+        root = self.new_index(pairs)
+        self.root_id = root.id
+        self.node_store.set_refcount(root.id, 1)
 
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
@@ -104,7 +92,10 @@ class BTree(object):
     @property
     def root(self):
         '''Return the root node.'''
-        return self.get_node(self.root_id)
+        if self.root_id is None:
+            return None
+        else:
+            return self.get_node(self.root_id)
         
     def lookup(self, key):
         '''Return value corresponding to ``key``.
@@ -114,6 +105,8 @@ class BTree(object):
         '''
 
         self.check_key_size(key)
+        if self.root_id is None:
+            raise KeyError(key)
         return self._lookup(self.root.id, key)
 
     def _lookup(self, node_id, key):
@@ -136,11 +129,15 @@ class BTree(object):
         '''
 
         self.check_key_size(key)
+        if self.root_id is None:
+            self.new_root([])
+        old_root_id = self.root.id
         a, b = self._insert(self.root.id, key, value)
         if b is None:
             self.new_root(a.pairs())
         else:
             self.new_root([(a.first_key(), a.id), (b.first_key(), b.id)])
+        self.decrement(old_root_id)
 
     def _insert(self, node_id, key, value):
         node = self.get_node(node_id)
@@ -213,12 +210,16 @@ class BTree(object):
         '''
         
         self.check_key_size(key)
+        if self.root_id is None:
+            raise KeyError(key)
+        old_root_id = self.root.id
         a = self._remove(self.root.id, key)
         if a is None:
             self.new_root([])
         else:
             self.new_root(a.pairs())
-        
+        self.decrement(old_root_id)
+
     def _remove(self, node_id, key):
         node = self.get_node(node_id)
         if isinstance(node, btree.LeafNode):
@@ -226,7 +227,7 @@ class BTree(object):
         else:
             k = node.find_key_for_child_containing(key)
             if k is None:
-                raise KeyError(key)
+                raise KeyError(key) # pragma: no cover
             elif len(self.get_node(node[k])) <= self.min_index_length:
                 return self._remove_from_minimal_index(node_id, key, k) 
             else:
@@ -292,4 +293,21 @@ class BTree(object):
         pairs.sort()
         assert pairs
         return self.new_index(pairs)
+
+    def increment(self, node_id):
+        '''Non-recursively increment refcount for a node.'''
+        refcount = self.node_store.get_refcount(node_id)
+        self.node_store.set_refcount(node_id, refcount + 1)
+
+    def decrement(self, node_id): # pragma: no cover
+        '''Recursively, lazily decrement refcounts for a node and children.'''
+        refcount = self.node_store.get_refcount(node_id)
+        if refcount > 1:
+            self.node_store.set_refcount(node_id, refcount - 1)
+        else:
+            node = self.node_store.get_node(node_id)
+            if isinstance(node, btree.IndexNode):
+                for key, child_id in node.pairs():
+                    self.decrement(child_id)
+            self.node_store.remove_node(node_id)
 
