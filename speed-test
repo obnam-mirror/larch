@@ -8,7 +8,8 @@
 # Otherwise it must be a non-existent directory name.
 #
 # The benchmark will do the given number of insertions into the tree, and
-# measure the speed of that. Then it will look up each of those.
+# measure the speed of that. Then it will look up each of those, and measure
+# the lookups.
 
 
 import os
@@ -18,8 +19,6 @@ import sys
 import time
 
 import btree
-import nodestore_disk
-import nodestore_memory
 
 
 def measure(keys, func):
@@ -33,26 +32,33 @@ def measure(keys, func):
 def main():
     location = sys.argv[1]
     n = int(sys.argv[2])
-    
+
+    key_size = 8
+    value_size = 128
     node_size = 4096
+
+    codec = btree.NodeCodec(key_size)
+
     if location == '':
-        ns = nodestore_memory.NodeStoreMemory(4096)
+        ns = btree.NodeStoreMemory(node_size, codec)
     else:
         if os.path.exists(location):
             raise Exception('%s exists already' % location)
         os.mkdir(location)
-        ns = nodestore_disk.NodeStoreDisk(location, 4096)
-    tree = btree.BTree(ns, 8)
+        ns = btree.NodeStoreDisk(location, node_size, codec)
+
+    forest = btree.Forest(ns)
+    tree = forest.new_tree()
     
     # Create list of keys.
-    keys = ['%08d' % i for i in xrange(n)]
+    keys = ['%0*d' % (key_size, i) for i in xrange(n)]
     
     # Calibrate.
     looptime = measure(keys, lambda key: None)
 
     # Measure inserts.
     random.shuffle(keys)
-    value = 'x' * 128
+    value = 'x' * value_size
     insert_time = measure(keys, lambda key: tree.insert(key, value)) - looptime
 
     # Measure lookups.
