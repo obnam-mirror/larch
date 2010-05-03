@@ -44,11 +44,13 @@ class BTree(object):
     
     '''
 
-    def __init__(self, node_store):
+    def __init__(self, node_store, root_id):
         self.node_store = node_store
 
         self.max_index_length = self.node_store.max_index_pairs()
         self.min_index_length = self.max_index_length / 2
+
+        self.root_id = root_id
 
         self.last_id = 0
         if not self.read_metadata():
