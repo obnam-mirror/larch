@@ -44,27 +44,28 @@ class BTree(object):
     
     '''
 
-    def __init__(self, node_store):
+    def __init__(self, node_store, root_id):
         self.node_store = node_store
 
         self.max_index_length = self.node_store.max_index_pairs()
         self.min_index_length = self.max_index_length / 2
+
+        self.root_id = root_id
 
         self.last_id = 0
         if not self.read_metadata():
             self.new_root([])
 
     def read_metadata(self):
-        blob = self.node_store.get_metadata()
-        if blob:
-            (self.last_id,) = struct.unpack('!Q', blob)
+        if 'last_id' in self.node_store.get_metadata_keys():
+            self.last_id = int(self.node_store.get_metadata('last_id'))
             return True
         else:
             return False
     
     def store_metadata(self):
-        blob = struct.pack('!Q', self.last_id)
-        self.node_store.set_metadata(blob)
+        self.node_store.set_metadata('last_id', self.last_id)
+        self.node_store.save_metadata()
 
     def check_key_size(self, key):
         if len(key) != self.node_store.codec.key_bytes:
@@ -91,7 +92,7 @@ class BTree(object):
         
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
-        root = btree.IndexNode(0, pairs)
+        root = btree.IndexNode(self.root_id, pairs)
         self.node_store.put_node(root.id, self.node_store.codec.encode(root))
         self.store_metadata()
 
@@ -103,7 +104,7 @@ class BTree(object):
     @property
     def root(self):
         '''Return the root node.'''
-        return self.get_node(0)
+        return self.get_node(self.root_id)
         
     def lookup(self, key):
         '''Return value corresponding to ``key``.
