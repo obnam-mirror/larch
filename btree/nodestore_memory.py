@@ -29,9 +29,6 @@ class NodeStoreMemory(btree.NodeStore):
         del self.metadata[key]
         
     def put_node(self, node):
-        size = self.codec.size(node)
-        if size > self.node_size:
-            raise btree.NodeTooBig(node.id, size)
         if node.id in self.nodes:
             raise btree.NodeExists(node.id)
         self.nodes[node.id] = node

@@ -229,10 +229,6 @@ class NodeStoreTests(object): # pragma: no cover
         node_ids = self.ns.list_nodes()
         self.assertEqual(node_ids, [node.id])
 
-    def test_put_refuses_too_large_a_node(self):
-        node = btree.LeafNode(0, [('000', 'x' * (self.node_size + 1))])
-        self.assertRaises(NodeTooBig, self.ns.put_node, node)
-
     def test_put_refuses_to_overwrite_a_node(self):
         node = btree.LeafNode(0, [])
         self.ns.put_node(node)

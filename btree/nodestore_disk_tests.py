@@ -99,3 +99,7 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
         self.assertEqual(self.ns.get_refcount(0), 1234)
         self.assertEqual(ns2.get_refcount(0), 1234)
 
+    def test_put_refuses_too_large_a_node(self):
+        node = btree.LeafNode(0, [('000', 'x' * (self.node_size + 1))])
+        self.assertRaises(btree.NodeTooBig, self.ns.put_node, node)
+
