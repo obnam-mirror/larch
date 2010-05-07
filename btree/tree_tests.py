@@ -300,12 +300,12 @@ class BTreeTests(unittest.TestCase):
 
     def test_lookup_range_returns_two_items_in_range(self):
         self.create_tree_for_range()
-        self.assertEqual(self.tree.lookup_range('002', '004'), 
+        self.assertEqual(sorted(self.tree.lookup_range('002', '004')), 
                           [('002', '002'), ('004', '004')])
 
     def test_lookup_range_returns_all_items_in_range(self):
         self.create_tree_for_range()
-        self.assertEqual(self.tree.lookup_range('000', '999'), 
+        self.assertEqual(sorted(self.tree.lookup_range('000', '999')), 
                           [('002', '002'), 
                            ('004', '004'),
                            ('006', '006'),
