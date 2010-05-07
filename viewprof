@@ -1,0 +1,10 @@
+#!/usr/bin/python
+
+import pstats
+import sys
+
+p = pstats.Stats(sys.argv[1])
+p.strip_dirs()
+p.sort_stats('cumulative')
+p.print_stats()
+p.print_callees()
