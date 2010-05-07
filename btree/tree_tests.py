@@ -39,8 +39,8 @@ class DummyNodeStore(object):
     def save_metadata(self):
         pass
     
-    def put_node(self, node_id, encoded):
-        self.nodes[node_id] = encoded
+    def put_node(self, node):
+        self.nodes[node.id] = node
         
     def get_node(self, node_id):
         return self.nodes[node_id]
