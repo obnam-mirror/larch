@@ -278,37 +278,37 @@ class BTreeTests(unittest.TestCase):
 
     def test_lookup_range_returns_empty_list_if_before_smallest_key(self):
         self.create_tree_for_range()
-        self.assert_equal(self.tree.lookup_range('000', '001'), [])
+        self.assertEqual(self.tree.lookup_range('000', '001'), [])
 
     def test_lookup_range_returns_empty_list_if_after_largest_key(self):
         self.create_tree_for_range()
-        self.assert_equal(self.tree.lookup_range('010', '999'), [])
+        self.assertEqual(self.tree.lookup_range('010', '999'), [])
 
     def test_lookup_range_returns_empty_list_if_between_keys(self):
         self.create_tree_for_range()
-        self.assert_equal(self.tree.lookup_range('003', '003'), [])
+        self.assertEqual(self.tree.lookup_range('003', '003'), [])
 
     def test_lookup_range_returns_single_item_in_range(self):
         self.create_tree_for_range()
-        self.assert_equal(self.tree.lookup_range('002', '002'), 
+        self.assertEqual(self.tree.lookup_range('002', '002'), 
                           [('002', '002')])
 
     def test_lookup_range_returns_single_item_in_range_exclusive(self):
         self.create_tree_for_range()
-        self.assert_equal(self.tree.lookup_range('001', '003'), 
+        self.assertEqual(self.tree.lookup_range('001', '003'), 
                           [('002', '002')])
 
     def test_lookup_range_returns_two_items_in_range(self):
         self.create_tree_for_range()
-        self.assert_equal(self.tree.lookup_range('002', '004'), 
+        self.assertEqual(self.tree.lookup_range('002', '004'), 
                           [('002', '002'), ('004', '004')])
 
     def test_lookup_range_returns_all_items_in_range(self):
         self.create_tree_for_range()
-        self.assert_equal(self.tree.lookup_range('000', '999'), 
+        self.assertEqual(self.tree.lookup_range('000', '999'), 
                           [('002', '002'), 
-                           ('004', '004')
-                           ('006', '006')
+                           ('004', '004'),
+                           ('006', '006'),
                            ('008', '008')])
 
 

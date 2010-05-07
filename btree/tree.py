@@ -120,6 +120,13 @@ class BTree(object):
             else:
                 return self._lookup(node[k], key)
 
+    def lookup_range(self, minkey, maxkey):
+        '''Return list of (key, value) pairs for all keys in a range.
+
+        minkey and maxkey are included in range.
+
+        '''
+
     def insert(self, key, value):
         '''Insert a new key/value pair into the tree.
         
