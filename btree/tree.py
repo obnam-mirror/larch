@@ -120,6 +120,42 @@ class BTree(object):
             else:
                 return self._lookup(node[k], key)
 
+    def lookup_range(self, minkey, maxkey):
+        '''Return list of (key, value) pairs for all keys in a range.
+
+        minkey and maxkey are included in range.
+
+        '''
+
+        if self.root_id is None:
+            return []
+        return self._lookup_range(self.root_id, minkey, maxkey)
+
+    def _lookup_range(self, node_id, minkey, maxkey):
+        node = self.get_node(node_id)
+        if isinstance(node, btree.LeafNode):
+            return self._lookup_range_in_leaf(node, minkey, maxkey)
+        else:
+            assert isinstance(node, btree.IndexNode)
+            result = []
+            for child_id in self._find_children_in_range(node, minkey, maxkey):
+                result += self._lookup_range(child_id, minkey, maxkey)
+            return result
+
+    def _lookup_range_in_leaf(self, leaf, minkey, maxkey):
+        result = []
+        for key in leaf:
+            if minkey <= key <= maxkey:
+                result.append((key, leaf[key]))
+        return result
+
+    def _find_children_in_range(self, node, minkey, maxkey):
+        child_ids = []
+        for key in node:
+            if minkey <= key <= maxkey:
+                child_ids.append(node[key])
+        return child_ids
+
     def insert(self, key, value):
         '''Insert a new key/value pair into the tree.
         
