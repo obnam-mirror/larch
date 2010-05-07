@@ -27,6 +27,7 @@ class NodeCodec(object):
     def leaf_size(self, pairs):
         '''Return size of a leaf node with the given pairs.'''
         return (self.leaf_header_size + len(pairs) * self.key_bytes + 
+                len(pairs) * struct.calcsize('I') +
                 sum(len(value) for key, value in pairs))
 
     def leaf_format(self, pairs):
