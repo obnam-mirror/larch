@@ -115,7 +115,7 @@ class NodeCodec(object):
 
     def size(self, node):
         if isinstance(node, btree.LeafNode):
-            return self.leaf_size(node)
+            return self.leaf_size(node.pairs())
         else:
-            return self.index_size(node)
+            return self.index_size(node.pairs())
 

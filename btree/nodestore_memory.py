@@ -1,5 +1,6 @@
 import btree
 
+
 class NodeStoreMemory(btree.NodeStore):
 
     '''An implementation of btree.NodeStore API for in-memory storage.
@@ -28,8 +29,9 @@ class NodeStoreMemory(btree.NodeStore):
         del self.metadata[key]
         
     def put_node(self, node_id, node):
-#        if len(encoded_node) > self.node_size:
-#            raise btree.NodeTooBig(node_id, len(encoded_node))
+        size = self.codec.size(node)
+        if size > self.node_size:
+            raise btree.NodeTooBig(node_id, size)
         if node_id in self.nodes:
             raise btree.NodeExists(node_id)
         self.nodes[node_id] = node
