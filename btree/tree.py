@@ -337,7 +337,8 @@ class BTree(object):
 
         '''
 
-        
+        for key, value in self.lookup_range(minkey, maxkey):
+            self.remove(key)
 
     def increment(self, node_id):
         '''Non-recursively increment refcount for a node.'''
