@@ -311,6 +311,11 @@ class BTreeTests(unittest.TestCase):
                            ('006', '006'),
                            ('008', '008')])
 
+    def test_remove_range_removes_everything(self):
+        self.create_tree_for_range()
+        self.tree.remove_range('000', '999')
+        self.assertEqual(self.tree.lookup_range('000', '999'), [])
+
 
 class BTreeBalanceTests(unittest.TestCase):
 

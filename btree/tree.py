@@ -330,6 +330,16 @@ class BTree(object):
         assert pairs
         return self.new_index(pairs)
 
+    def remove_range(self, minkey, maxkey):
+        '''Remove all keys in the given range.
+
+        Range is inclusive.
+
+        '''
+
+        for key, value in self.lookup_range(minkey, maxkey):
+            self.remove(key)
+
     def increment(self, node_id):
         '''Non-recursively increment refcount for a node.'''
         refcount = self.node_store.get_refcount(node_id)
