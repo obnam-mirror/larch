@@ -113,3 +113,9 @@ class NodeCodec(object):
         else:
             return self.decode_index(encoded)
 
+    def size(self, node):
+        if isinstance(node, btree.LeafNode):
+            return self.leaf_size(node)
+        else:
+            return self.index_size(node)
+
