@@ -14,6 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+version = '0.0'
+
+
 from nodes import LeafNode, IndexNode
 from codec import NodeCodec
 from tree import BTree, KeySizeMismatch
