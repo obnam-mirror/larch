@@ -15,6 +15,9 @@ class NodeCodecTests(unittest.TestCase):
     def test_returns_reasonable_size_for_empty_leaf(self):
         self.assert_(self.codec.leaf_size([]) > 10)
 
+    def test_returns_reasonable_size_for_empty_index(self):
+        self.assert_(self.codec.index_size([]) > 10)
+
     def test_leaf_round_trip_ok(self):
         encoded = self.codec.encode_leaf(self.leaf)
         self.assertEqual(self.codec.decode_leaf(encoded), self.leaf)

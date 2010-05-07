@@ -68,6 +68,11 @@ class NodeCodec(object):
         index_header_size = struct.calcsize('!cQI')
         index_pair_size = struct.calcsize('%dsQ' % self.key_bytes)
         return (node_size - index_header_size) / index_pair_size
+        
+    def index_size(self, pairs):
+        '''Return size of an inex node with the given pairs.'''
+        fmt = self.index_format(pairs)
+        return struct.calcsize(fmt)
 
     def index_format(self, pairs):
         return ('!cQI' + ('%ds' % self.key_bytes) * len(pairs) + 
