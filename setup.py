@@ -14,16 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = '0.0'
+from distutils.core import setup
 
+import btree
 
-from nodes import LeafNode, IndexNode
-from codec import NodeCodec
-from tree import BTree, KeySizeMismatch
-from forest import Forest
-from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig, 
-                       NodeExists)
-from intset import IntSet
-from nodestore_disk import NodeStoreDisk
-from nodestore_memory import NodeStoreMemory
-
+setup(
+    name='btree',
+    version=btree.version,
+    description='B-tree data structure',
+    author='Lars Wirzenius',
+    author_email='liw@liw.fi',
+    url='http://liw.fi/btree/',
+    packages=['btree'],
+)

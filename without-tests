@@ -1,2 +1,3 @@
 ./btree/__init__.py
 ./btree/nodestore.py
+./setup.py

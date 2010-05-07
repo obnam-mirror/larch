@@ -22,4 +22,5 @@ check: all
 	rm .coverage
 	
 clean:
-	rm -f .coverage *.py[co] btree/*.py[co]
+	rm -f .coverage *.py[co] btree/*.py[co] 
+	rm -rf build
