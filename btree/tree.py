@@ -86,8 +86,7 @@ class BTree(object):
 
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
-        encoded = self.node_store.get_node(node_id)
-        return self.node_store.codec.decode(encoded)
+        return self.node_store.get_node(node_id)
 
     @property
     def root(self):
