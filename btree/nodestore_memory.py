@@ -28,13 +28,13 @@ class NodeStoreMemory(btree.NodeStore):
     def remove_metadata(self, key):
         del self.metadata[key]
         
-    def put_node(self, node_id, node):
+    def put_node(self, node):
         size = self.codec.size(node)
         if size > self.node_size:
-            raise btree.NodeTooBig(node_id, size)
-        if node_id in self.nodes:
-            raise btree.NodeExists(node_id)
-        self.nodes[node_id] = node
+            raise btree.NodeTooBig(node.id, size)
+        if node.id in self.nodes:
+            raise btree.NodeExists(node.id)
+        self.nodes[node.id] = node
         
     def get_node(self, node_id):
         if node_id in self.nodes:

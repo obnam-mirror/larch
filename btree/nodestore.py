@@ -103,7 +103,7 @@ class NodeStore(object): # pragma: no cover
 
         '''
         
-    def put_node(self, node_id, node):
+    def put_node(self, node):
         '''Put a new node into the store.'''
         
     def get_node(self, node_id):
@@ -213,30 +213,30 @@ class NodeStoreTests(object): # pragma: no cover
         
     def test_puts_and_gets_same(self):
         node = btree.LeafNode(0, [])
-        self.ns.put_node(0, node)
+        self.ns.put_node(node)
         self.assertEqualNodes(self.ns.get_node(0), node)
 
     def test_removes_node(self):
         node = btree.LeafNode(0, [])
-        self.ns.put_node(0, node)
+        self.ns.put_node(node)
         self.ns.remove_node(0)
         self.assertRaises(NodeMissing, self.ns.get_node, 0)
         self.assertEqual(self.ns.list_nodes(), [])
 
     def test_lists_node_zero(self):
         node = btree.LeafNode(0, [])
-        self.ns.put_node(0, node)
+        self.ns.put_node(node)
         node_ids = self.ns.list_nodes()
         self.assertEqual(node_ids, [node.id])
 
     def test_put_refuses_too_large_a_node(self):
         node = btree.LeafNode(0, [('000', 'x' * (self.node_size + 1))])
-        self.assertRaises(NodeTooBig, self.ns.put_node, 0, node)
+        self.assertRaises(NodeTooBig, self.ns.put_node, node)
 
     def test_put_refuses_to_overwrite_a_node(self):
         node = btree.LeafNode(0, [])
-        self.ns.put_node(0, node)
-        self.assertRaises(NodeExists, self.ns.put_node, 0, node)
+        self.ns.put_node(node)
+        self.assertRaises(NodeExists, self.ns.put_node, node)
 
     def test_remove_raises_nodemissing_if_node_does_not_exist(self):
         self.assertRaises(NodeMissing, self.ns.remove_node, 0)

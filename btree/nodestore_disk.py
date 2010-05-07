@@ -127,13 +127,13 @@ class NodeStoreDisk(btree.NodeStore):
     def pathname(self, node_id):
         return os.path.join(self.dirname, '%d.node' % node_id)
         
-    def put_node(self, node_id, node):
+    def put_node(self, node):
         encoded_node = self.codec.encode(node)
         if len(encoded_node) > self.node_size:
-            raise btree.NodeTooBig(node_id, len(encoded_node))
-        name = self.pathname(node_id)
+            raise btree.NodeTooBig(node.id, len(encoded_node))
+        name = self.pathname(node.id)
         if os.path.exists(name):
-            raise btree.NodeExists(node_id)
+            raise btree.NodeExists(node.id)
         file(name, 'w').write(encoded_node)
         
     def get_node(self, node_id):
