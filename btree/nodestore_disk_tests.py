@@ -14,12 +14,37 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os
 import shutil
 import tempfile
 import unittest
 
 import btree
 import nodestore_disk
+
+
+class DummyNodeStore(object):
+
+    def __init__(self, dirname):
+        self.dirname = dirname
+
+    def read_file(self, filename):
+        return file(filename).read()
+
+    def write_file(self, filename, contents):
+        file(filename, 'w').write(contents)
+
+    def file_exists(self, filename):
+        return os.path.exists(filename)
+
+    def rename_file(self, old, new):
+        os.rename(old, new)
+
+    def remove_file(self, filename):
+        os.remove(filename)
+
+    def listdir(self, dirname):
+        return os.listdir(dirname)
 
 
 class RefcountStoreTests(unittest.TestCase):
@@ -32,7 +57,7 @@ class RefcountStoreTests(unittest.TestCase):
         shutil.rmtree(self.dirname)
 
     def new_rs(self):
-        return nodestore_disk.RefcountStore(self.dirname)
+        return nodestore_disk.RefcountStore(DummyNodeStore(self.dirname))
 
     def test_returns_zero_for_unset_refcount(self):
         self.assertEqual(self.rs.get_refcount(123), 0)

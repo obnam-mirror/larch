@@ -16,6 +16,7 @@
 
 import ConfigParser
 import os
+import StringIO
 import struct
 
 import btree
@@ -27,8 +28,8 @@ class RefcountStore(object):
 
     per_group = 2
 
-    def __init__(self, dirname):
-        self.dirname = dirname
+    def __init__(self, node_store):
+        self.node_store = node_store
         self.refcounts = dict()
         self.dirty = set()
 
@@ -52,20 +53,20 @@ class RefcountStore(object):
                               self.per_group):
             encoded = self.encode_refcounts(start_id, self.per_group)
             filename = self.group_filename(start_id)
-            file(filename, 'w').write(encoded)
+            self.node_store.write_file(filename, encoded)
         self.dirty.clear()
 
     def load_refcount_group(self, start_id):
         filename = self.group_filename(start_id)
-        if os.path.exists(filename):
-            encoded = file(filename).read()
+        if self.node_store.file_exists(filename):
+            encoded = self.node_store.read_file(filename)
             return dict(self.decode_refcounts(encoded))
         else:
             return dict((x, 0) 
                         for x in range(start_id, start_id + self.per_group))
 
     def group_filename(self, start_id):
-        return os.path.join(self.dirname, 'refcounts-%d' % start_id)
+        return os.path.join(self.node_store.dirname, 'refcounts-%d' % start_id)
 
     def group(self, node_id):
         return (node_id / self.per_group) * self.per_group
@@ -90,6 +91,16 @@ class NodeStoreDisk(btree.NodeStore):
     
     The caller will specify a directory in which the nodes will be stored.
     Each node is stored in its own file, named after the node identifier.
+
+    This class can be subclassed to allow filesystem operations be
+    overridden. The subclass needs to override the following methods:
+
+    * read_file
+    * write_file
+    * file_exists
+    * rename_file
+    * remove_file
+    * listdir
     
     '''
 
@@ -100,16 +111,34 @@ class NodeStoreDisk(btree.NodeStore):
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
         self.metadata = None
-        self.rs = RefcountStore(self.dirname)
+        self.rs = RefcountStore(self)
+
+    def read_file(self, filename):
+        return file(filename).read()
+
+    def write_file(self, filename, contents):
+        file(filename, 'w').write(contents)
+
+    def file_exists(self, filename):
+        return os.path.exists(filename)
+
+    def rename_file(self, old, new):
+        os.rename(old, new)
+
+    def remove_file(self, filename):
+        os.remove(filename)
+
+    def listdir(self, dirname):
+        return os.listdir(dirname)
 
     def _load_metadata(self):
         if self.metadata is None:
             self.metadata = ConfigParser.ConfigParser()
             self.metadata.add_section('metadata')
             if os.path.exists(self.metadata_name):
-                f = file(self.metadata_name)
+                data = self.read_file(self.metadata_name)
+                f = StringIO.StringIO(data)
                 self.metadata.readfp(f)
-                f.close()
 
     def get_metadata_keys(self):
         self._load_metadata()
@@ -135,10 +164,10 @@ class NodeStoreDisk(btree.NodeStore):
 
     def save_metadata(self):
         self._load_metadata()
-        f = file(self.metadata_name + '_new', 'w')
+        f = StringIO.StringIO()
         self.metadata.write(f)
-        f.close()
-        os.rename(self.metadata_name + '_new', self.metadata_name)
+        self.write_file(self.metadata_name + '_new', f.getvalue())
+        self.rename_file(self.metadata_name + '_new', self.metadata_name)
 
     def pathname(self, node_id):
         return os.path.join(self.dirname, '%d.node' % node_id)
@@ -148,28 +177,28 @@ class NodeStoreDisk(btree.NodeStore):
         if len(encoded_node) > self.node_size:
             raise btree.NodeTooBig(node.id, len(encoded_node))
         name = self.pathname(node.id)
-        if os.path.exists(name):
+        if self.file_exists(name):
             raise btree.NodeExists(node.id)
-        file(name, 'w').write(encoded_node)
+        self.write_file(name, encoded_node)
         
     def get_node(self, node_id):
         name = self.pathname(node_id)
-        if os.path.exists(name):
-            encoded = file(name).read()
+        if self.file_exists(name):
+            encoded = self.read_file(name)
             return self.codec.decode(encoded)
         else:
             raise btree.NodeMissing(node_id)
     
     def remove_node(self, node_id):
         name = self.pathname(node_id)
-        if os.path.exists(name):
-            os.remove(name)
+        if self.file_exists(name):
+            self.remove_file(name)
         else:
             raise btree.NodeMissing(node_id)
         
     def list_nodes(self):
         return [int(x[:-len('.node')])
-                for x in os.listdir(self.dirname)
+                for x in self.listdir(self.dirname)
                 if x.endswith('.node')]
 
     def get_refcount(self, node_id):
