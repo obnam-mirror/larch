@@ -48,13 +48,14 @@ class RefcountStore(object):
         self.dirty.add(node_id)
 
     def save_refcounts(self):
-        ids = sorted(self.dirty)
-        for start_id in range(self.group(ids[0]), self.group(ids[-1]) + 1, 
-                              self.per_group):
-            encoded = self.encode_refcounts(start_id, self.per_group)
-            filename = self.group_filename(start_id)
-            self.node_store.write_file(filename, encoded)
-        self.dirty.clear()
+        if self.dirty:
+            ids = sorted(self.dirty)
+            for start_id in range(self.group(ids[0]), self.group(ids[-1]) + 1, 
+                                  self.per_group):
+                encoded = self.encode_refcounts(start_id, self.per_group)
+                filename = self.group_filename(start_id)
+                self.node_store.write_file(filename, encoded)
+            self.dirty.clear()
 
     def load_refcount_group(self, start_id):
         filename = self.group_filename(start_id)

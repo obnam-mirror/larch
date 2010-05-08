@@ -82,6 +82,9 @@ class RefcountStoreTests(unittest.TestCase):
         rs2 = self.new_rs()
         self.assertEqual(rs2.get_refcount(123), 1)
 
+    def test_save_refcounts_works_without_changes(self):
+        self.assertEqual(self.rs.save_refcounts(), None)
+
     def test_refcount_group_encode_decode_round_trip_works(self):
         refs = range(2048)
         for ref in refs:
