@@ -1,3 +1,10 @@
+python-btree (0.4) squeeze; urgency=low
+
+  * Fix NodeStoreDisk._load_metadata to use self.file_exists instead of
+    os.path.exists directly.
+
+ -- Lars Wirzenius <liw@liw.fi>  Sat, 08 May 2010 16:21:09 +1200
+
 python-btree (0.3) squeeze; urgency=low
 
   * Fix RefcountStore to work even without changes. 

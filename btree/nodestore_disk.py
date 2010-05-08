@@ -136,7 +136,7 @@ class NodeStoreDisk(btree.NodeStore):
         if self.metadata is None:
             self.metadata = ConfigParser.ConfigParser()
             self.metadata.add_section('metadata')
-            if os.path.exists(self.metadata_name):
+            if self.file_exists(self.metadata_name):
                 data = self.read_file(self.metadata_name)
                 f = StringIO.StringIO(data)
                 self.metadata.readfp(f)
