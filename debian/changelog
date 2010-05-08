@@ -1,3 +1,9 @@
+python-btree (0.5) squeeze; urgency=low
+
+  * Fix emptied forests and empty trees handling. 
+
+ -- Lars Wirzenius <liw@liw.fi>  Sat, 08 May 2010 20:31:55 +1200
+
 python-btree (0.4) squeeze; urgency=low
 
   * Fix NodeStoreDisk._load_metadata to use self.file_exists instead of
