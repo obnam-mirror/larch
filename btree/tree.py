@@ -166,8 +166,8 @@ class BTree(object):
 
     def _find_children_in_range(self, node, minkey, maxkey):
         keys = node.keys()
-        while keys and keys[0] < minkey:
-            del keys[0]
+        while len(keys) > 1 and keys[1] < minkey:
+            del keys[0] # pragma: no cover
         while keys and keys[-1] > maxkey:
             del keys[-1]
         return [node[key] for key in keys]        
