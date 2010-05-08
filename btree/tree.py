@@ -165,11 +165,12 @@ class BTree(object):
         return result
 
     def _find_children_in_range(self, node, minkey, maxkey):
-        child_ids = []
-        for key in node:
-            if minkey <= key <= maxkey:
-                child_ids.append(node[key])
-        return child_ids
+        keys = node.keys()
+        while keys and keys[0] < minkey:
+            del keys[0]
+        while keys and keys[-1] > maxkey:
+            del keys[-1]
+        return [node[key] for key in keys]        
 
     def insert(self, key, value):
         '''Insert a new key/value pair into the tree.

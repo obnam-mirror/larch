@@ -1,3 +1,10 @@
+python-btree (0.6) squeeze; urgency=low
+
+  * Fix lookup_range for case when a node's children contain keys in
+    the range, but the first key is not one of them.
+
+ -- Lars Wirzenius <liw@liw.fi>  Sat, 08 May 2010 21:05:55 +1200
+
 python-btree (0.5) squeeze; urgency=low
 
   * Fix emptied forests and empty trees handling. 
