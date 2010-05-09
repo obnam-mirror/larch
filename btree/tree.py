@@ -307,13 +307,29 @@ class BTree(object):
             assert isinstance(n2, btree.LeafNode)
             return self.new_leaf(n1.pairs() + n2.pairs())
 
-    def _can_merge_left(self, node, keys, i):
-        return (i > 0 and 
-                len(self.get_node(node[keys[i-1]])) < self.max_index_length)
+    def _can_merge_left(self, node, keys, i, child):
+        if i <= 0:
+            return False
+        left = self.get_node(node[keys[i-1]])
+        if isinstance(left, btree.IndexNode):
+            return len(left) < self.max_index_length
+        else:
+            assert isinstance(left, btree.LeafNode)
+            left_size = self.node_store.codec.leaf_size(left.pairs())
+            child_size = self.node_store.codec.leaf_size(child.pairs())
+            return left_size + child_size <= self.node_store.node_size
 
-    def _can_merge_right(self, node, keys, i):
-        return (i+1 < len(keys) and 
-                len(self.get_node(node[keys[i+1]])) < self.max_index_length)
+    def _can_merge_right(self, node, keys, i, child):
+        if i+1 >= len(keys):
+            return False
+        right = self.get_node(node[keys[i+1]])
+        if isinstance(right, btree.IndexNode):
+            return len(right) < self.max_index_length
+        else:
+            assert isinstance(right, btree.LeafNode)
+            right_size = self.node_store.codec.leaf_size(right.pairs())
+            child_size = self.node_store.codec.leaf_size(child.pairs())
+            return right_size + child_size <= self.node_store.node_size
 
     def _remove_from_minimal_index(self, node_id, key, child_key):
         node = self.get_node(node_id)
@@ -326,10 +342,10 @@ class BTree(object):
             i = keys.index(child_key)
 
             # If possible, merge with left or right sibling.
-            if self._can_merge_left(node, keys, i):
+            if self._can_merge_left(node, keys, i, child):
                 new_ones.append(self._merge(node[keys[i-1]], child.id))
                 exclude.append(keys[i-1])
-            elif self._can_merge_right(node, keys, i):
+            elif self._can_merge_right(node, keys, i, child):
                 new_ones.append(self._merge(node[keys[i+1]], child.id))
                 exclude.append(keys[i+1])
             else:
