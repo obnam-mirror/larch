@@ -307,6 +307,14 @@ class BTree(object):
             assert isinstance(n2, btree.LeafNode)
             return self.new_leaf(n1.pairs() + n2.pairs())
 
+    def _can_merge_left(self, node, keys, i):
+        return (i > 0 and 
+                len(self.get_node(node[keys[i-1]])) < self.max_index_length)
+
+    def _can_merge_right(self, node, keys, i):
+        return (i+1 < len(keys) and 
+                len(self.get_node(node[keys[i+1]])) < self.max_index_length)
+
     def _remove_from_minimal_index(self, node_id, key, child_key):
         node = self.get_node(node_id)
         exclude = [child_key]
@@ -318,12 +326,10 @@ class BTree(object):
             i = keys.index(child_key)
 
             # If possible, merge with left or right sibling.
-            if (i > 0 and 
-                len(self.get_node(node[keys[i-1]])) < self.max_index_length):
+            if self._can_merge_left(node, keys, i):
                 new_ones.append(self._merge(node[keys[i-1]], child.id))
                 exclude.append(keys[i-1])
-            elif (i+1 < len(keys) and 
-                  len(self.get_node(node[keys[i+1]])) < self.max_index_length):
+            elif self._can_merge_right(node, keys, i):
                 new_ones.append(self._merge(node[keys[i+1]], child.id))
                 exclude.append(keys[i+1])
             else:
