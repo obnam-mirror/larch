@@ -26,6 +26,7 @@
 # the lookups.
 
 
+import cProfile
 import os
 import random
 import shutil
@@ -43,11 +44,21 @@ def measure(keys, func):
     return end - start
 
 
+def profile(keys, func, basename):
+    def helper():
+        for key in keys:
+            func(key)
+    globaldict = globals().copy()
+    localdict = locals().copy()
+    cProfile.runctx('helper()', globaldict, localdict, '%s.prof' % basename)
+
+
 def main():
     location = sys.argv[1]
     n = int(sys.argv[2])
+    do_profile = True if sys.argv[3] == 'yes' else False
 
-    key_size = 8
+    key_size = 19
     value_size = 128
     node_size = 64*1024
 
@@ -73,16 +84,25 @@ def main():
     # Measure inserts.
     random.shuffle(keys)
     value = 'x' * value_size
-    insert_time = measure(keys, lambda key: tree.insert(key, value)) - looptime
-
+    if do_profile:
+        profile(keys, lambda key: tree.insert(key, value), 'insert')
+    else:
+        insert_time = measure(keys, lambda key: tree.insert(key, value))
+        
     # Measure lookups.
     random.shuffle(keys)
-    lookup_time = measure(keys, lambda key: tree.lookup(key)) - looptime
+    if do_profile:
+        profile(keys, tree.lookup, 'lookup')
+    else:
+        lookup_time = measure(keys, lambda key: tree.lookup(key)) - looptime
 
     # Report
-    print 'num_operations: %d' % n
-    print 'insert: %.3f s (%.1f/s)' % (insert_time, n/insert_time)
-    print 'lookup-time: %.3f s (%.1f/s)' % (lookup_time, n/lookup_time)
+    if do_profile:
+        print 'See insert.prof, lookup.prof for profiling data (try viewprof)'
+    else:
+        print 'num_operations: %d' % n
+        print 'insert: %.3f s (%.1f/s)' % (insert_time, n/insert_time)
+        print 'lookup-time: %.3f s (%.1f/s)' % (lookup_time, n/lookup_time)
 
     # Clean up
     if location:
