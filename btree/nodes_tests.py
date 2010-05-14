@@ -19,34 +19,59 @@ import unittest
 import btree
 
 
-class LeafNodeTests(unittest.TestCase):
+class NodeTests(unittest.TestCase):
 
     def setUp(self):
         self.node_id = 12765
-        self.leaf = btree.LeafNode(self.node_id, [('foo', 'bar')])
+        self.pairs = [('key2', 'value2'), ('key1', 'value1')]
+        self.node = btree.nodes.Node(self.node_id, self.pairs)
 
     def test_has_id(self):
-        self.assertEqual(self.leaf.id, self.node_id)
-        
+        self.assertEqual(self.node.id, self.node_id)
+
+    def test_has_each_pair(self):
+        for key, value in self.pairs:
+            self.assertEqual(self.node[key], value)
+
+    def test_raises_keyerror_for_missing_key(self):
+        self.assertRaises(KeyError, self.node.__getitem__, 'notexist')
+
+    def test_contains_each_key(self):
+        for key, value in self.pairs:
+            self.assert_(key in self.node)
+
+    def test_does_not_contain_wrong_key(self):
+        self.assertFalse('notexist' in self.node)
+
+    def test_is_equal_to_itself(self):
+        self.assert_(self.node == self.node)
+
+    def test_iterates_over_all_keys(self):
+        self.assertEqual([k for k in self.node], 
+                         sorted(k for k, v in self.pairs))
+
+    def test_has_correct_length(self):
+        self.assertEqual(len(self.node), len(self.pairs))
+
     def test_has_keys(self):
-        self.assertEqual(self.leaf.keys(), ['foo'])
-        
-    def test_has_value(self):
-        self.assertEqual(self.leaf['foo'], 'bar')
+        self.assertEqual(self.node.keys(), sorted(k for k, v in self.pairs))
 
     def test_sorts_keys(self):
-        leaf = btree.LeafNode(0, [('foo', 'foo'), ('bar', 'bar')])
-        self.assertEqual(leaf.keys(), sorted(['foo', 'bar']))
+        self.assertEqual(self.node.keys(), sorted(k for k, v in self.pairs))
 
-    def test_returns_first_key(self):
-        leaf = btree.LeafNode(0, [('foo', 'foo'), ('bar', 'bar')])
-        self.assertEqual(leaf.first_key(), 'bar')
+    def test_has_values(self):
+        self.assertEqual(self.node.values(), 
+                         [v for k, v in sorted(self.pairs)])
+
+    def test_returns_correct_first_key(self):
+        self.assertEqual(self.node.first_key(), 'key1')
 
     def test_returns_pairs(self):
-        self.assertEqual(self.leaf.pairs(), [('foo', 'bar')])
+        self.assertEqual(self.node.pairs(), sorted(self.pairs))
 
     def test_does_not_return_excluded_pairs(self):
-        self.assertEqual(self.leaf.pairs(exclude=['foo']), [])
+        self.assertEqual(self.node.pairs(exclude=['key1']), 
+                         [('key2', 'value2')])
 
 
 class IndexNodeTests(unittest.TestCase):
@@ -58,20 +83,6 @@ class IndexNodeTests(unittest.TestCase):
         self.index = btree.IndexNode(self.index_id,
                                      [('bar', self.leaf1.id), 
                                       ('foo', self.leaf2.id)])
-
-    def test_has_id(self):
-        self.assertEqual(self.index.id, self.index_id)
-        
-    def test_has_keys(self):
-        self.assertEqual(self.index.keys(), ['bar', 'foo'])
-        
-    def test_has_children(self):
-        self.assertEqual(sorted(self.index.values()), 
-                         sorted([self.leaf1.id, self.leaf2.id]))
-
-    def test_has_indexed_children(self):
-        self.assertEqual(self.index['bar'], self.leaf1.id)
-        self.assertEqual(self.index['foo'], self.leaf2.id)
 
     def test_finds_child_containing_key(self):
         self.assertEqual(self.index.find_key_for_child_containing('barbar'),

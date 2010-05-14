@@ -32,19 +32,19 @@ class Node(object):
         for k, v in self._pairs:
             if k == key:
                 return v
-        raise KeyError(key) # pragma: no cover
+        raise KeyError(key)
 
-    def __contains__(self, key): # pragma: no cover
+    def __contains__(self, key):
         return key in set(k for k, v in self._pairs)
 
-    def __eq__(self, other): # pragma: no cover
+    def __eq__(self, other):
         return self._pairs == other._pairs
 
-    def __iter__(self): # pragma: no cover
-        for key, value in self._pairs:
+    def __iter__(self):
+        for key, value in sorted(self._pairs):
             yield key
 
-    def __len__(self): # pragma: no cover
+    def __len__(self):
         return len(self._pairs)
 
     def keys(self):
