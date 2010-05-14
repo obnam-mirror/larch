@@ -28,6 +28,7 @@ class Node(object):
         self._pairs = sorted(pairs or [])
         self._dict = dict(pairs)
         self.id = node_id
+        self.size = None
 
     def __getitem__(self, key):
         return self._dict[key]

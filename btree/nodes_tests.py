@@ -29,6 +29,9 @@ class NodeTests(unittest.TestCase):
     def test_has_id(self):
         self.assertEqual(self.node.id, self.node_id)
 
+    def test_has_no_size(self):
+        self.assertEqual(self.node.size, None)
+
     def test_has_each_pair(self):
         for key, value in self.pairs:
             self.assertEqual(self.node[key], value)
