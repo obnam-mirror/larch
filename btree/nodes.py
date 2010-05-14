@@ -26,16 +26,14 @@ class Node(object):
 
     def __init__(self, node_id, pairs=None):
         self._pairs = sorted(pairs or [])
+        self._dict = dict(pairs)
         self.id = node_id
 
     def __getitem__(self, key):
-        for k, v in self._pairs:
-            if k == key:
-                return v
-        raise KeyError(key)
+        return self._dict[key]
 
     def __contains__(self, key):
-        return key in set(k for k, v in self._pairs)
+        return key in self._dict
 
     def __eq__(self, other):
         return self._pairs == other._pairs
@@ -49,15 +47,15 @@ class Node(object):
 
     def keys(self):
         '''Return keys in the node, sorted.'''
-        return sorted(k for k, v in self._pairs)
+        return [k for k, v in self._pairs]
 
     def values(self):
         '''Return value sin the key, in same order as keys.'''
-        return [self[k] for k in self.keys()]
+        return [v for k, v in self._pairs]
 
     def first_key(self):
         '''Return smallest key in the node.'''
-        return self.keys()[0]
+        return self._pairs[0][0]
 
     def pairs(self, exclude=None):
         '''Return (key, value) pairs in the node.
