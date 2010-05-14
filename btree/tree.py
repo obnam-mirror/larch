@@ -204,7 +204,10 @@ class BTree(object):
 
     def _insert_into_leaf(self, leaf_id, key, value):
         leaf = self.get_node(leaf_id)
-        pairs = sorted(leaf.pairs(exclude=[key]) + [(key, value)])
+        if key in leaf:
+            pairs = sorted(leaf.pairs(exclude=[key]) + [(key, value)])
+        else:
+            pairs = sorted(leaf.pairs() + [(key, value)])
         if self.node_store.codec.leaf_size(pairs) <= self.node_store.node_size:
             return self.new_leaf(pairs), None
         else:
@@ -307,6 +310,11 @@ class BTree(object):
             assert isinstance(n2, btree.LeafNode)
             return self.new_leaf(n1.pairs() + n2.pairs())
 
+    def _leaf_size(self, node):
+        if node.size is None:
+            node.size = self.node_store.codec.leaf_size(node.pairs())
+        return node.size
+
     def _can_merge_left(self, node, keys, i, child):
         if i <= 0:
             return False
@@ -315,8 +323,8 @@ class BTree(object):
             return len(left) < self.max_index_length
         else:
             assert isinstance(left, btree.LeafNode)
-            left_size = self.node_store.codec.leaf_size(left.pairs())
-            child_size = self.node_store.codec.leaf_size(child.pairs())
+            left_size = self._leaf_size(left)
+            child_size = self._leaf_size(child)
             return left_size + child_size <= self.node_store.node_size
 
     def _can_merge_right(self, node, keys, i, child):
@@ -327,8 +335,8 @@ class BTree(object):
             return len(right) < self.max_index_length
         else:
             assert isinstance(right, btree.LeafNode)
-            right_size = self.node_store.codec.leaf_size(right.pairs())
-            child_size = self.node_store.codec.leaf_size(child.pairs())
+            right_size = self._leaf_size(right)
+            child_size = self._leaf_size(child)
             return right_size + child_size <= self.node_store.node_size
 
     def _remove_from_minimal_index(self, node_id, key, child_key):

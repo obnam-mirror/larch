@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-class Node(dict):
+class Node(object):
 
     '''Abstract base class for index and leaf nodes.
     
@@ -25,16 +25,38 @@ class Node(dict):
     '''
 
     def __init__(self, node_id, pairs=None):
-        dict.__init__(self, pairs or [])
+        self._pairs = sorted(pairs or [])
+        self._dict = dict(pairs)
         self.id = node_id
+        self.size = None
+
+    def __getitem__(self, key):
+        return self._dict[key]
+
+    def __contains__(self, key):
+        return key in self._dict
+
+    def __eq__(self, other):
+        return self._pairs == other._pairs
+
+    def __iter__(self):
+        for key, value in self._pairs:
+            yield key
+
+    def __len__(self):
+        return len(self._pairs)
 
     def keys(self):
         '''Return keys in the node, sorted.'''
-        return sorted(dict.keys(self))
+        return [k for k, v in self._pairs]
+
+    def values(self):
+        '''Return value sin the key, in same order as keys.'''
+        return [v for k, v in self._pairs]
 
     def first_key(self):
         '''Return smallest key in the node.'''
-        return self.keys()[0]
+        return self._pairs[0][0]
 
     def pairs(self, exclude=None):
         '''Return (key, value) pairs in the node.
@@ -45,8 +67,9 @@ class Node(dict):
         '''
 
         if exclude is None:
-            exclude = []
-        return sorted((key, self[key]) for key in self if key not in exclude)
+            return self._pairs
+        else:
+            return [(k, v) for k, v in self._pairs if k not in exclude]
 
 
 class LeafNode(Node):
