@@ -66,8 +66,9 @@ class Node(object):
         '''
 
         if exclude is None:
-            exclude = []
-        return [(k, v) for k, v in self._pairs if k not in exclude]
+            return self._pairs
+        else:
+            return [(k, v) for k, v in self._pairs if k not in exclude]
 
 
 class LeafNode(Node):
