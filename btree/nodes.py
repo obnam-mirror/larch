@@ -25,7 +25,7 @@ class Node(object):
     '''
 
     def __init__(self, node_id, pairs=None):
-        self._pairs = pairs or []
+        self._pairs = sorted(pairs or [])
         self.id = node_id
 
     def __getitem__(self, key):
@@ -41,7 +41,7 @@ class Node(object):
         return self._pairs == other._pairs
 
     def __iter__(self):
-        for key, value in sorted(self._pairs):
+        for key, value in self._pairs:
             yield key
 
     def __len__(self):
@@ -69,7 +69,7 @@ class Node(object):
 
         if exclude is None:
             exclude = []
-        return sorted((k, v) for k, v in self._pairs if k not in exclude)
+        return [(k, v) for k, v in self._pairs if k not in exclude]
 
 
 class LeafNode(Node):
