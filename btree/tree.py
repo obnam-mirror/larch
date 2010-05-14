@@ -204,7 +204,10 @@ class BTree(object):
 
     def _insert_into_leaf(self, leaf_id, key, value):
         leaf = self.get_node(leaf_id)
-        pairs = sorted(leaf.pairs(exclude=[key]) + [(key, value)])
+        if key in leaf:
+            pairs = sorted(leaf.pairs(exclude=[key]) + [(key, value)])
+        else:
+            pairs = sorted(leaf.pairs() + [(key, value)])
         if self.node_store.codec.leaf_size(pairs) <= self.node_store.node_size:
             return self.new_leaf(pairs), None
         else:
