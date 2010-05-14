@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-class Node(dict):
+class Node(object):
 
     '''Abstract base class for index and leaf nodes.
     
@@ -25,12 +25,35 @@ class Node(dict):
     '''
 
     def __init__(self, node_id, pairs=None):
-        dict.__init__(self, pairs or [])
+        self._pairs = pairs or []
         self.id = node_id
+
+    def __getitem__(self, key):
+        for k, v in self._pairs:
+            if k == key:
+                return v
+        raise KeyError(key) # pragma: no cover
+
+    def __contains__(self, key): # pragma: no cover
+        return key in set(k for k, v in self._pairs)
+
+    def __eq__(self, other): # pragma: no cover
+        return self._pairs == other._pairs
+
+    def __iter__(self): # pragma: no cover
+        for key, value in self._pairs:
+            yield key
+
+    def __len__(self): # pragma: no cover
+        return len(self._pairs)
 
     def keys(self):
         '''Return keys in the node, sorted.'''
-        return sorted(dict.keys(self))
+        return sorted(k for k, v in self._pairs)
+
+    def values(self):
+        '''Return value sin the key, in same order as keys.'''
+        return [self[k] for k in self.keys()]
 
     def first_key(self):
         '''Return smallest key in the node.'''
@@ -46,7 +69,7 @@ class Node(dict):
 
         if exclude is None:
             exclude = []
-        return sorted((key, self[key]) for key in self if key not in exclude)
+        return sorted((k, v) for k, v in self._pairs if k not in exclude)
 
 
 class LeafNode(Node):
