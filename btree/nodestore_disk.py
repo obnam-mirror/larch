@@ -15,6 +15,7 @@
 
 
 import ConfigParser
+import lru
 import os
 import StringIO
 import struct
@@ -113,6 +114,7 @@ class NodeStoreDisk(btree.NodeStore):
         self.metadata_name = os.path.join(dirname, 'metadata')
         self.metadata = None
         self.rs = RefcountStore(self)
+        self.cache = lru.LRUCache(100)
 
     def read_file(self, filename):
         return file(filename).read()
@@ -181,16 +183,23 @@ class NodeStoreDisk(btree.NodeStore):
         if self.file_exists(name):
             raise btree.NodeExists(node.id)
         self.write_file(name, encoded_node)
+        self.cache.add(node.id, node)
         
     def get_node(self, node_id):
+        node = self.cache.get(node_id)
+        if node is not None:
+            return node
         name = self.pathname(node_id)
         if self.file_exists(name):
             encoded = self.read_file(name)
-            return self.codec.decode(encoded)
+            node = self.codec.decode(encoded)
+            self.cache.add(node.id, node)
+            return node
         else:
             raise btree.NodeMissing(node_id)
     
     def remove_node(self, node_id):
+        self.cache.add(node_id, None)
         name = self.pathname(node_id)
         if self.file_exists(name):
             self.remove_file(name)

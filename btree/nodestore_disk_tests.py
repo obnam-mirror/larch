@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import lru
 import os
 import shutil
 import tempfile
@@ -146,4 +147,10 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
     def test_put_refuses_too_large_a_node(self):
         node = btree.LeafNode(0, [('000', 'x' * (self.node_size + 1))])
         self.assertRaises(btree.NodeTooBig, self.ns.put_node, node)
+        
+    def test_puts_and_gets_same_with_cache_emptied(self):
+        node = btree.LeafNode(0, [])
+        self.ns.put_node(node)
+        self.ns.cache = lru.LRUCache(100)
+        self.assertEqualNodes(self.ns.get_node(0), node)
 
