@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 7.3.8), python-support (>= 1.0.3),
 
 Package: python-btree
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python (>= 2.5)
+Depends: ${python:Depends}, ${misc:Depends}, python (>= 2.5), python-lru
 Description: B-tree library for Python
  The btree Python library implements the copy-on-write B-trees designed by
  Odah Rodeh.
