@@ -19,6 +19,11 @@ import struct
 import btree
 
 
+class CodecError(Exception):
+
+    pass
+
+
 class NodeCodec(object):
 
     '''Encode and decode nodes from their binary format.
@@ -38,7 +43,7 @@ class NodeCodec(object):
     
     def __init__(self, key_bytes):
         self.key_bytes = key_bytes
-        self.leaf_header_size = struct.calcsize('!cQI')
+        self.leaf_header_size = struct.calcsize('!4sQI')
         
     def leaf_size(self, pairs):
         '''Return size of a leaf node with the given pairs.'''
@@ -47,7 +52,7 @@ class NodeCodec(object):
                 sum([len(value) for key, value in pairs]))
 
     def leaf_format(self, pairs):
-        return ('!cQI' + ('%ds' % self.key_bytes) * len(pairs) + 
+        return ('!4sQI' + ('%ds' % self.key_bytes) * len(pairs) + 
                 'I' * len(pairs) +
                 ''.join('%ds' % len(value) for key, value in pairs))
 
@@ -56,7 +61,7 @@ class NodeCodec(object):
 
         pairs = node.pairs()
         fmt = self.leaf_format(pairs)
-        return struct.pack(fmt, *(['L', node.id, len(pairs)] +
+        return struct.pack(fmt, *(['ORBL', node.id, len(pairs)] +
                                     [key for key, value in pairs] +
                                     [len(value) for key, value in pairs] +
                                     [value for key, value in pairs]))
@@ -65,8 +70,11 @@ class NodeCodec(object):
         '''Decode a leaf node from its encoded byte string.'''
 
         buf = buffer(encoded)
-        el, node_id, num_pairs = struct.unpack_from('!cQI', buf)
-        fmt = ('!cQI' + ('%ds' % self.key_bytes) * num_pairs + 
+        cookie, node_id, num_pairs = struct.unpack_from('!4sQI', buf)
+        if cookie != 'ORBL':
+            raise CodecError('Leaf node does not begin with magic cookie '
+                             '(should be ORBL, is %s)' % repr(cookie))
+        fmt = ('!4sQI' + ('%ds' % self.key_bytes) * num_pairs + 
                 'I' * num_pairs)
         items = struct.unpack_from(fmt, buf)
         keys = items[3:3+num_pairs]
@@ -83,7 +91,7 @@ class NodeCodec(object):
 
     def max_index_pairs(self, node_size): # pragma: no cover
         '''Return number of index pairs that fit in a node of a given size.'''
-        index_header_size = struct.calcsize('!cQI')
+        index_header_size = struct.calcsize('!4sQI')
         index_pair_size = struct.calcsize('%dsQ' % self.key_bytes)
         return (node_size - index_header_size) / index_pair_size
         
@@ -93,7 +101,7 @@ class NodeCodec(object):
         return struct.calcsize(fmt)
 
     def index_format(self, pairs):
-        return ('!cQI' + ('%ds' % self.key_bytes) * len(pairs) + 
+        return ('!4sQI' + ('%ds' % self.key_bytes) * len(pairs) + 
                 'Q' * len(pairs))
         
     def encode_index(self, node):
@@ -101,7 +109,7 @@ class NodeCodec(object):
 
         pairs = node.pairs()
         fmt = self.index_format(pairs)
-        return struct.pack(fmt, *(['I', node.id, len(pairs)] +
+        return struct.pack(fmt, *(['ORBI', node.id, len(pairs)] +
                                   [key for key, child_id in pairs] +
                                   [child_id for key, child_id in pairs]))
 
@@ -109,8 +117,13 @@ class NodeCodec(object):
         '''Decode an index node from its encoded byte string.'''
 
         buf = buffer(encoded)
-        eye, node_id, num_pairs = struct.unpack_from('!cQI', buf)
-        fmt = ('!cQI' + ('%ds' % self.key_bytes) * num_pairs + 'Q' * num_pairs)
+        cookie, node_id, num_pairs = struct.unpack_from('!4sQI', buf)
+        if cookie != 'ORBI':
+            raise CodecError('Index node does not begin with magic cookie '
+                             '(should be ORBI, is %s)' % repr(cookie))
+        fmt = ('!4sQI' + 
+               ('%ds' % self.key_bytes) * num_pairs + 
+               'Q' * num_pairs)
         items = struct.unpack(fmt, encoded)
         keys = items[3:3+num_pairs]
         child_ids = items[3+num_pairs:]
@@ -126,10 +139,13 @@ class NodeCodec(object):
             return self.encode_index(node)
 
     def decode(self, encoded):
-        if encoded.startswith('L'):
+        if encoded.startswith('ORBL'):
             return self.decode_leaf(encoded)
-        else:
+        elif encoded.startswith('ORBI'):
             return self.decode_index(encoded)
+        else:
+            raise CodecError('Unknown magic cookie in encoded node (%s)' %
+                             repr(encoded[:4]))
 
     def size(self, node):
         if isinstance(node, btree.LeafNode):

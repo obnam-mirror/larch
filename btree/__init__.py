@@ -18,7 +18,7 @@ version = '0.9'
 
 
 from nodes import LeafNode, IndexNode
-from codec import NodeCodec
+from codec import NodeCodec, CodecError
 from tree import BTree, KeySizeMismatch
 from forest import Forest
 from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig, 

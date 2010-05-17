@@ -58,3 +58,12 @@ class NodeCodecTests(unittest.TestCase):
         encoded = self.codec.encode(self.index)
         self.assertEqual(self.codec.decode(encoded), self.index)
 
+    def test_decode_leaf_raises_error_for_garbage(self):
+        self.assertRaises(btree.CodecError, self.codec.decode_leaf, 'x'*1000)
+
+    def test_decode_index_raises_error_for_garbage(self):
+        self.assertRaises(btree.CodecError, self.codec.decode_index, 'x'*1000)
+
+    def test_decode_raises_error_for_garbage(self):
+        self.assertRaises(btree.CodecError, self.codec.decode, 'x'*1000)
+
