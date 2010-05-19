@@ -130,6 +130,10 @@ class BTreeTests(unittest.TestCase):
         self.tree.insert('foo', 'bar')
         self.assertEqual(self.tree.lookup('foo'), 'bar')
 
+    def test_insert_inserts_empty_value(self):
+        self.tree.insert('foo', '')
+        self.assertEqual(self.tree.lookup('foo'), '')
+
     def test_insert_replaces_value_for_existing_key(self):
         self.tree.insert('foo', 'foo')
         self.tree.insert('foo', 'bar')
