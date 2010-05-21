@@ -199,7 +199,7 @@ class NodeStoreDisk(btree.NodeStore):
             raise btree.NodeMissing(node_id)
     
     def remove_node(self, node_id):
-        self.cache.add(node_id, None)
+        self.cache.remove(node_id)
         name = self.pathname(node_id)
         if self.file_exists(name):
             self.remove_file(name)
