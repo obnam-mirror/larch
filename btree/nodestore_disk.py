@@ -15,6 +15,7 @@
 
 
 import ConfigParser
+import heapq
 import lru
 import os
 import StringIO
@@ -87,6 +88,56 @@ class RefcountStore(object):
         return [(start_id + i, counts[i]) for i in range(how_many)]
 
 
+class UploadQueue(object):
+
+    def __init__(self, really_put, max_length):
+        self.really_put = really_put
+        self.max = max_length
+        self.order = list()
+        self.counters = dict()
+        self.ids = dict()
+        self.counter = 0
+        
+    def put(self, node):
+        self.counter += 1
+        heapq.heappush(self.order, self.counter)
+        self.counters[self.counter] = node
+        self.ids[node.id] = self.counter
+        while len(self.order) > self.max:
+            self._push_oldest()
+
+    def _push_oldest(self):
+        if self.order:
+            counter = heapq.heappop(self.order)
+            if counter in self.counters:
+                node = self.counters[counter]
+                del self.counters[counter]
+                del self.ids[node.id]
+                self.really_put(node)
+
+    def push(self):
+        while self.order:
+            self._push_oldest()
+    
+    def remove(self, node_id):
+        if node_id in self.ids:
+            counter = self.ids[node_id]
+            del self.counters[counter]
+            del self.ids[node_id]
+            return True
+        else:
+            return False
+        
+    def list_ids(self):
+        return self.ids.keys()
+        
+    def get(self, node_id):
+        if node_id not in self.ids:
+            return None
+        counter = self.ids[node_id]
+        return self.counters[counter]
+
+
 class NodeStoreDisk(btree.NodeStore):
 
     '''An implementation of btree.NodeStore API for on-disk storage.
@@ -108,13 +159,15 @@ class NodeStoreDisk(btree.NodeStore):
 
     refcounts_per_group = 2**15
 
-    def __init__(self, dirname, node_size, codec):
+    def __init__(self, dirname, node_size, codec, upload_max=128*1000):
         btree.NodeStore.__init__(self, node_size, codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
         self.metadata = None
         self.rs = RefcountStore(self)
         self.cache = lru.LRUCache(100)
+        self.upload_max = upload_max
+        self.upload_queue = UploadQueue(self._really_put_node, self.upload_max)
 
     def read_file(self, filename):
         return file(filename).read()
@@ -176,6 +229,13 @@ class NodeStoreDisk(btree.NodeStore):
         return os.path.join(self.dirname, '%d.node' % node_id)
         
     def put_node(self, node):
+        self.cache.add(node.id, node)
+        self.upload_queue.put(node)
+
+    def push_upload_queue(self):
+        self.upload_queue.push()
+
+    def _really_put_node(self, node):
         encoded_node = self.codec.encode(node)
         if len(encoded_node) > self.node_size:
             raise btree.NodeTooBig(node.id, len(encoded_node))
@@ -183,12 +243,16 @@ class NodeStoreDisk(btree.NodeStore):
         if self.file_exists(name):
             raise btree.NodeExists(node.id)
         self.write_file(name, encoded_node)
-        self.cache.add(node.id, node)
         
     def get_node(self, node_id):
         node = self.cache.get(node_id)
         if node is not None:
             return node
+
+        node = self.upload_queue.get(node_id)
+        if node is not None:
+            return node
+
         name = self.pathname(node_id)
         if self.file_exists(name):
             encoded = self.read_file(name)
@@ -200,6 +264,9 @@ class NodeStoreDisk(btree.NodeStore):
     
     def remove_node(self, node_id):
         self.cache.remove(node_id)
+        if self.upload_queue.remove(node_id):
+            return
+
         name = self.pathname(node_id)
         if self.file_exists(name):
             self.remove_file(name)
@@ -207,9 +274,11 @@ class NodeStoreDisk(btree.NodeStore):
             raise btree.NodeMissing(node_id)
         
     def list_nodes(self):
-        return [int(x[:-len('.node')])
-                for x in self.listdir(self.dirname)
-                if x.endswith('.node')]
+        queued = self.upload_queue.list_ids()
+        basenames = self.listdir(self.dirname)
+        nodenames = [x for x in basenames if x.endswith('.node')]
+        uploaded = [int(x[:-len('.node')]) for x in nodenames]
+        return queued + uploaded
 
     def get_refcount(self, node_id):
         return self.rs.get_refcount(node_id)

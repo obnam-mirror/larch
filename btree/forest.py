@@ -67,6 +67,7 @@ class Forest(object):
 
     def commit(self):
         '''Make sure all changes are stored into the node store.'''
+        self.node_store.push_upload_queue()
         self.node_store.set_metadata('last_id', self.last_id)
         root_ids = ','.join('%d' % t.root_id 
                             for t in self.trees 

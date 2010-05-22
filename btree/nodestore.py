@@ -137,6 +137,9 @@ class NodeStore(object): # pragma: no cover
     def list_nodes(self):
         '''Return list of ids of all nodes in store.'''
 
+    def push_upload_queue(self):
+        '''Make sure all changes to nodes have been uploaded.'''
+
     def get_refcount(self, node_id):
         '''Return the reference count for a node.'''
 
@@ -230,9 +233,18 @@ class NodeStoreTests(object): # pragma: no cover
     def test_puts_and_gets_same(self):
         node = btree.LeafNode(0, [])
         self.ns.put_node(node)
+        self.ns.push_upload_queue()
         self.assertEqualNodes(self.ns.get_node(0), node)
 
     def test_removes_node(self):
+        node = btree.LeafNode(0, [])
+        self.ns.put_node(node)
+        self.ns.push_upload_queue()
+        self.ns.remove_node(0)
+        self.assertRaises(NodeMissing, self.ns.get_node, 0)
+        self.assertEqual(self.ns.list_nodes(), [])
+
+    def test_removes_node_from_upload_queue_if_one_exists(self):
         node = btree.LeafNode(0, [])
         self.ns.put_node(node)
         self.ns.remove_node(0)
@@ -242,13 +254,17 @@ class NodeStoreTests(object): # pragma: no cover
     def test_lists_node_zero(self):
         node = btree.LeafNode(0, [])
         self.ns.put_node(node)
+        self.ns.push_upload_queue()
         node_ids = self.ns.list_nodes()
         self.assertEqual(node_ids, [node.id])
 
     def test_put_refuses_to_overwrite_a_node(self):
         node = btree.LeafNode(0, [])
-        self.ns.put_node(node)
-        self.assertRaises(NodeExists, self.ns.put_node, node)
+        def helper(node):
+            self.ns.put_node(node)
+            self.ns.push_upload_queue()
+        helper(node)
+        self.assertRaises(NodeExists, helper, node)
 
     def test_remove_raises_nodemissing_if_node_does_not_exist(self):
         self.assertRaises(NodeMissing, self.ns.remove_node, 0)
