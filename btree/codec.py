@@ -54,7 +54,7 @@ class NodeCodec(object):
     def leaf_format(self, pairs):
         return ('!4sQI' + ('%ds' % self.key_bytes) * len(pairs) + 
                 'I' * len(pairs) +
-                ''.join('%ds' % len(value) for key, value in pairs))
+                ''.join(['%ds' % len(value) for key, value in pairs]))
 
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
