@@ -16,6 +16,7 @@
 
 import ConfigParser
 import heapq
+import logging
 import lru
 import os
 import StringIO
