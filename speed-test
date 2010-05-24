@@ -56,6 +56,10 @@ def profile(keys, func, final, basename):
 
 
 def main():
+    if False:
+        import logging
+        logging.basicConfig(filename='btree.log', level=logging.DEBUG)
+
     location = sys.argv[1]
     n = int(sys.argv[2])
     do_profile = True if sys.argv[3] == 'yes' else False
