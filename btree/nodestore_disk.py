@@ -159,7 +159,7 @@ class NodeStoreDisk(btree.NodeStore):
 
     refcounts_per_group = 2**15
 
-    def __init__(self, dirname, node_size, codec, upload_max=128*1000):
+    def __init__(self, dirname, node_size, codec, upload_max=64):
         btree.NodeStore.__init__(self, node_size, codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
