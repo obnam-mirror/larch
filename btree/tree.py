@@ -187,6 +187,7 @@ class BTree(object):
         a, b = self._insert(self.root.id, key, value)
         if b is None:
             self.new_root(a.pairs())
+            self.decrement(a.id)
         else:
             self.new_root([(a.first_key(), a.id), (b.first_key(), b.id)])
         self.decrement(old_root_id)
