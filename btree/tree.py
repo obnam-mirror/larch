@@ -402,4 +402,5 @@ class BTree(object):
                 for key, child_id in node.pairs():
                     self.decrement(child_id)
             self.node_store.remove_node(node_id)
+            self.node_store.set_refcount(node_id, 0)
 
