@@ -36,18 +36,20 @@ import time
 import btree
 
 
-def measure(keys, func):
+def measure(keys, func, final):
     start = time.clock()
     for key in keys:
         func(key)
+    final()
     end = time.clock()
     return end - start
 
 
-def profile(keys, func, basename):
+def profile(keys, func, final, basename):
     def helper():
         for key in keys:
             func(key)
+        final()
     globaldict = globals().copy()
     localdict = locals().copy()
     cProfile.runctx('helper()', globaldict, localdict, '%s.prof' % basename)
@@ -79,22 +81,25 @@ def main():
     keys = ['%0*d' % (key_size, i) for i in xrange(n)]
     
     # Calibrate.
-    looptime = measure(keys, lambda key: None)
+    looptime = measure(keys, lambda key: None, lambda: None)
 
     # Measure inserts.
     random.shuffle(keys)
     value = 'x' * value_size
     if do_profile:
-        profile(keys, lambda key: tree.insert(key, value), 'insert')
+        profile(keys, lambda key: tree.insert(key, value), 
+                lambda: forest.commit(), 'insert')
     else:
-        insert_time = measure(keys, lambda key: tree.insert(key, value))
+        insert_time = measure(keys, lambda key: tree.insert(key, value),
+                              lambda: forest.commit())
         
     # Measure lookups.
     random.shuffle(keys)
     if do_profile:
-        profile(keys, tree.lookup, 'lookup')
+        profile(keys, tree.lookup, lambda: None, 'lookup')
     else:
-        lookup_time = measure(keys, lambda key: tree.lookup(key)) - looptime
+        lookup_time = measure(keys, lambda key: tree.lookup(key),
+                              lambda: None) - looptime
 
     # Report
     if do_profile:
