@@ -29,7 +29,7 @@ class RefcountStore(object):
 
     '''Store node reference counts.'''
 
-    per_group = 2
+    per_group = 2**15
 
     def __init__(self, node_store):
         self.node_store = node_store
