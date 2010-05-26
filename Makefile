@@ -22,5 +22,5 @@ check: all
 	rm .coverage
 	
 clean:
-	rm -f .coverage *.py[co] btree/*.py[co] 
+	rm -f .coverage *.py[co] btree/*.py[co] insert.prof lookup.prof
 	rm -rf build
