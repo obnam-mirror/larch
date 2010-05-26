@@ -1,3 +1,9 @@
+python-btree (0.10) UNRELEASED; urgency=low
+
+  * Start new development.
+
+ -- Lars Wirzenius <liw@liw.fi>  Thu, 27 May 2010 00:47:44 +1200
+
 python-btree (0.9) squeeze; urgency=low
 
   * Add check that setup.py (i.e., btree/__init__.py) and debian/changelog

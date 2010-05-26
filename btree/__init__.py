@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = '0.9'
+version = '0.10'
 
 
 from nodes import LeafNode, IndexNode
