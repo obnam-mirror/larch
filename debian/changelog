@@ -4,7 +4,7 @@ python-btree (0.9) UNRELEASED; urgency=low
     agree on version. 
   * Node and NodeCodec have been optimized a bit. 
   * NodeStoreDisk uses small LRU cache to avoid repeatedly reading the same
-    nodes from disk.
+    nodes from disk. This adds dependency on python-lru.
   * NodeCodec uses four-byte magic cookies, instead of one-byte ones.
 
  -- Lars Wirzenius <liw@liw.fi>  Fri, 14 May 2010 21:50:02 +1200

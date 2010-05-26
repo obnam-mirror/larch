@@ -1,0 +1,21 @@
+NEWS for btree
+==============
+
+These are the release notes for btree, a Python implementation of a
+copy-on-write tree, designed by Odah Rodeh.
+
+
+Version 0.9, released 2010-05-26
+--------------------------------
+
+* Several speed optimizations.
+* One of this requires a Least-Recently-Used cache, which is provided by
+  my python-lru package. That is now a dependency.
+* NodeStoreDisk now has an upload queue. This is so that when a node gets
+  immediately overwritten, it can be removed from the queue, i.e.,
+  removed before it gets encoded and written at all. This provides quite
+  significant speedups.
+* A bug fix for reference counting of index node is fixed. This allows
+  the speedups from the upload queue to actually occur.
+* On-disk node encodings have changed. Anything written by previous
+  versions is now unusable.
