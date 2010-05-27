@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
 import struct
 
 import btree
@@ -83,12 +84,14 @@ class BTree(object):
     def new_leaf(self, pairs):
         '''Create a new leaf node and keep track of it.'''
         leaf = btree.LeafNode(self.new_id(), pairs)
+        logging.debug('new leaf %d' % leaf.id)
         self.node_store.put_node(leaf)
         return leaf
         
     def new_index(self, pairs):
         '''Create a new index node and keep track of it.'''
         index = btree.IndexNode(self.new_id(), pairs)
+        logging.debug('new index %d' % index.id)
         self.node_store.put_node(index)
         for key, child_id in pairs:
             self.increment(child_id)
@@ -97,6 +100,7 @@ class BTree(object):
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
         root = self.new_index(pairs)
+        logging.debug('new root %d' % root.id)
         self.root_id = root.id
         self.node_store.set_refcount(root.id, 1)
 
@@ -264,7 +268,8 @@ class BTree(object):
         If key is not in the tree, ``KeyValue`` is raised.
         
         '''
-        
+    
+        logging.debug('removing key %s' % key)    
         self.check_key_size(key)
         if self.root_id is None:
             raise KeyError(key)
@@ -274,6 +279,7 @@ class BTree(object):
             self.new_root([])
         else:
             self.new_root(a.pairs())
+            self.decrement(a.id)
         self.decrement(old_root_id)
 
     def _remove(self, node_id, key):
@@ -347,6 +353,7 @@ class BTree(object):
         child = self._remove(node[child_key], key)
 
         if child is not None:
+            logging.debug('temp child in minimal %d' % child.id)
             keys = node.keys()
             i = keys.index(child_key)
 
@@ -354,28 +361,38 @@ class BTree(object):
             if self._can_merge_left(node, keys, i, child):
                 new_ones.append(self._merge(node[keys[i-1]], child.id))
                 exclude.append(keys[i-1])
+                decrement = child.id
             elif self._can_merge_right(node, keys, i, child):
                 new_ones.append(self._merge(node[keys[i+1]], child.id))
                 exclude.append(keys[i+1])
+                decrement = child.id
             else:
                 new_ones.append(child)
         
         others = node.pairs(exclude=exclude)
         if others + new_ones:
-            return self.new_index(others + 
-                                  [(n.first_key(), n.id) for n in new_ones])
+            result = self.new_index(others + 
+                                    [(n.first_key(), n.id) for n in new_ones])
+            logging.debug('result from minimal index %d' % result.id)
         else:
-            return None
+            result = None
+            logging.debug('result from minimal index None')
+        if child is not None and child not in new_ones:
+            self.decrement(child.id)
+        return result
 
     def _remove_from_nonminimal_index(self, node_id, key, child_key):
         node = self.get_node(node_id)
         child = self._remove(node[child_key], key)
         pairs = node.pairs(exclude=[child_key])
         if child is not None:
+            logging.debug('temp child in nonminimal %d' % child.id)
             pairs += [(child.first_key(), child.id)]
         pairs.sort()
         assert pairs
-        return self.new_index(pairs)
+        result = self.new_index(pairs)
+        logging.debug('result from nonmiminal index %d' % result.id)
+        return result
 
     def remove_range(self, minkey, maxkey):
         '''Remove all keys in the given range.
