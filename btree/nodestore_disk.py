@@ -230,6 +230,7 @@ class NodeStoreDisk(btree.NodeStore):
         return os.path.join(self.dirname, '%d.node' % node_id)
         
     def put_node(self, node):
+        logging.debug('put %d' % node.id)
         self.cache.add(node.id, node)
         self.upload_queue.put(node)
 
@@ -237,6 +238,7 @@ class NodeStoreDisk(btree.NodeStore):
         self.upload_queue.push()
 
     def _really_put_node(self, node):
+        logging.debug('really put %d' % node.id)
         encoded_node = self.codec.encode(node)
         if len(encoded_node) > self.node_size:
             raise btree.NodeTooBig(node.id, len(encoded_node))
@@ -266,11 +268,13 @@ class NodeStoreDisk(btree.NodeStore):
     def remove_node(self, node_id):
         self.cache.remove(node_id)
         if self.upload_queue.remove(node_id):
+            logging.debug('remove from upload queue %d' % node_id)
             return
 
         name = self.pathname(node_id)
         if self.file_exists(name):
             self.remove_file(name)
+            logging.debug('remove from disk %d' % node_id)
         else:
             raise btree.NodeMissing(node_id)
         
