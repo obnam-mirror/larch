@@ -321,7 +321,7 @@ class BTree(object):
             return False
         left = self.get_node(node[keys[i-1]])
         if isinstance(left, btree.IndexNode):
-            return len(left) < self.max_index_length
+            return len(node) + len(left) <= self.max_index_length
         else:
             assert isinstance(left, btree.LeafNode)
             left_size = self._leaf_size(left)
@@ -333,7 +333,7 @@ class BTree(object):
             return False
         right = self.get_node(node[keys[i+1]])
         if isinstance(right, btree.IndexNode):
-            return len(right) < self.max_index_length
+            return len(node) + len(right) <= self.max_index_length
         else:
             assert isinstance(right, btree.LeafNode)
             right_size = self._leaf_size(right)
