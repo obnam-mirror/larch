@@ -351,7 +351,7 @@ class BTree(object):
         exclude = [child_key]
         new_ones = []
         child = self._remove(node[child_key], key)
-
+        
         if child is not None:
             logging.debug('temp child in minimal %d' % child.id)
             keys = node.keys()
@@ -361,13 +361,13 @@ class BTree(object):
             if self._can_merge_left(node, keys, i, child):
                 new_ones.append(self._merge(node[keys[i-1]], child.id))
                 exclude.append(keys[i-1])
-                decrement = child.id
             elif self._can_merge_right(node, keys, i, child):
                 new_ones.append(self._merge(node[keys[i+1]], child.id))
                 exclude.append(keys[i+1])
-                decrement = child.id
             else:
                 new_ones.append(child)
+        else:
+            logging.debug('lost child %s in minimal' % node[child_key])
         
         others = node.pairs(exclude=exclude)
         if others + new_ones:
