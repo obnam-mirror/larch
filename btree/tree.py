@@ -278,7 +278,13 @@ class BTree(object):
         if a is None:
             self.new_root([])
         else:
-            self.new_root(a.pairs())
+            pairs = a.pairs()
+            while len(pairs) == 1:
+                aa = self.get_node(pairs[0][1])
+                if isinstance(aa, btree.LeafNode):
+                    break
+                pairs = aa.pairs()
+            self.new_root(pairs)
             self.decrement(a.id)
         self.decrement(old_root_id)
 
