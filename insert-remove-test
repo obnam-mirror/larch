@@ -27,6 +27,7 @@
 
 
 import cProfile
+import logging
 import os
 import random
 import shutil
@@ -43,6 +44,32 @@ def do_it(keys, func, final):
     final()
     end = time.clock()
     return end - start
+
+
+def assert_refcounts_are_one(tree):
+    def helper(node_id):
+        refcount = tree.node_store.rs.get_refcount(node_id)
+        assert refcount == 1, 'id=%d refcount=%d' % (node_id, refcount)
+        node = tree.get_node(node_id)
+        if isinstance(node, btree.IndexNode):
+            for key, child_id in node.pairs():
+                helper(child_id)
+    helper(tree.root_id)
+
+
+def do_insert(tree, key, value):
+    logging.debug('do_insert(%s)' % (repr(key)))
+    if tree.root_id is not None:
+        assert_refcounts_are_one(tree)
+    tree.insert(key, value)
+    assert_refcounts_are_one(tree)
+
+
+def do_remove(tree, key):
+    logging.debug('do_remove(%s)' % (repr(key)))
+    assert_refcounts_are_one(tree)
+    tree.remove(key)
+    assert_refcounts_are_one(tree)
 
 
 def main():
@@ -78,14 +105,15 @@ def main():
     # Do inserts.
     value = 'x' * value_size
     logging.debug('start inserts')
-    do_it(keys, lambda key: tree.insert(key, value), lambda: forest.commit())
+    do_it(keys, lambda key: do_insert(tree, key, value), 
+          lambda: forest.commit())
     logging.debug('# nodes: %d' % len(ns.list_nodes()))
     logging.debug('nodes: %s' % sorted(ns.list_nodes()))
     print '# nodes after inserts:', len(ns.list_nodes())
         
     # Remove all but one key.
     logging.debug('start removes')
-    do_it(keys[1:], lambda key: tree.remove(key), lambda: forest.commit())
+    do_it(keys[1:], lambda key: do_remove(tree, key), lambda: forest.commit())
     logging.debug('# nodes: %d' % len(ns.list_nodes()))
     logging.debug('nodes: %s' % sorted(ns.list_nodes()))
     print '# nodes after removes:', len(ns.list_nodes())
