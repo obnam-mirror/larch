@@ -84,14 +84,12 @@ class BTree(object):
     def new_leaf(self, pairs):
         '''Create a new leaf node and keep track of it.'''
         leaf = btree.LeafNode(self.new_id(), pairs)
-        logging.debug('new leaf %d' % leaf.id)
         self.node_store.put_node(leaf)
         return leaf
         
     def new_index(self, pairs):
         '''Create a new index node and keep track of it.'''
         index = btree.IndexNode(self.new_id(), pairs)
-        logging.debug('new index %d' % index.id)
         self.node_store.put_node(index)
         for key, child_id in pairs:
             self.increment(child_id)
@@ -100,7 +98,6 @@ class BTree(object):
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
         root = self.new_index(pairs)
-        logging.debug('new root %d' % root.id)
         self.root_id = root.id
         self.node_store.set_refcount(root.id, 1)
 
@@ -236,10 +233,12 @@ class BTree(object):
         if key < node2.first_key():
             a, b = self._insert(node1.id, key, value)
             assert b is None
+            self.decrement(node1.id)
             return a, node2
         else:
             a, b = self._insert(node2.id, key, value)
             assert b is None
+            self.decrement(node2.id)
             return node1, a
     
     def _insert_into_nonfull_index(self, node_id, key, value):        
@@ -269,7 +268,6 @@ class BTree(object):
         
         '''
     
-        logging.debug('removing key %s' % key)    
         self.check_key_size(key)
         if self.root_id is None:
             raise KeyError(key)
@@ -333,7 +331,7 @@ class BTree(object):
             return False
         left = self.get_node(node[keys[i-1]])
         if isinstance(left, btree.IndexNode):
-            return len(node) + len(left) <= self.max_index_length
+            return len(child) + len(left) <= self.max_index_length
         else:
             assert isinstance(left, btree.LeafNode)
             left_size = self._leaf_size(left)
@@ -345,7 +343,7 @@ class BTree(object):
             return False
         right = self.get_node(node[keys[i+1]])
         if isinstance(right, btree.IndexNode):
-            return len(node) + len(right) <= self.max_index_length
+            return len(child) + len(right) <= self.max_index_length
         else:
             assert isinstance(right, btree.LeafNode)
             right_size = self._leaf_size(right)
@@ -359,7 +357,6 @@ class BTree(object):
         child = self._remove(node[child_key], key)
         
         if child is not None:
-            logging.debug('temp child in minimal %d' % child.id)
             keys = node.keys()
             i = keys.index(child_key)
 
@@ -372,17 +369,13 @@ class BTree(object):
                 exclude.append(keys[i+1])
             else:
                 new_ones.append(child)
-        else:
-            logging.debug('lost child %s in minimal' % node[child_key])
         
         others = node.pairs(exclude=exclude)
         if others + new_ones:
             result = self.new_index(others + 
                                     [(n.first_key(), n.id) for n in new_ones])
-            logging.debug('result from minimal index %d' % result.id)
         else:
             result = None
-            logging.debug('result from minimal index None')
         if child is not None and child not in new_ones:
             self.decrement(child.id)
         return result
@@ -392,12 +385,10 @@ class BTree(object):
         child = self._remove(node[child_key], key)
         pairs = node.pairs(exclude=[child_key])
         if child is not None:
-            logging.debug('temp child in nonminimal %d' % child.id)
             pairs += [(child.first_key(), child.id)]
         pairs.sort()
         assert pairs
         result = self.new_index(pairs)
-        logging.debug('result from nonmiminal index %d' % result.id)
         return result
 
     def remove_range(self, minkey, maxkey):
