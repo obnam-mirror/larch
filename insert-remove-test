@@ -117,6 +117,7 @@ def main():
     logging.debug('# nodes: %d' % len(ns.list_nodes()))
     logging.debug('nodes: %s' % sorted(ns.list_nodes()))
     print '# nodes after removes:', len(ns.list_nodes())
+    assert len(ns.list_nodes()) == 2
 
 
 if __name__ == '__main__':
