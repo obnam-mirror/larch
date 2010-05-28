@@ -1,0 +1,95 @@
+#!/usr/bin/python
+# Copyright 2010  Lars Wirzenius
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Excercise my btree implementation, for simple benchmarking purposes.
+# The benchmark gets a location and an operation count as command line
+# arguments.
+#
+# If the location is the empty string, an in-memory node store is used.
+# Otherwise it must be a non-existent directory name.
+#
+# The benchmark will do the given number of insertions into the tree, and
+# do_it the speed of that. Then it will look up each of those, and do_it
+# the lookups.
+
+
+import cProfile
+import os
+import random
+import shutil
+import sys
+import time
+
+import btree
+
+
+def do_it(keys, func, final):
+    start = time.clock()
+    for key in keys:
+        func(key)
+    final()
+    end = time.clock()
+    return end - start
+
+
+def main():
+    if True:
+        import logging
+        logging.basicConfig(filename='btree.log', level=logging.DEBUG)
+
+    location = sys.argv[1]
+    n = int(sys.argv[2])
+
+    key_size = 19
+    value_size = 128
+    node_size = 256
+
+    codec = btree.NodeCodec(key_size)
+
+    if location == '':
+        ns = btree.NodeStoreMemory(node_size, codec)
+    else:
+        if os.path.exists(location):
+            raise Exception('%s exists already' % location)
+        os.mkdir(location)
+        ns = btree.NodeStoreDisk(location, node_size, codec)
+
+    forest = btree.Forest(ns)
+    tree = forest.new_tree()
+    logging.debug('min keys: %d' % tree.min_index_length)
+    logging.debug('max keys: %d' % tree.max_index_length)
+    
+    # Create list of keys.
+    keys = ['%0*d' % (key_size, i) for i in xrange(n)]
+    
+    # Do inserts.
+    value = 'x' * value_size
+    logging.debug('start inserts')
+    do_it(keys, lambda key: tree.insert(key, value), lambda: forest.commit())
+    logging.debug('# nodes: %d' % len(ns.list_nodes()))
+    logging.debug('nodes: %s' % sorted(ns.list_nodes()))
+    print '# nodes after inserts:', len(ns.list_nodes())
+        
+    # Remove all but one key.
+    logging.debug('start removes')
+    do_it(keys[1:], lambda key: tree.remove(key), lambda: forest.commit())
+    logging.debug('# nodes: %d' % len(ns.list_nodes()))
+    logging.debug('nodes: %s' % sorted(ns.list_nodes()))
+    print '# nodes after removes:', len(ns.list_nodes())
+
+
+if __name__ == '__main__':
+    main()
