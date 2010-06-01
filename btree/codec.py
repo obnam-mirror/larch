@@ -57,12 +57,11 @@ class NodeCodec(object):
 
         pairs = node.pairs()
         fmt = ('!4sQI' + ('%ds' % self.key_bytes) * len(pairs) + 
-                'I' * len(pairs) +
-                ''.join(['%ds' % len(value) for key, value in pairs]))
-        return struct.pack(fmt, *(['ORBL', node.id, len(pairs)] +
+                'I' * len(pairs))
+        return (struct.pack(fmt, *(['ORBL', node.id, len(pairs)] +
                                     [key for key, value in pairs] +
-                                    [len(value) for key, value in pairs] +
-                                    [value for key, value in pairs]))
+                                    [len(value) for key, value in pairs])) +
+                ''.join([value for key, value in pairs]))
 
     def decode_leaf(self, encoded):
         '''Decode a leaf node from its encoded byte string.'''
