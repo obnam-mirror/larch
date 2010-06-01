@@ -58,8 +58,7 @@ class NodeCodec(object):
         keys, values = zip(*node.pairs())
         return (struct.pack('!4sQI', 'ORBL', node.id, len(keys)) +
                 ''.join(keys) +
-                struct.pack('!%dI' % len(values), 
-                            *[len(value) for value in values]) +
+                struct.pack('!%dI' % len(values), *map(len, values)) +
                 ''.join(values))
 
     def decode_leaf(self, encoded):
