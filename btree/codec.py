@@ -44,11 +44,12 @@ class NodeCodec(object):
     def __init__(self, key_bytes):
         self.key_bytes = key_bytes
         self.leaf_header_size = struct.calcsize('!4sQI')
+        # space for key and length of value is needed for each pair
+        self.pair_fixed_size = key_bytes + struct.calcsize('!I')
         
     def leaf_size(self, pairs):
         '''Return size of a leaf node with the given pairs.'''
-        return (self.leaf_header_size + len(pairs) * self.key_bytes + 
-                len(pairs) * struct.calcsize('I') +
+        return (self.leaf_header_size + len(pairs) * self.pair_fixed_size +
                 len(''.join([value for key, value in pairs])))
 
     def leaf_format(self, pairs):
