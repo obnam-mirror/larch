@@ -44,27 +44,22 @@ class NodeCodec(object):
     def __init__(self, key_bytes):
         self.key_bytes = key_bytes
         self.leaf_header_size = struct.calcsize('!4sQI')
+        # space for key and length of value is needed for each pair
+        self.pair_fixed_size = key_bytes + struct.calcsize('!I')
         
     def leaf_size(self, pairs):
         '''Return size of a leaf node with the given pairs.'''
-        return (self.leaf_header_size + len(pairs) * self.key_bytes + 
-                len(pairs) * struct.calcsize('I') +
+        return (self.leaf_header_size + len(pairs) * self.pair_fixed_size +
                 len(''.join([value for key, value in pairs])))
-
-    def leaf_format(self, pairs):
-        return ('!4sQI' + ('%ds' % self.key_bytes) * len(pairs) + 
-                'I' * len(pairs) +
-                ''.join(['%ds' % len(value) for key, value in pairs]))
 
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
 
-        pairs = node.pairs()
-        fmt = self.leaf_format(pairs)
-        return struct.pack(fmt, *(['ORBL', node.id, len(pairs)] +
-                                    [key for key, value in pairs] +
-                                    [len(value) for key, value in pairs] +
-                                    [value for key, value in pairs]))
+        keys, values = zip(*node.pairs()) or [[], []]
+        return (struct.pack('!4sQI', 'ORBL', node.id, len(keys)) +
+                ''.join(keys) +
+                struct.pack('!%dI' % len(values), *map(len, values)) +
+                ''.join(values))
 
     def decode_leaf(self, encoded):
         '''Decode a leaf node from its encoded byte string.'''
