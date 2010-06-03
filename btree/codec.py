@@ -43,20 +43,22 @@ class NodeCodec(object):
     
     def __init__(self, key_bytes):
         self.key_bytes = key_bytes
-        self.leaf_header_size = struct.calcsize('!4sQI')
+        self.leaf_header = struct.Struct('!4sQI')
+        self.index_header = struct.Struct('!4sQI')
         # space for key and length of value is needed for each pair
-        self.pair_fixed_size = key_bytes + struct.calcsize('!I')
+        self.leaf_pair_fixed_size = key_bytes + struct.calcsize('!I')
+        self.index_pair_size = key_bytes + struct.calcsize('!Q')
         
     def leaf_size(self, pairs):
         '''Return size of a leaf node with the given pairs.'''
-        return (self.leaf_header_size + len(pairs) * self.pair_fixed_size +
+        return (self.leaf_header.size + len(pairs) * self.leaf_pair_fixed_size +
                 len(''.join([value for key, value in pairs])))
 
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
 
         keys, values = zip(*node.pairs()) or [[], []]
-        return (struct.pack('!4sQI', 'ORBL', node.id, len(keys)) +
+        return (self.leaf_header.pack('ORBL', node.id, len(keys)) +
                 ''.join(keys) +
                 struct.pack('!%dI' % len(values), *map(len, values)) +
                 ''.join(values))
@@ -65,20 +67,19 @@ class NodeCodec(object):
         '''Decode a leaf node from its encoded byte string.'''
 
         buf = buffer(encoded)
-        cookie, node_id, num_pairs = struct.unpack_from('!4sQI', buf)
+        cookie, node_id, num_pairs = self.leaf_header.unpack_from(buf)
         if cookie != 'ORBL':
             raise CodecError('Leaf node does not begin with magic cookie '
                              '(should be ORBL, is %s)' % repr(cookie))
-        fmt = ('!4sQI' + ('%ds' % self.key_bytes) * num_pairs + 
-                'I' * num_pairs)
-        items = struct.unpack_from(fmt, buf)
-        keys = items[3:3+num_pairs]
-        lengths = items[3+num_pairs:3+num_pairs*2]
+        fmt = '!' + ('%ds' % self.key_bytes) * num_pairs + 'I' * num_pairs
+        items = struct.unpack_from(fmt, buf, self.leaf_header.size)
+        keys = items[:num_pairs]
+        lengths = items[num_pairs:num_pairs*2]
         offsets = [0]
         for i in range(1, len(lengths)):
             offsets.append(offsets[-1] + lengths[i-1])
 
-        values = buffer(encoded, struct.calcsize(fmt))
+        values = buffer(encoded, self.leaf_header.size + struct.calcsize(fmt))
         pairs = [(keys[i], values[offsets[i]:offsets[i] + lengths[i]]) 
                     for i in range(len(keys))]
 
@@ -86,14 +87,11 @@ class NodeCodec(object):
 
     def max_index_pairs(self, node_size): # pragma: no cover
         '''Return number of index pairs that fit in a node of a given size.'''
-        index_header_size = struct.calcsize('!4sQI')
-        index_pair_size = struct.calcsize('%dsQ' % self.key_bytes)
-        return (node_size - index_header_size) / index_pair_size
+        return (node_size - self.index_header.size) / self.index_pair_size
         
     def index_size(self, pairs):
         '''Return size of an inex node with the given pairs.'''
-        fmt = self.index_format(pairs)
-        return struct.calcsize(fmt)
+        return self.index_header.size + self.index_pair_size * len(pairs)
 
     def index_format(self, pairs):
         return ('!4sQI' + ('%ds' % self.key_bytes) * len(pairs) + 
@@ -112,16 +110,14 @@ class NodeCodec(object):
         '''Decode an index node from its encoded byte string.'''
 
         buf = buffer(encoded)
-        cookie, node_id, num_pairs = struct.unpack_from('!4sQI', buf)
+        cookie, node_id, num_pairs = self.index_header.unpack_from(buf)
         if cookie != 'ORBI':
             raise CodecError('Index node does not begin with magic cookie '
                              '(should be ORBI, is %s)' % repr(cookie))
-        fmt = ('!4sQI' + 
-               ('%ds' % self.key_bytes) * num_pairs + 
-               'Q' * num_pairs)
-        items = struct.unpack(fmt, encoded)
-        keys = items[3:3+num_pairs]
-        child_ids = items[3+num_pairs:]
+        fmt = '!' + ('%ds' % self.key_bytes) * num_pairs + 'Q' * num_pairs
+        items = struct.unpack_from(fmt, buf, self.index_header.size)
+        keys = items[:num_pairs]
+        child_ids = items[num_pairs:]
         assert len(keys) == len(child_ids)
         for x in child_ids:
             assert type(x) == int
