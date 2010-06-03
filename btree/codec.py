@@ -75,14 +75,12 @@ class NodeCodec(object):
         items = struct.unpack_from(fmt, buf, self.leaf_header.size)
         keys = items[:num_pairs]
         lengths = items[num_pairs:num_pairs*2]
-        offsets = [0]
-        for i in range(1, len(lengths)):
-            offsets.append(offsets[-1] + lengths[i-1])
-
-        values = buffer(encoded, self.leaf_header.size + struct.calcsize(fmt))
-        pairs = [(keys[i], values[offsets[i]:offsets[i] + lengths[i]]) 
-                    for i in range(len(keys))]
-
+        values = []
+        offset = self.leaf_header.size + self.leaf_pair_fixed_size * num_pairs
+        for length in lengths:
+          values.append(encoded[offset:offset + length])
+          offset += length
+        pairs = zip(keys, values)
         return btree.LeafNode(node_id, pairs)
 
     def max_index_pairs(self, node_size): # pragma: no cover
