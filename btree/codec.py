@@ -57,7 +57,7 @@ class NodeCodec(object):
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
 
-        keys, values = zip(*node.pairs()) or [[], []]
+        keys, values = zip(*node.pairs()) or [(), ()]
         return (self.leaf_header.pack('ORBL', node.id, len(keys)) +
                 ''.join(keys) +
                 struct.pack('!%dI' % len(values), *map(len, values)) +
@@ -91,18 +91,13 @@ class NodeCodec(object):
         '''Return size of an inex node with the given pairs.'''
         return self.index_header.size + self.index_pair_size * len(pairs)
 
-    def index_format(self, pairs):
-        return ('!4sQI' + ('%ds' % self.key_bytes) * len(pairs) + 
-                'Q' * len(pairs))
-        
     def encode_index(self, node):
         '''Encode an index node as a byte string.'''
 
-        pairs = node.pairs()
-        fmt = self.index_format(pairs)
-        return struct.pack(fmt, *(['ORBI', node.id, len(pairs)] +
-                                  [key for key, child_id in pairs] +
-                                  [child_id for key, child_id in pairs]))
+        keys, child_ids = zip(*node.pairs()) or [(), ()]
+        return (self.index_header.pack('ORBI', node.id, len(keys)) +
+                ''.join(keys) +
+                struct.pack('!%dQ' % len(child_ids), *child_ids))
 
     def decode_index(self, encoded):
         '''Decode an index node from its encoded byte string.'''
