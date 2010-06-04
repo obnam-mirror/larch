@@ -35,15 +35,16 @@ class RefcountStore(object):
         self.node_store = node_store
         self.refcounts = dict()
         self.dirty = set()
+        self.zeroes = [0] * self.per_group
 
     def get_refcount(self, node_id):
         if node_id in self.refcounts:
             return self.refcounts[node_id]
         else:
             group = self.load_refcount_group(self.group(node_id))
-            for x in group:
+            for x, count in group:
                 if x not in self.dirty:
-                    self.refcounts[x] = group[x]
+                    self.refcounts[x] = count
             return self.refcounts[node_id]
 
     def set_refcount(self, node_id, refcount):
@@ -66,10 +67,9 @@ class RefcountStore(object):
         filename = self.group_filename(start_id)
         if self.node_store.file_exists(filename):
             encoded = self.node_store.read_file(filename)
-            return dict(self.decode_refcounts(encoded))
+            return self.decode_refcounts(encoded)
         else:
-            return dict((x, 0) 
-                        for x in range(start_id, start_id + self.per_group))
+            return zip(range(start_id, start_id + self.per_group), self.zeroes)
 
     def group_filename(self, start_id):
         return os.path.join(self.node_store.dirname, self.refcountdir,
