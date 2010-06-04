@@ -15,7 +15,6 @@
 
 
 import ConfigParser
-import heapq
 import logging
 import lru
 import os
@@ -94,36 +93,42 @@ class UploadQueue(object):
     def __init__(self, really_put, max_length):
         self.really_put = really_put
         self.max = max_length
-        self.order = list()
-        self.counters = dict()
-        self.ids = dict()
-        self.counter = 0
+        # Together, node_before and node_after form a random access
+        # double-linked sequence. None used as the sentinel on both ends.
+        self.node_before = dict()
+        self.node_after = dict()
+        self.node_before[None] = None
+        self.node_after[None] = None
+        self.ids = dict()  # maps node.id to node
         
     def put(self, node):
-        self.counter += 1
-        heapq.heappush(self.order, self.counter)
-        self.counters[self.counter] = node
-        self.ids[node.id] = self.counter
-        while len(self.order) > self.max:
+        before = self.node_before[None]
+        self.node_before[None] = node
+        self.node_before[node] = before
+        self.node_after[before] = node
+        self.node_after[node] = None
+        self.ids[node.id] = node
+        while len(self.ids) > self.max:
             self._push_oldest()
 
     def _push_oldest(self):
-        if self.order:
-            counter = heapq.heappop(self.order)
-            if counter in self.counters:
-                node = self.counters[counter]
-                del self.counters[counter]
-                del self.ids[node.id]
-                self.really_put(node)
+        node = self.node_after[None]
+        self.remove(node.id)
+        self.really_put(node)
 
     def push(self):
-        while self.order:
+        while self.ids:
             self._push_oldest()
     
     def remove(self, node_id):
         if node_id in self.ids:
-            counter = self.ids[node_id]
-            del self.counters[counter]
+            node = self.ids[node_id]
+            before = self.node_before[node]
+            after = self.node_after[node]
+            self.node_before[after] = before
+            self.node_after[before] = after
+            del self.node_before[node]
+            del self.node_after[node]
             del self.ids[node_id]
             return True
         else:
@@ -133,11 +138,7 @@ class UploadQueue(object):
         return self.ids.keys()
         
     def get(self, node_id):
-        if node_id not in self.ids:
-            return None
-        counter = self.ids[node_id]
-        return self.counters[counter]
-
+        return self.ids.get(node_id)
 
 class NodeStoreDisk(btree.NodeStore):
 
