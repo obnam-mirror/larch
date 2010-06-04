@@ -29,6 +29,7 @@ class RefcountStore(object):
     '''Store node reference counts.'''
 
     per_group = 2**15
+    refcountdir = 'refcounts'
 
     def __init__(self, node_store):
         self.node_store = node_store
@@ -51,6 +52,8 @@ class RefcountStore(object):
 
     def save_refcounts(self):
         if self.dirty:
+            self.node_store.mkdir(os.path.join(self.node_store.dirname,
+                                               self.refcountdir))
             ids = sorted(self.dirty)
             for start_id in range(self.group(ids[0]), self.group(ids[-1]) + 1, 
                                   self.per_group):
@@ -69,7 +72,8 @@ class RefcountStore(object):
                         for x in range(start_id, start_id + self.per_group))
 
     def group_filename(self, start_id):
-        return os.path.join(self.node_store.dirname, 'refcounts-%d' % start_id)
+        return os.path.join(self.node_store.dirname, self.refcountdir,
+                            'refcounts-%d' % start_id)
 
     def group(self, node_id):
         return (node_id / self.per_group) * self.per_group
@@ -170,6 +174,10 @@ class NodeStoreDisk(btree.NodeStore):
         self.cache = lru.LRUCache(100)
         self.upload_max = upload_max
         self.upload_queue = UploadQueue(self._really_put_node, self.upload_max)
+
+    def mkdir(self, dirname):
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
 
     def read_file(self, filename):
         return file(filename).read()

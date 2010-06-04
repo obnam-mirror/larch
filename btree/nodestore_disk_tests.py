@@ -29,6 +29,10 @@ class DummyNodeStore(object):
     def __init__(self, dirname):
         self.dirname = dirname
 
+    def mkdir(self, dirname):
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
+
     def read_file(self, filename):
         return file(filename).read()
 
