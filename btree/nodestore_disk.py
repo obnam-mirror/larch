@@ -164,6 +164,7 @@ class NodeStoreDisk(btree.NodeStore):
     '''
 
     refcounts_per_group = 2**15
+    nodedir = 'nodes'
 
     def __init__(self, dirname, node_size, codec, upload_max=64):
         btree.NodeStore.__init__(self, node_size, codec)
@@ -236,7 +237,7 @@ class NodeStoreDisk(btree.NodeStore):
         self.rename_file(self.metadata_name + '_new', self.metadata_name)
 
     def pathname(self, node_id):
-        return os.path.join(self.dirname, '%d.node' % node_id)
+        return os.path.join(self.dirname, self.nodedir, '%d.node' % node_id)
         
     def put_node(self, node):
         self.cache.add(node.id, node)
@@ -252,6 +253,7 @@ class NodeStoreDisk(btree.NodeStore):
         name = self.pathname(node.id)
         if self.file_exists(name):
             raise btree.NodeExists(node.id)
+        self.mkdir(os.path.join(self.dirname, self.nodedir))
         self.write_file(name, encoded_node)
         
     def get_node(self, node_id):
@@ -285,7 +287,10 @@ class NodeStoreDisk(btree.NodeStore):
         
     def list_nodes(self):
         queued = self.upload_queue.list_ids()
-        basenames = self.listdir(self.dirname)
+        try:
+            basenames = self.listdir(os.path.join(self.dirname, self.nodedir))
+        except OSError:
+            basenames = []
         nodenames = [x for x in basenames if x.endswith('.node')]
         uploaded = [int(x[:-len('.node')]) for x in nodenames]
         return queued + uploaded
