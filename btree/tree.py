@@ -95,11 +95,14 @@ class BTree(object):
             self.increment(child_id)
         return index
         
+    def set_root(self, node):
+        '''Use a (newly created) node as the new root.'''
+        self.root_id = node.id
+        self.node_store.set_refcount(node.id, 1)
+
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
-        root = self.new_index(pairs)
-        self.root_id = root.id
-        self.node_store.set_refcount(root.id, 1)
+        self.set_root(self.new_index(pairs))
 
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
@@ -187,8 +190,7 @@ class BTree(object):
         old_root_id = self.root.id
         a, b = self._insert(self.root.id, key, value)
         if b is None:
-            self.new_root(a.pairs())
-            self.decrement(a.id)
+            self.set_root(a)
         else:
             self.new_root([(a.first_key(), a.id), (b.first_key(), b.id)])
         self.decrement(old_root_id)
