@@ -163,11 +163,19 @@ class BTree(object):
 
     def _lookup_range_in_leaf(self, leaf, minkey, maxkey):
         keys = leaf.keys()
-        while keys and keys[0] < minkey:
-            del keys[0]
-        while keys and keys[-1] > maxkey:
-            del keys[-1]
-        return [(key, leaf[key]) for key in keys]
+
+        for i, key in enumerate(keys):
+            if key >= minkey:
+                break
+        else:
+            return []
+        
+        for j, key in enumerate(reversed(keys)):
+            if key <= maxkey:
+                break
+        j = len(keys) - 1 - j
+            
+        return [(key, leaf[key]) for key in keys[i:j+1]]
 
     def _find_children_in_range(self, node, minkey, maxkey):
         keys = node.keys()
