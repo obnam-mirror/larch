@@ -162,20 +162,20 @@ class BTree(object):
             return result
 
     def _lookup_range_in_leaf(self, leaf, minkey, maxkey):
-        keys = leaf.keys()
+        pairs = leaf.pairs()
 
-        for i, key in enumerate(keys):
-            if key >= minkey:
+        for i, pair in enumerate(pairs):
+            if pair[0] >= minkey:
                 break
         else:
             return []
         
-        for j, key in enumerate(reversed(keys)):
-            if key <= maxkey:
+        for j, pair in enumerate(reversed(pairs)):
+            if pair[0] <= maxkey:
                 break
-        j = len(keys) - 1 - j
+        j = len(pairs) - 1 - j
             
-        return [(key, leaf[key]) for key in keys[i:j+1]]
+        return [(key, value) for key, value in pairs[i:j+1]]
 
     def _find_children_in_range(self, node, minkey, maxkey):
         keys = node.keys()
