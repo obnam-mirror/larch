@@ -1,0 +1,80 @@
+A Python B-tree library
+=======================
+
+This is an implementation of particular kind of B-tree, based on research by 
+Ohad Rodeh. See "B-trees, Shadowing, and Clones" (link below) for details on 
+the data structure. This is the same data structure that btrfs uses. Note 
+that my implementation probably differs from what the paper describes or 
+what btrfs implements.
+
+The distinctive feature of this B-tree implementation is that a node is 
+never modified. Instead, all updates are done by copy-on-write. Among other 
+things, this makes it easy to clone a tree, and modify only the clone, while 
+other processes access the original tree. This is utterly wonderful for my 
+backup application, and that's the reason I wrote btree in the first place.
+
+I have tried to keep the implementation generic and flexibile, so that you 
+may use it in a variety of situations. For example, the tree itself does not 
+decide where its nodes are stored: you provide a class that does that for it. 
+I have two implementations of the NodeStore class, one for in-memory and one 
+for on-disk storage.
+
+Documentation is sparse. Docstrings and reading the code are your best hope.
+(Help and feedback welcome!)
+
+See the file speed-test for an example.
+
+* Homepage: http://liw.fi/btree/
+* Version control: bzr get http://code.liw.fi/btree/bzr/trunk/
+* Rodeh paper: http://www.cs.tau.ac.il/~ohadrode/papers/btree_TOS.pdf
+
+
+Build and install
+-----------------
+
+setup.py should work as usual for distutils. But it might not: I have
+only used enough to make the Debian package build.
+
+You can also use the Debian packaging, if on Debian or a derivative.
+(Just run "debuild -us -uc" to build the package.)
+
+
+Hacking
+-------
+
+The actual tree code is in the btree directory, laid out as a normal
+Python package.
+
+* tree.py is the actual tree implementation
+* nodes.py has tree nodes
+* nodestore.py defines the interface for storing nodes on disk or
+  wherever; nodestore_disk.py and nodestore_memory.py are two implementations
+  of the interface
+* codec.py handles encoding of nodes for on-disk storage, and decoding too
+* forest.py handles creation of new trees and committing things to a node
+  store
+
+Run "make check" to run the test suite. You will need my CoverageTestRunner
+and LRUCache:
+
+* http://liw.fi/lru/
+* http://liw.fi/coverage-test-runner/
+
+The unit test modules are paired with their corresponding code modules:
+for code module foo.py there exists a unit test module foo_tests.py.
+CoverageTestRunner makes sure each code module's unit test achieve
+100% test coverage for that module, not counting explicitly excluded
+parts of the code.
+
+I have two scripts to run simplistic benchmarks:
+
+* codec-speed tests speed of the NodeCodec class, for encoding tree nodes
+  for on-disk storage.
+* speed-test tests insert and lookup speeds in trees.
+
+You may want to run either or both before and after making any changes,
+to see if you're making things better or worse.
+
+If you have any patches, please send them to me (mailto:liw@liw.fi).
+Bzr bundles preferred, but plain diffs are always OK. Or set up a bzr
+branch of your own and send me a URL, and I'll merge from that.
