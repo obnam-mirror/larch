@@ -25,3 +25,5 @@ from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig,
                        NodeExists)
 from nodestore_disk import NodeStoreDisk
 from nodestore_memory import NodeStoreMemory
+
+from bsearch import bsearch

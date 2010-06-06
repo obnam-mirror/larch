@@ -1,4 +1,44 @@
+# Copyright 2010  Lars Wirzenius
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+'''A binary search.
+
+This is sort-of similar to the standard library bisect module, but
+has a differnt API. Apart from gratuitous differences, it provides
+a way to extract the key from a list item rather than using the
+list item directly as a key.
+
+'''
+
+
 def bsearch(array, key, getkey=None):
+
+    '''Binary search in a list.
+    
+    Return the indexes surrounding the location in the array where
+    the searched item is, or where it would be, if it were, but isn't.
+    
+    Call the return values a and b. If item exists in array, then
+    return its index as both a and b. If it does not exist, return
+    adjacent values for a and b for the location where the item would
+    be. If a is None, then item would come before first item in list.
+    If b is None, after last item in list. If both a and b are None,
+    the list is empty.
+    
+    '''
 
     def helper(lo, hi):
         lokey = getkey(array[lo])
@@ -33,4 +73,3 @@ def bsearch(array, key, getkey=None):
     else:
         assert getkey(array[lo]) <= key <= getkey(array[hi])
         return helper(lo, hi)
-

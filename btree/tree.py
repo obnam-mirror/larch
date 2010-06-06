@@ -18,7 +18,6 @@ import logging
 import struct
 
 import btree
-from btree.bsearch import bsearch
 
 
 '''A simple B-tree implementation.
@@ -165,8 +164,8 @@ class BTree(object):
     def _lookup_range_in_leaf(self, leaf, minkey, maxkey):
         pairs = leaf.pairs()
         getkey = lambda pair: pair[0]
-        min_lo, min_hi = bsearch(pairs, minkey, getkey=getkey)
-        max_lo, max_hi = bsearch(pairs, maxkey, getkey=getkey)
+        min_lo, min_hi = btree.bsearch(pairs, minkey, getkey=getkey)
+        max_lo, max_hi = btree.bsearch(pairs, maxkey, getkey=getkey)
 
         if min_hi is None:
             return []
