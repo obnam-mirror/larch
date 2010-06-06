@@ -148,7 +148,7 @@ class BTree(object):
 
         if self.root_id is None:
             return []
-        return sorted(self._lookup_range(self.root_id, minkey, maxkey))
+        return self._lookup_range(self.root_id, minkey, maxkey)
 
     def _lookup_range(self, node_id, minkey, maxkey):
         node = self.get_node(node_id)
