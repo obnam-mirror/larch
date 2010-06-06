@@ -110,7 +110,7 @@ def main():
     max_key = max(keys)
     if do_profile:
         profile(keys, lambda key: tree.lookup_range(key, max_key), 
-                lambda: None, 'lookup')
+                lambda: None, 'lookup-range')
     else:
         lookup_range_time = measure(keys, 
                                     lambda key: tree.lookup_range(key, max_key),
