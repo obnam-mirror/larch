@@ -168,15 +168,12 @@ class BTree(object):
         min_lo, min_hi = bsearch(pairs, minkey, getkey=getkey)
         max_lo, max_hi = bsearch(pairs, maxkey, getkey=getkey)
 
-#        assert (min_lo, min_hi) != (None, None)
-#        assert (max_lo, max_hi) != (None, None)
-        
         if min_hi is None:
             return []
         i = min_hi
         j = max_lo
 
-        return [(key, value) for key, value in pairs[i:j+1]]
+        return pairs[i:j+1]
 
     def _find_children_in_range(self, node, minkey, maxkey):
         keys = node.keys()
