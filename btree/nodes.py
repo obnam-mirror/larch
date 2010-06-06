@@ -14,6 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import btree
+
+
 class Node(object):
 
     '''Abstract base class for index and leaf nodes.
@@ -100,8 +103,9 @@ class IndexNode(Node):
 
     def find_key_for_child_containing(self, key):
         '''Return key for the child that contains ``key``.'''
-        for k, v in reversed(self._pairs):
-            if key >= k:
-                return k
-        return None
-
+        getkey = lambda pair: pair[0]
+        lo, hi = btree.bsearch(self._pairs, key, getkey=getkey)
+        if lo is None:
+            return None
+        else:
+            return getkey(self._pairs[lo])
