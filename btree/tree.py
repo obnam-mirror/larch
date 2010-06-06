@@ -337,11 +337,11 @@ class BTree(object):
         n2 = self.get_node(id2)
         if isinstance(n1, btree.IndexNode):
             assert isinstance(n2, btree.IndexNode)
-            return self.new_index(n1.pairs() + n2.pairs())
+            return self.new_index(sorted(n1.pairs() + n2.pairs()))
         else:
             assert isinstance(n1, btree.LeafNode)
             assert isinstance(n2, btree.LeafNode)
-            return self.new_leaf(n1.pairs() + n2.pairs())
+            return self.new_leaf(sorted(n1.pairs() + n2.pairs()))
 
     def _leaf_size(self, node):
         if node.size is None:
@@ -394,8 +394,9 @@ class BTree(object):
         
         others = node.pairs(exclude=exclude)
         if others + new_ones:
-            result = self.new_index(others + 
-                                    [(n.first_key(), n.id) for n in new_ones])
+            pairs = others + [(n.first_key(), n.id) for n in new_ones]
+            pairs.sort()
+            result = self.new_index(pairs)
         else:
             result = None
         if child is not None and child not in new_ones:

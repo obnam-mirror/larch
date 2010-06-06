@@ -24,6 +24,7 @@ class NodeTests(unittest.TestCase):
     def setUp(self):
         self.node_id = 12765
         self.pairs = [('key2', 'value2'), ('key1', 'value1')]
+        self.pairs.sort()
         self.node = btree.nodes.Node(self.node_id, self.pairs)
 
     def test_has_id(self):
