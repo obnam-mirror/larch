@@ -100,7 +100,7 @@ class IndexNode(Node):
 
     def find_key_for_child_containing(self, key):
         '''Return key for the child that contains ``key``.'''
-        for k in reversed(self.keys()):
+        for k, v in reversed(self._pairs):
             if key >= k:
                 return k
         return None
