@@ -43,27 +43,29 @@ def bsearch(array, key, getkey=None):
     def helper(lo, hi):
         lokey = getkey(array[lo])
         hikey = getkey(array[hi])
-        while True:
-            assert lo <= hi
-
+        assert lo <= hi
+        while hi - lo >= 2:
             mid = (lo + hi) / 2
             midkey = getkey(array[mid])
-
-            if key == lokey:
-                return lo, lo
-            elif key == hikey:
-                return hi, hi
-            elif key == midkey:
-                return mid, mid
-            elif (hi-lo) == 1:
-                return lo, hi
-            elif lokey < key < midkey:
+            if lokey <= key <= midkey:
                 hi = mid
                 hikey = midkey
             else:
-                assert midkey < key < hikey
+                assert midkey <= key <= hikey
                 lo = mid
                 lokey = midkey
+
+        assert (lo == hi) or (lo+1 == hi)
+        assert getkey(array[lo]) == lokey
+        assert getkey(array[hi]) == hikey
+        if key == lokey:
+            return lo, lo
+        elif key == hikey:
+            return hi, hi
+        else:
+            assert lo+1 == hi
+            return lo, hi
+
 
     getkey = getkey or (lambda x: x)
     lo = 0
