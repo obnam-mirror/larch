@@ -43,8 +43,9 @@ def bsearch(array, key, getkey=None):
     getkey = getkey or (lambda x: x)
     lo = 0
     hi = len(array) - 1
-    lokey = getkey(array[lo])
-    hikey = getkey(array[hi])
+    if array:
+        lokey = getkey(array[lo])
+        hikey = getkey(array[hi])
 
     if not array:
         return None, None
