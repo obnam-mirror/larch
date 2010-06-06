@@ -214,10 +214,24 @@ class BTree(object):
 
     def _insert_into_leaf(self, leaf_id, key, value):
         leaf = self.get_node(leaf_id)
-        if key in leaf:
-            pairs = sorted(leaf.pairs(exclude=[key]) + [(key, value)])
+
+        pairs = leaf.pairs()
+        oldpairs = pairs[:]
+        getkey = lambda pair: pair[0]
+        lo, hi = btree.bsearch(pairs, key, getkey=getkey)
+        if lo is None:
+            pairs = [(key, value)] + pairs
+            assert len(pairs) == len(oldpairs) + 1
+        elif lo == hi:
+            pairs = pairs[:lo] + [(key, value)] + pairs[lo+1:]
+            assert len(pairs) == len(oldpairs)
+        elif hi is None:
+            pairs = pairs + [(key, value)]
+            assert len(pairs) == len(oldpairs) + 1
         else:
-            pairs = sorted(leaf.pairs() + [(key, value)])
+            pairs = pairs[:hi] + [(key, value)] + pairs[hi:]
+            assert len(pairs) == len(oldpairs) + 1
+
         if self.node_store.codec.leaf_size(pairs) <= self.node_store.node_size:
             return self.new_leaf(pairs), None
         else:
