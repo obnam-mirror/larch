@@ -104,6 +104,17 @@ def main():
     else:
         lookup_time = measure(keys, lambda key: tree.lookup(key),
                               lambda: None) - looptime
+        
+    # Measure range lookups.
+    random.shuffle(keys)
+    max_key = max(keys)
+    if do_profile:
+        profile(keys, lambda key: tree.lookup_range(key, max_key), 
+                lambda: None, 'lookup')
+    else:
+        lookup_range_time = measure(keys, 
+                                    lambda key: tree.lookup_range(key, max_key),
+                                    lambda: None) - looptime
 
     # Measure inserts into existing tree.
     random.shuffle(keys)
@@ -116,13 +127,14 @@ def main():
 
     # Report
     if do_profile:
-        print 'See insert.prof, lookup.prof, insert2.prof for profiling data'
-        print '(use ./viewprof to view the data)'
+        print 'View *.prof with ./viewprof for profiling results.'
     else:
         print 'num_operations: %d' % n
-        print 'insert     : %.3f s (%.1f/s)' % (insert_time, n/insert_time)
-        print 'lookup-time: %.3f s (%.1f/s)' % (lookup_time, n/lookup_time)
-        print 'insert2    : %.3f s (%.1f/s)' % (insert2_time, n/insert2_time)
+        print 'insert      : %5.3f s (%.1f/s)' % (insert_time, n/insert_time)
+        print 'lookup      : %5.3f s (%.1f/s)' % (lookup_time, n/lookup_time)
+        print 'lookup_range: %5.3f s (%.1f/s)' % (lookup_range_time, 
+                                                 n/lookup_range_time)
+        print 'insert2     : %5.3f s (%.1f/s)' % (insert2_time, n/insert2_time)
 
     # Clean up
     if location:
