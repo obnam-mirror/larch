@@ -77,8 +77,9 @@ class NodeCodec(object):
         lengths = items[num_pairs:num_pairs*2]
         values = []
         offset = self.leaf_header.size + self.leaf_pair_fixed_size * num_pairs
+        append = values.append
         for length in lengths:
-          values.append(encoded[offset:offset + length])
+          append(encoded[offset:offset + length])
           offset += length
         pairs = zip(keys, values)
         return btree.LeafNode(node_id, pairs)
