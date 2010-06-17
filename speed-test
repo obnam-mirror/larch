@@ -56,7 +56,7 @@ def profile(keys, func, final, basename):
 
 
 def main():
-    if False:
+    if True:
         import logging
         logging.basicConfig(filename='btree.log', level=logging.DEBUG)
 

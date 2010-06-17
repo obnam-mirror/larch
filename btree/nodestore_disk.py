@@ -48,8 +48,9 @@ class RefcountStore(object):
         return self.refcounts[node_id]
 
     def set_refcount(self, node_id, refcount):
-        if refcount == 0 and refcount in self.refcounts:
-            del self.refcounts[node_id]
+        if refcount == 0:
+            if node_id in self.refcounts:
+                del self.refcounts[node_id]
         else:
             self.refcounts[node_id] = refcount
         self.dirty.add(node_id)
