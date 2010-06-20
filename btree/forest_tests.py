@@ -90,7 +90,7 @@ class ForestTests(unittest.TestCase):
         self.assertEqual(t2a.lookup('002'), 'foobar')
 
     def test_committing_single_empty_tree_works(self):
-        t1 = self.forest.new_tree()
+        self.forest.new_tree()
         self.assertEqual(self.forest.commit(), None)
 
     def test_read_metadata_works_after_removed_and_committed(self):
@@ -98,7 +98,7 @@ class ForestTests(unittest.TestCase):
         t1.insert('foo', 'foo')
         self.forest.commit()
 
-        t2 = self.forest.remove_tree(t1)
+        self.forest.remove_tree(t1)
         self.forest.commit()
 
         f2 = btree.Forest(self.ns)

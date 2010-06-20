@@ -152,7 +152,6 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
 
     def test_refcounts_persist(self):
         self.ns.set_refcount(0, 1234)
-        ids = [0]
         self.per_group = 2
         self.ns.save_refcounts()
         ns2 = self.new_ns()
