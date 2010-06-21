@@ -78,6 +78,17 @@ class Node(object):
     def add(self, key, value):
         '''Insert a key/value pair into the right place in a node.'''
         
+        getkey = lambda pair: pair[0]
+        i, j = btree.bsearch(self._pairs, key, getkey=getkey)
+        
+        pair = (key, value)
+        if i is None:
+            self._pairs.insert(0, pair)
+        elif i == j:
+            self._pairs[i] = pair
+        else:
+            self._pairs.insert(i+1, pair)
+
 
 class LeafNode(Node):
 
