@@ -263,7 +263,7 @@ class NodeStoreDisk(btree.NodeStore):
             raise btree.NodeTooBig(node.id, len(encoded_node))
         name = self.pathname(node.id)
         if self.file_exists(name):
-            raise btree.NodeExists(node.id)
+            self.remove_file(name)
         self.mkdir(os.path.join(self.dirname, self.nodedir))
         self.write_file(name, encoded_node)
         
