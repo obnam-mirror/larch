@@ -89,6 +89,13 @@ class Node(object):
         else:
             self._pairs.insert(i+1, pair)
 
+    def remove(self, key):
+        '''Remove a key from the node.
+        
+        Raise KeyError if key does not exist in node.
+        
+        '''
+
 
 class LeafNode(Node):
 

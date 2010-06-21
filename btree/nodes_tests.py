@@ -103,6 +103,29 @@ class NodeTests(unittest.TestCase):
         node.add('bar', 'xxx')
         self.assertEqual(node.pairs(), [('bar', 'xxx'), ('foo', 'bar')])
 
+    def test_removes_first_key(self):
+        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
+                                    ('foo', 'bar')])
+        node.remove('bar')
+        self.assertEqual(node.pairs(), [('duh', 'bar'), ('foo', 'bar')])
+
+    def test_removes_last_key(self):
+        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
+                                    ('foo', 'bar')])
+        node.remove('foo')
+        self.assertEqual(node.pairs(), [('bar', 'bar'), ('duh', 'bar')])
+
+    def test_removes_middle_key(self):
+        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
+                                    ('foo', 'bar')])
+        node.remove('duh')
+        self.assertEqual(node.pairs(), [('bar', 'bar'), ('foo', 'bar')])
+
+    def test_raises_exception_when_removing_unknown_key(self):
+        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
+                                    ('foo', 'bar')])
+        self.assertRaises(KeyError, node.remove, 'yo')
+
 
 class IndexNodeTests(unittest.TestCase):
 
