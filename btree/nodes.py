@@ -95,7 +95,13 @@ class Node(object):
         Raise KeyError if key does not exist in node.
         
         '''
-
+        
+        getkey = lambda pair: pair[0]
+        i, j = btree.bsearch(self._pairs, key, getkey=getkey)
+        if i == j and i is not None:
+            del self._pairs[i]
+        else:
+            raise KeyError(key)
 
 class LeafNode(Node):
 
