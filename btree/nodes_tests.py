@@ -98,6 +98,11 @@ class NodeTests(unittest.TestCase):
         self.assertEqual(node.pairs(), [('bar', 'bar'), ('duh', 'bar'), 
                                         ('foo', 'bar')])
 
+    def test_add_replaces_value_for_existing_key(self):
+        node = btree.nodes.Node(0, [('bar', 'bar'), ('foo', 'bar')])
+        node.add('bar', 'xxx')
+        self.assertEqual(node.pairs(), [('bar', 'xxx'), ('foo', 'bar')])
+
 
 class IndexNodeTests(unittest.TestCase):
 
