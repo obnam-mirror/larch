@@ -113,18 +113,21 @@ class NodeTests(unittest.TestCase):
                                     ('foo', 'bar')])
         node.remove('bar')
         self.assertEqual(node.pairs(), [('duh', 'bar'), ('foo', 'bar')])
+        self.assertRaises(KeyError, node.__getitem__, 'bar')
 
     def test_removes_last_key(self):
         node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
                                     ('foo', 'bar')])
         node.remove('foo')
         self.assertEqual(node.pairs(), [('bar', 'bar'), ('duh', 'bar')])
+        self.assertRaises(KeyError, node.__getitem__, 'foo')
 
     def test_removes_middle_key(self):
         node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
                                     ('foo', 'bar')])
         node.remove('duh')
         self.assertEqual(node.pairs(), [('bar', 'bar'), ('foo', 'bar')])
+        self.assertRaises(KeyError, node.__getitem__, 'duh')
 
     def test_raises_exception_when_removing_unknown_key(self):
         node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 

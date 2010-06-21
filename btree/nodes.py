@@ -100,6 +100,7 @@ class Node(object):
         i, j = btree.bsearch(self._pairs, key, getkey=getkey)
         if i == j and i is not None:
             del self._pairs[i]
+            del self._dict[key]
         else:
             raise KeyError(key)
 
