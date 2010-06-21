@@ -75,6 +75,9 @@ class Node(object):
         else:
             return [(k, v) for k, v in self._pairs if k not in exclude]
 
+    def add(self, key, value):
+        '''Insert a key/value pair into the right place in a node.'''
+        
 
 class LeafNode(Node):
 

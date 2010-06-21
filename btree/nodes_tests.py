@@ -77,6 +77,27 @@ class NodeTests(unittest.TestCase):
         self.assertEqual(self.node.pairs(exclude=['key1']), 
                          [('key2', 'value2')])
 
+    def test_adds_key_value_pair_to_empty_node(self):
+        node = btree.nodes.Node(0, [])
+        node.add('foo', 'bar')
+        self.assertEqual(node.pairs(), [('foo', 'bar')])
+
+    def test_adds_key_value_pair_to_end_of_node_of_one_element(self):
+        node = btree.nodes.Node(0, [('foo', 'bar')])
+        node.add('foo2', 'bar')
+        self.assertEqual(node.pairs(), [('foo', 'bar'), ('foo2', 'bar')])
+
+    def test_adds_key_value_pair_to_beginning_of_node_of_one_element(self):
+        node = btree.nodes.Node(0, [('foo', 'bar')])
+        node.add('bar', 'bar')
+        self.assertEqual(node.pairs(), [('bar', 'bar'), ('foo', 'bar')])
+
+    def test_adds_key_value_pair_to_middle_of_node_of_two_elements(self):
+        node = btree.nodes.Node(0, [('bar', 'bar'), ('foo', 'bar')])
+        node.add('duh', 'bar')
+        self.assertEqual(node.pairs(), [('bar', 'bar'), ('duh', 'bar'), 
+                                        ('foo', 'bar')])
+
 
 class IndexNodeTests(unittest.TestCase):
 
