@@ -28,8 +28,7 @@ class Node(object):
     '''
 
     def __init__(self, node_id, pairs=None):
-        self._pairs = pairs or []
-#        assert self._pairs == sorted(self._pairs)
+        self._pairs = (pairs or [])[:]
         self._dict = dict(pairs)
         self.id = node_id
         self.size = None
