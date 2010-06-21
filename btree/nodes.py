@@ -87,6 +87,7 @@ class Node(object):
             self._pairs[i] = pair
         else:
             self._pairs.insert(i+1, pair)
+        self._dict[key] = value
 
     def remove(self, key):
         '''Remove a key from the node.

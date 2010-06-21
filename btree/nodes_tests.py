@@ -81,27 +81,32 @@ class NodeTests(unittest.TestCase):
         node = btree.nodes.Node(0, [])
         node.add('foo', 'bar')
         self.assertEqual(node.pairs(), [('foo', 'bar')])
+        self.assertEqual(node['foo'], 'bar')
 
     def test_adds_key_value_pair_to_end_of_node_of_one_element(self):
         node = btree.nodes.Node(0, [('foo', 'bar')])
         node.add('foo2', 'bar')
         self.assertEqual(node.pairs(), [('foo', 'bar'), ('foo2', 'bar')])
+        self.assertEqual(node['foo2'], 'bar')
 
     def test_adds_key_value_pair_to_beginning_of_node_of_one_element(self):
         node = btree.nodes.Node(0, [('foo', 'bar')])
         node.add('bar', 'bar')
         self.assertEqual(node.pairs(), [('bar', 'bar'), ('foo', 'bar')])
+        self.assertEqual(node['bar'], 'bar')
 
     def test_adds_key_value_pair_to_middle_of_node_of_two_elements(self):
         node = btree.nodes.Node(0, [('bar', 'bar'), ('foo', 'bar')])
         node.add('duh', 'bar')
         self.assertEqual(node.pairs(), [('bar', 'bar'), ('duh', 'bar'), 
                                         ('foo', 'bar')])
+        self.assertEqual(node['duh'], 'bar')
 
     def test_add_replaces_value_for_existing_key(self):
         node = btree.nodes.Node(0, [('bar', 'bar'), ('foo', 'bar')])
         node.add('bar', 'xxx')
         self.assertEqual(node.pairs(), [('bar', 'xxx'), ('foo', 'bar')])
+        self.assertEqual(node['bar'], 'xxx')
 
     def test_removes_first_key(self):
         node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
