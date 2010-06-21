@@ -77,7 +77,16 @@ class BTree(object):
     def new_id(self):
         '''Generate a new node identifier.'''
         return self.forest.new_id()
+    
+    def node_can_be_modified_in_place(self, node):
+        '''Can a node be modified in place, in memory?
         
+        This is true if there is only parent (refcount is 1).
+        
+        '''
+        
+        return self.node_store.get_refcount(node.id) == 1
+    
     def new_leaf(self, pairs):
         '''Create a new leaf node and keep track of it.'''
         leaf = btree.LeafNode(self.new_id(), pairs)
