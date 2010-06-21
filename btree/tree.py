@@ -415,7 +415,7 @@ class BTree(object):
         pairs = node.pairs(exclude=[child_key])
         if child is not None:
             pairs += [(child.first_key(), child.id)]
-        pairs.sort()
+            pairs.sort()
         assert pairs
         result = self.new_index(pairs)
         return result
