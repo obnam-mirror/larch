@@ -411,14 +411,16 @@ class BTree(object):
 
     def _remove_from_nonminimal_index(self, node_id, key, child_key):
         node = self.get_node(node_id)
-        child = self._remove(node[child_key], key)
-        pairs = node.pairs(exclude=[child_key])
-        if child is not None:
-            pairs += [(child.first_key(), child.id)]
-            pairs.sort()
-        assert pairs
-        result = self.new_index(pairs)
-        return result
+        child_id = node[child_key]
+        new_child = self._remove(child_id, key)
+        new_node = btree.IndexNode(self.new_id(), node.pairs())
+        new_node.remove(child_key)
+        if new_child:
+            new_node.add(new_child.first_key(), new_child.id)
+        self.node_store.put_node(new_node)
+        for k, v in new_node.pairs():
+            self.increment(v)
+        return new_node
 
     def remove_range(self, minkey, maxkey):
         '''Remove all keys in the given range.
