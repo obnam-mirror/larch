@@ -247,13 +247,14 @@ class BTree(object):
 
         kids = self._insert_into_index(self.root, key, value)
         if len(kids) == 1:
-            self.root_id = kids[0].id
-            self.increment(self.root_id)
+            if kids[0].id != self.root_id:
+                self.root_id = kids[0].id
+                self.increment(self.root_id)
         else:
             pairs = [(kid.first_key(), kid.id) for kid in kids]
             self._new_root(pairs)
 
-    def _insert_into_index(self, index, key, value):
+    def _insert_into_index(self, old_index, key, value):
         '''Insert key, value into an index node.
         
         Return list of replacement nodes. Might be just the same node,
@@ -262,36 +263,36 @@ class BTree(object):
         
         '''
 
-        index = self._shadow(index)
+        new_index = self._shadow(old_index)
 
-        child_key = index.find_key_for_child_containing(key)
+        child_key = new_index.find_key_for_child_containing(key)
         if child_key is None:
-            child_key = index.first_key()
+            child_key = new_index.first_key()
 
-        child = self.get_node(index[child_key])
+        child = self.get_node(new_index[child_key])
         if isinstance(child, btree.IndexNode):
             new_kids = self._insert_into_index(child, key, value)
         else:
             new_kids = self._insert_into_leaf(child, key, value)
 
-        index.remove(child_key)
+        new_index.remove(child_key)
         for kid in new_kids:
-            index.add(kid.first_key(), kid.id)
+            new_index.add(kid.first_key(), kid.id)
             self.increment(kid.id)
         self.decrement(child.id)
 
-        if len(index) > self.max_index_length:
-            n = len(index) / 2
-            pairs = index.pairs()[n:]
+        if len(new_index) > self.max_index_length:
+            n = len(new_index) / 2
+            pairs = new_index.pairs()[n:]
             new = btree.IndexNode(self.new_id(), pairs)
             for k, v in pairs:
-                index.remove(k)
-            self.put_node(index)
+                new_index.remove(k)
+            self.put_node(new_index)
             self.put_node(new)
-            return [index, new]
+            return [new_index, new]
         else:
-            self.put_node(index)
-            return [index]
+            self.put_node(new_index)
+            return [new_index]
 
     def _insert_into_leaf(self, leaf, key, value):
         '''Insert a key/value pair into a leaf node.
@@ -300,23 +301,21 @@ class BTree(object):
         
         '''
         
-        logging.debug('_insert_into_leaf: id=%d refcount=%d' %
-                      (leaf.id, self.node_store.get_refcount(leaf.id)))
-        leaf = self._shadow(leaf)
-        logging.debug('_insert_into_leaf: after shadowing id=%d' % leaf.id)
-        leaf.add(key, value)
-        if self._leaf_size(leaf) > self.node_store.node_size:
-            n = len(leaf) / 2
-            pairs = leaf.pairs()[n:]
+        clone = self._shadow(leaf)
+        clone.add(key, value)
+        if self._leaf_size(clone) > self.node_store.node_size:
+            n = len(clone) / 2
+            pairs = clone.pairs()[n:]
             new = btree.LeafNode(self.new_id(), pairs)
             for k, v in pairs:
-                leaf.remove(k)
-            self.put_node(leaf)
-            self.put_node(new)
-            return [leaf, new]
+                clone.remove(k)
+            leaves = [clone, new]
         else:
-            self.put_node(leaf)
-            return [leaf]
+            leaves = [clone]
+
+        for x in leaves:
+            self.put_node(x)
+        return leaves
 
     def remove(self, key):
         '''Remove ``key`` and its associated value from tree.
@@ -326,47 +325,48 @@ class BTree(object):
         '''
     
         self.check_key_size(key)
+
         if self.root_id is None:
             raise KeyError(key)
-        old_root_id = self.root.id
-        a = self._remove(self.root.id, key)
-        if a is None:
-            self.new_root([])
-        else:
-            pairs = a.pairs()
-            while len(pairs) == 1:
-                aa = self.get_node(pairs[0][1])
-                if isinstance(aa, btree.LeafNode):
-                    break
-                pairs = aa.pairs()
-            self.new_root(pairs)
-            self.decrement(a.id)
-        self.decrement(old_root_id)
 
-    def _remove(self, node_id, key):
-        node = self.get_node(node_id)
-        if isinstance(node, btree.LeafNode):
-            return self._remove_from_leaf(node_id, key)
-        else:
-            k = node.find_key_for_child_containing(key)
-            if k is None:
-                raise KeyError(key) # pragma: no cover
-            elif len(self.get_node(node[k])) <= self.min_index_length:
-                return self._remove_from_minimal_index(node_id, key, k) 
-            else:
-                return self._remove_from_nonminimal_index(node_id, key, k)
+        self._remove_from_index(self.root, key)
+        if self.node_store.get_refcount(self.root.id) == 0:
+            self.node_store.set_refcoun(self.root.id, 1)
 
-    def _remove_from_leaf(self, node_id, key):
-        node = self.get_node(node_id)
-        if key in node:
-            pairs = node.pairs(exclude=[key])
-            if pairs:
-                return self.new_leaf(pairs)
-            else:
-                return None
-        else:
+    def _remove_from_index(self, index, key):
+        child_key = index.find_key_for_child_containing(key)
+        if child_key is None:
             raise KeyError(key)
-    
+
+        index = self._shadow(index)
+        child = self.get_node(index[child_key])
+        
+        if isinstance(child, btree.IndexNode):
+            new_kid = self._remove_from_index(child, key)
+            index.remove(child_key)
+            if len(new_kid) > 0:
+                index.add(new_kid.first_key(), new_kid.id)
+                self.increment(new_kid.id)
+            self.decrement(child.id)
+        else:
+            assert isinstance(child, btree.LeafNode)
+            leaf = self._shadow(child)
+            leaf.remove(key)
+            index.remove(child_key)
+            if len(leaf) > 0:
+                self.put_node(leaf)
+                index.add(leaf.first_key(), leaf.id)
+                if leaf.id != child.id:
+                    self.increment(leaf.id)
+                    self.decrement(child.id)
+            else:
+                self.decrement(leaf.id)
+                if child.id != leaf.id:
+                    self.decrement(child.id)
+
+        self.put_node(index)
+        return index
+
     def _merge(self, id1, id2):
         n1 = self.get_node(id1)
         n2 = self.get_node(id2)
