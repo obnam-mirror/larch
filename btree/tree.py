@@ -65,10 +65,7 @@ class BTree(object):
         self.max_index_length = self.node_store.max_index_pairs()
         self.min_index_length = self.max_index_length / 2
 
-        if root_id is None:
-            self.root_id = None
-        else:
-            self.root_id = root_id
+        self.root_id = root_id
 
     def check_key_size(self, key):
         if len(key) != self.node_store.codec.key_bytes:
@@ -113,6 +110,15 @@ class BTree(object):
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
         return self.node_store.get_node(node_id)
+
+    def put_node(self, node):
+        '''Put node into node store.'''
+        return self.node_store.put_node(node)
+
+    def _leaf_size(self, node):
+        if node.size is None:
+            node.size = self.node_store.codec.leaf_size(node.pairs())
+        return node.size
 
     @property
     def root(self):
@@ -188,6 +194,37 @@ class BTree(object):
             del keys[-1]
         return [node[key] for key in keys]        
 
+    def _new_root(self, pairs):
+        '''Create a new root node for this tree.'''
+        root = btree.IndexNode(self.new_id(), pairs)
+        self.put_node(root)
+        self.node_store.set_refcount(root.id, 1)
+        self.root_id = root.id
+        for k, v in pairs:
+            self.increment(v)
+
+    def _clone_node(self, node):
+        '''Make a new, identical copy of a node.
+        
+        Same contents, new id.
+        
+        '''
+
+        if isinstance(node, btree.IndexNode):
+            new = btree.IndexNode(self.new_id(), node.pairs())
+        else:
+            new = btree.LeafNode(self.new_id(), node.pairs())
+        self.put_node(new)
+        return new
+
+    def _shadow(self, node):
+        '''Shadow a node: make it possible to modify it in-place.'''
+        
+        if self.node_can_be_modified_in_place(node):
+            return node
+        else:
+            return self._clone_node(node)
+        
     def insert(self, key, value):
         '''Insert a new key/value pair into the tree.
         
@@ -197,97 +234,84 @@ class BTree(object):
         '''
 
         self.check_key_size(key)
-        if self.root_id is None:
-            self.new_root([])
-        old_root_id = self.root.id
-        a, b = self._insert(self.root.id, key, value)
-        if b is None:
-            self.set_root(a)
+
+        # Is the tree empty? This needs special casing to keep
+        # _insert_into_index simpler.
+        if self.root_id is None or len(self.root) == 0:
+            leaf = btree.LeafNode(self.new_id(), [(key, value)])
+            self.put_node(leaf)
+            self._new_root([(key, leaf.id)])
+            return
+
+        kids = self._insert_into_index(self.root, key, value)
+        if len(kids) == 1:
+            self.root_id = kids[0].id
+            self.increment(self.root_id)
         else:
-            self.new_root([(a.first_key(), a.id), (b.first_key(), b.id)])
-        self.decrement(old_root_id)
+            pairs = [(kid.first_key(), kid.id) for kid in kids]
+            self._new_root(pairs)
 
-    def _insert(self, node_id, key, value):
-        node = self.get_node(node_id)
-        if isinstance(node, btree.LeafNode):
-            return self._insert_into_leaf(node_id, key, value)
-        elif len(node) == 0:
-            return self._insert_into_empty_root(key, value)
-        elif len(node) == self.max_index_length:
-            return self._insert_into_full_index(node_id, key, value)
+    def _insert_into_index(self, index, key, value):
+        '''Insert key, value into an index node.
+        
+        Return list of replacement nodes. Might be just the same node,
+        or a single new node, or two nodes, one of which might be the
+        same node.
+        
+        '''
+
+        index = self._shadow(index)
+
+        child_key = index.find_key_for_child_containing(key)
+        if child_key is None:
+            child_key = index.first_key()
+
+        child = self.get_node(index[child_key])
+        if isinstance(child, btree.IndexNode):
+            new_kids = self._insert_into_index(child, key, value)
         else:
-            return self._insert_into_nonfull_index(node_id, key, value)
+            new_kids = self._insert_into_leaf(child, key, value)
 
-    def _insert_into_leaf(self, leaf_id, key, value):
-        leaf = self.get_node(leaf_id)
+        index.remove(child_key)
+        for kid in new_kids:
+            index.add(kid.first_key(), kid.id)
+            self.increment(kid.id)
+        self.decrement(child.id)
 
-        pairs = leaf.pairs()
-        oldpairs = pairs[:]
-        getkey = lambda pair: pair[0]
-        lo, hi = btree.bsearch(pairs, key, getkey=getkey)
-        if lo is None:
-            pairs = [(key, value)] + pairs
-            assert len(pairs) == len(oldpairs) + 1
-        elif lo == hi:
-            pairs = pairs[:lo] + [(key, value)] + pairs[lo+1:]
-            assert len(pairs) == len(oldpairs)
-        elif hi is None:
-            pairs = pairs + [(key, value)]
-            assert len(pairs) == len(oldpairs) + 1
+        if len(index) > self.max_index_length:
+            n = len(index) / 2
+            pairs = index.pairs()[n:]
+            new = btree.IndexNode(self.new_id(), pairs)
+            for k, v in pairs:
+                index.remove(k)
+            self.put_node(index)
+            self.put_node(new)
+            return [index, new]
         else:
-            pairs = pairs[:hi] + [(key, value)] + pairs[hi:]
-            assert len(pairs) == len(oldpairs) + 1
+            self.put_node(index)
+            return [index]
 
-        if self.node_store.codec.leaf_size(pairs) <= self.node_store.node_size:
-            return self.new_leaf(pairs), None
+    def _insert_into_leaf(self, leaf, key, value):
+        '''Insert a key/value pair into a leaf node.
+        
+        Return value is like for _insert_into_index.
+        
+        '''
+        
+        leaf = self._shadow(leaf)
+        leaf.add(key, value)
+        if self._leaf_size(leaf) > self.node_store.node_size:
+            n = len(leaf) / 2
+            pairs = leaf.pairs()[n:]
+            new = btree.LeafNode(self.new_id(), pairs)
+            for k, v in pairs:
+                leaf.remove(k)
+            self.put_node(leaf)
+            self.put_node(new)
+            return [leaf, new]
         else:
-            n = len(pairs) / 2
-            leaf1 = self.new_leaf(pairs[:n])
-            leaf2 = self.new_leaf(pairs[n:])
-            return leaf1, leaf2
-
-    def _insert_into_empty_root(self, key, value):
-        leaf = self.new_leaf([(key, value)])
-        return self.new_index([(leaf.first_key(), leaf.id)]), None
-
-    def _insert_into_full_index(self, node_id, key, value):
-        # A full index node needs to be split, then key/value inserted into
-        # one of the halves.
-        node = self.get_node(node_id)
-        pairs = node.pairs()
-        n = len(pairs) / 2
-        node1 = self.new_index(pairs[:n])
-        node2 = self.new_index(pairs[n:])
-        if key < node2.first_key():
-            a, b = self._insert(node1.id, key, value)
-            assert b is None
-            self.decrement(node1.id)
-            return a, node2
-        else:
-            a, b = self._insert(node2.id, key, value)
-            assert b is None
-            self.decrement(node2.id)
-            return node1, a
-    
-    def _insert_into_nonfull_index(self, node_id, key, value):        
-        # Insert into correct child, get up to two replacements for
-        # that child.
-
-        node = self.get_node(node_id)
-        k = node.find_key_for_child_containing(key)
-        if k is None:
-            k = node.first_key()
-
-        child = self.get_node(node[k])
-        a, b = self._insert(child.id, key, value)
-        assert a is not None
-        pairs = node.pairs(exclude=[k])
-        pairs += [(a.first_key(), a.id)]
-        if b is not None:
-            pairs += [(b.first_key(), b.id)]
-        pairs.sort()
-        assert len(pairs) <= self.max_index_length
-        return self.new_index(pairs), None
+            self.put_node(leaf)
+            return [leaf]
 
     def remove(self, key):
         '''Remove ``key`` and its associated value from tree.
@@ -348,11 +372,6 @@ class BTree(object):
             assert isinstance(n1, btree.LeafNode)
             assert isinstance(n2, btree.LeafNode)
             return self.new_leaf(sorted(n1.pairs() + n2.pairs()))
-
-    def _leaf_size(self, node):
-        if node.size is None:
-            node.size = self.node_store.codec.leaf_size(node.pairs())
-        return node.size
 
     def _can_merge_left(self, node, keys, i, child):
         if i <= 0:

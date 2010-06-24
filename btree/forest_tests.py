@@ -42,7 +42,7 @@ class ForestTests(unittest.TestCase):
     def test_clones_a_tree(self):
         t1 = self.forest.new_tree()
         t2 = self.forest.new_tree(t1)
-        self.assertEqual(t1.root_id, t2.root_id)
+        self.assertNotEqual(t1.root_id, t2.root_id)
 
     def test_clones_can_be_changed_independently(self):
         t1 = self.forest.new_tree()

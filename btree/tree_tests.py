@@ -93,7 +93,7 @@ class BTreeTests(unittest.TestCase):
         # We use a small node size so that all code paths are traversed
         # during testing. Use coverage.py to make sure they do.
         self.codec = btree.NodeCodec(3)
-        self.ns = DummyNodeStore(64, self.codec)
+        self.ns = DummyNodeStore(32, self.codec)
         self.forest = DummyForest()
         self.tree = btree.BTree(self.forest, self.ns, None)
         self.dump = False
