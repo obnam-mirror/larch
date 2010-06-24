@@ -128,6 +128,9 @@ class UploadQueue(object):
 
     def _push_oldest(self):
         node = self.node_after[None]
+        assert node is not None, \
+            'node is None\nids: %s\nafter: %s\nbefore: %s' % \
+            (repr(self.ids), self.node_after, self.node_before)
         self.remove(node.id)
         self.really_put(node)
 
@@ -138,6 +141,7 @@ class UploadQueue(object):
     def remove(self, node_id):
         if node_id in self.ids:
             node = self.ids[node_id]
+            assert node.id == node_id
             before = self.node_before[node]
             after = self.node_after[node]
             self.node_before[after] = before
@@ -154,6 +158,7 @@ class UploadQueue(object):
         
     def get(self, node_id):
         return self.ids.get(node_id)
+
 
 class NodeStoreDisk(btree.NodeStore):
 

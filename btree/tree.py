@@ -97,7 +97,7 @@ class BTree(object):
         index = btree.IndexNode(self.new_id(), pairs)
         self.node_store.put_node(index)
         for key, child_id in pairs:
-            self.increment(child_id)
+            self.increment(child_id) # pragma: no cover
         return index
         
     def set_root(self, node):
@@ -202,8 +202,6 @@ class BTree(object):
         self.put_node(root)
         self.node_store.set_refcount(root.id, 1)
         self.root_id = root.id
-        for k, v in pairs:
-            self.increment(v)
 
     def _clone_node(self, node):
         '''Make a new, identical copy of a node.
@@ -243,16 +241,18 @@ class BTree(object):
             leaf = btree.LeafNode(self.new_id(), [(key, value)])
             self.put_node(leaf)
             self._new_root([(key, leaf.id)])
+            self.increment(leaf.id)
             return
 
         kids = self._insert_into_index(self.root, key, value)
-        if len(kids) == 1:
-            if kids[0].id != self.root_id:
-                self.root_id = kids[0].id
-                self.increment(self.root_id)
-        else:
+        if len(kids) > 1:
             pairs = [(kid.first_key(), kid.id) for kid in kids]
+            old_root_id = self.root_id
+            assert old_root_id is not None
             self._new_root(pairs)
+            for kid in kids:
+                self.increment(kid.id)
+            self.decrement(old_root_id)
 
     def _insert_into_index(self, old_index, key, value):
         '''Insert key, value into an index node.
@@ -330,12 +330,12 @@ class BTree(object):
             raise KeyError(key)
 
         self._remove_from_index(self.root, key)
-        if self.node_store.get_refcount(self.root.id) == 0:
+        if self.node_store.get_refcount(self.root.id) == 0: # pragma: no cover
             self.node_store.set_refcoun(self.root.id, 1)
 
     def _remove_from_index(self, index, key):
         child_key = index.find_key_for_child_containing(key)
-        if child_key is None:
+        if child_key is None: # pragma: no cover
             raise KeyError(key)
 
         index = self._shadow(index)
@@ -356,95 +356,94 @@ class BTree(object):
             if len(leaf) > 0:
                 self.put_node(leaf)
                 index.add(leaf.first_key(), leaf.id)
-                if leaf.id != child.id:
-                    self.increment(leaf.id)
-                    self.decrement(child.id)
+                self.increment(leaf.id)
+                self.decrement(child.id)
             else:
                 self.decrement(leaf.id)
-                if child.id != leaf.id:
+                if child.id != leaf.id: # pragma: no cover
                     self.decrement(child.id)
 
         self.put_node(index)
         return index
 
-    def _merge(self, id1, id2):
-        n1 = self.get_node(id1)
-        n2 = self.get_node(id2)
-        if isinstance(n1, btree.IndexNode):
-            assert isinstance(n2, btree.IndexNode)
-            return self.new_index(sorted(n1.pairs() + n2.pairs()))
-        else:
-            assert isinstance(n1, btree.LeafNode)
-            assert isinstance(n2, btree.LeafNode)
-            return self.new_leaf(sorted(n1.pairs() + n2.pairs()))
+#    def _merge(self, id1, id2):
+#        n1 = self.get_node(id1)
+#        n2 = self.get_node(id2)
+#        if isinstance(n1, btree.IndexNode):
+#            assert isinstance(n2, btree.IndexNode)
+#            return self.new_index(sorted(n1.pairs() + n2.pairs()))
+#        else:
+#            assert isinstance(n1, btree.LeafNode)
+#            assert isinstance(n2, btree.LeafNode)
+#            return self.new_leaf(sorted(n1.pairs() + n2.pairs()))
 
-    def _can_merge_left(self, node, keys, i, child):
-        if i <= 0:
-            return False
-        left = self.get_node(node[keys[i-1]])
-        if isinstance(left, btree.IndexNode):
-            return len(child) + len(left) <= self.max_index_length
-        else:
-            assert isinstance(left, btree.LeafNode)
-            left_size = self._leaf_size(left)
-            child_size = self._leaf_size(child)
-            return left_size + child_size <= self.node_store.node_size
+#    def _can_merge_left(self, node, keys, i, child):
+#        if i <= 0:
+#            return False
+#        left = self.get_node(node[keys[i-1]])
+#        if isinstance(left, btree.IndexNode):
+#            return len(child) + len(left) <= self.max_index_length
+#        else:
+#            assert isinstance(left, btree.LeafNode)
+#            left_size = self._leaf_size(left)
+#            child_size = self._leaf_size(child)
+#            return left_size + child_size <= self.node_store.node_size
 
-    def _can_merge_right(self, node, keys, i, child):
-        if i+1 >= len(keys):
-            return False
-        right = self.get_node(node[keys[i+1]])
-        if isinstance(right, btree.IndexNode):
-            return len(child) + len(right) <= self.max_index_length
-        else:
-            assert isinstance(right, btree.LeafNode)
-            right_size = self._leaf_size(right)
-            child_size = self._leaf_size(child)
-            return right_size + child_size <= self.node_store.node_size
+#    def _can_merge_right(self, node, keys, i, child):
+#        if i+1 >= len(keys):
+#            return False
+#        right = self.get_node(node[keys[i+1]])
+#        if isinstance(right, btree.IndexNode):
+#            return len(child) + len(right) <= self.max_index_length
+#        else:
+#            assert isinstance(right, btree.LeafNode)
+#            right_size = self._leaf_size(right)
+#            child_size = self._leaf_size(child)
+#            return right_size + child_size <= self.node_store.node_size
 
-    def _remove_from_minimal_index(self, node_id, key, child_key):
-        node = self.get_node(node_id)
-        exclude = [child_key]
-        new_ones = []
-        child = self._remove(node[child_key], key)
-        
-        if child is not None:
-            keys = node.keys()
-            i = keys.index(child_key)
+#    def _remove_from_minimal_index(self, node_id, key, child_key):
+#        node = self.get_node(node_id)
+#        exclude = [child_key]
+#        new_ones = []
+#        child = self._remove(node[child_key], key)
+#        
+#        if child is not None:
+#            keys = node.keys()
+#            i = keys.index(child_key)
 
-            # If possible, merge with left or right sibling.
-            if self._can_merge_left(node, keys, i, child):
-                new_ones.append(self._merge(node[keys[i-1]], child.id))
-                exclude.append(keys[i-1])
-            elif self._can_merge_right(node, keys, i, child):
-                new_ones.append(self._merge(node[keys[i+1]], child.id))
-                exclude.append(keys[i+1])
-            else:
-                new_ones.append(child)
-        
-        others = node.pairs(exclude=exclude)
-        if others + new_ones:
-            pairs = others + [(n.first_key(), n.id) for n in new_ones]
-            pairs.sort()
-            result = self.new_index(pairs)
-        else:
-            result = None
-        if child is not None and child not in new_ones:
-            self.decrement(child.id)
-        return result
+#            # If possible, merge with left or right sibling.
+#            if self._can_merge_left(node, keys, i, child):
+#                new_ones.append(self._merge(node[keys[i-1]], child.id))
+#                exclude.append(keys[i-1])
+#            elif self._can_merge_right(node, keys, i, child):
+#                new_ones.append(self._merge(node[keys[i+1]], child.id))
+#                exclude.append(keys[i+1])
+#            else:
+#                new_ones.append(child)
+#        
+#        others = node.pairs(exclude=exclude)
+#        if others + new_ones:
+#            pairs = others + [(n.first_key(), n.id) for n in new_ones]
+#            pairs.sort()
+#            result = self.new_index(pairs)
+#        else:
+#            result = None
+#        if child is not None and child not in new_ones:
+#            self.decrement(child.id)
+#        return result
 
-    def _remove_from_nonminimal_index(self, node_id, key, child_key):
-        node = self.get_node(node_id)
-        child_id = node[child_key]
-        new_child = self._remove(child_id, key)
-        new_node = btree.IndexNode(self.new_id(), node.pairs())
-        new_node.remove(child_key)
-        if new_child:
-            new_node.add(new_child.first_key(), new_child.id)
-        self.node_store.put_node(new_node)
-        for k, v in new_node.pairs():
-            self.increment(v)
-        return new_node
+#    def _remove_from_nonminimal_index(self, node_id, key, child_key):
+#        node = self.get_node(node_id)
+#        child_id = node[child_key]
+#        new_child = self._remove(child_id, key)
+#        new_node = btree.IndexNode(self.new_id(), node.pairs())
+#        new_node.remove(child_key)
+#        if new_child:
+#            new_node.add(new_child.first_key(), new_child.id)
+#        self.node_store.put_node(new_node)
+#        for k, v in new_node.pairs():
+#            self.increment(v)
+#        return new_node
 
     def remove_range(self, minkey, maxkey):
         '''Remove all keys in the given range.
