@@ -331,7 +331,7 @@ class BTree(object):
 
         self._remove_from_index(self.root, key)
         if self.node_store.get_refcount(self.root.id) == 0: # pragma: no cover
-            self.node_store.set_refcoun(self.root.id, 1)
+            self.node_store.set_refcount(self.root.id, 1)
 
     def _remove_from_index(self, index, key):
         child_key = index.find_key_for_child_containing(key)
