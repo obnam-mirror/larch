@@ -117,6 +117,8 @@ class UploadQueue(object):
         self.ids = dict()  # maps node.id to node
         
     def put(self, node):
+        if node.id in self.ids:
+            self.remove(node.id)
         before = self.node_before[None]
         self.node_before[None] = node
         self.node_before[node] = before
