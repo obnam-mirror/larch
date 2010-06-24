@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
+
 import btree
 
 
@@ -298,7 +300,10 @@ class BTree(object):
         
         '''
         
+        logging.debug('_insert_into_leaf: id=%d refcount=%d' %
+                      (leaf.id, self.node_store.get_refcount(leaf.id)))
         leaf = self._shadow(leaf)
+        logging.debug('_insert_into_leaf: after shadowing id=%d' % leaf.id)
         leaf.add(key, value)
         if self._leaf_size(leaf) > self.node_store.node_size:
             n = len(leaf) / 2

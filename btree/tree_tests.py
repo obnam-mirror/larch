@@ -102,6 +102,28 @@ class BTreeTests(unittest.TestCase):
         leaf = self.tree.new_leaf([])
         self.assertEqual(leaf, self.tree.get_node(leaf.id))
 
+    def test_knows_node_with_refcount_1_can_be_modified_in_place(self):
+        node = self.tree.new_leaf([])
+        self.ns.set_refcount(node.id, 1)
+        self.assert_(self.tree.node_can_be_modified_in_place(node))
+
+    def test_knows_node_with_refcount_2_cannot_be_modified_in_place(self):
+        node = self.tree.new_leaf([])
+        self.ns.set_refcount(node.id, 2)
+        self.assertFalse(self.tree.node_can_be_modified_in_place(node))
+
+    def test_shadow_returns_leaf_itself_when_refcount_is_1(self):
+        leaf = self.tree.new_leaf([])
+        self.ns.set_refcount(leaf.id, 1)
+        clone = self.tree._shadow(leaf)
+        self.assertEqual(leaf.id, clone.id)
+
+    def test_shadow_returns_new_leaf_when_refcount_is_2(self):
+        leaf = self.tree.new_leaf([])
+        self.ns.set_refcount(leaf.id, 2)
+        clone = self.tree._shadow(leaf)
+        self.assertNotEqual(leaf.id, clone.id)
+
     def test_creates_index(self):
         index = self.tree.new_index([])
         self.assertEqual(index, self.tree.get_node(index.id))
