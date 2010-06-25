@@ -20,6 +20,7 @@ import lru
 import os
 import StringIO
 import struct
+import tempfile
 
 import btree
 
@@ -202,7 +203,12 @@ class NodeStoreDisk(btree.NodeStore):
         return file(filename).read()
 
     def write_file(self, filename, contents):
-        file(filename, 'w').write(contents)
+        dirname = os.path.dirname(filename)
+        fd, tempname = tempfile.mkstemp(dir=dirname)
+        os.write(fd, contents)
+        os.fsync(fd)
+        os.close(fd)
+        os.rename(tempname, filename)
 
     def file_exists(self, filename):
         return os.path.exists(filename)
