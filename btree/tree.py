@@ -354,9 +354,7 @@ class BTree(object):
             leaf.remove(key)
             index.remove(child_key)
             if len(leaf) > 0:
-                self.put_node(leaf)
-                index.add(leaf.first_key(), leaf.id)
-                self.increment(leaf.id)
+                self._add_or_merge_leaf(index, leaf)
                 self.decrement(child.id)
             else:
                 self.decrement(leaf.id)
@@ -365,6 +363,33 @@ class BTree(object):
 
         self.put_node(index)
         return index
+        
+    def _add_or_merge_leaf(self, parent, leaf):
+        pairs = parent.pairs()
+        getkey = lambda pair: pair[0]
+        i, j = btree.bsearch(pairs, leaf.first_key(), getkey=getkey)
+        if i is None or not self._merge_leaf(parent, leaf, i):
+            if j is not None:
+                self._merge_leaf(parent, leaf, j)
+
+        self.put_node(leaf)
+        parent.add(leaf.first_key(), leaf.id)
+        self.increment(leaf.id)
+
+    def _merge_leaf(self, parent, leaf, sibling_index):
+        pairs = parent.pairs()
+        sibling_id = pairs[sibling_index][1]
+        sibling = self.get_node(sibling_id)
+        sibling_size = self._leaf_size(sibling)
+        leaf_size = self._leaf_size(leaf)
+        if sibling_size + leaf_size <= self.node_store.node_size:
+            for k, v in sibling.pairs():
+                leaf.add(k, v)
+            parent.remove(pairs[sibling_index][0])
+            self.decrement(sibling.id)
+            return True
+        else:
+            return False
 
 #    def _merge(self, id1, id2):
 #        n1 = self.get_node(id1)
@@ -473,3 +498,22 @@ class BTree(object):
             self.node_store.remove_node(node_id)
             self.node_store.set_refcount(node_id, 0)
 
+    def dump(self, f): # pragma: no cover
+        '''Dump tree structure to open file f.'''
+        
+        def dumper(node, indent):
+            if isinstance(node, btree.IndexNode):
+                f.write('%*sindex (id=%d)\n' % (indent*2, '', node.id))
+                for key, child_id in node.pairs():
+                    child = self.get_node(child_id)
+                    dumper(child, indent + 1)
+            else:
+                assert isinstance(node, btree.LeafNode)
+                f.write('%*sleaf (id=%d, len=%d):' % 
+                        (indent*2, '', node.id, len(node)))
+                for key, value in node.pairs():
+                    f.write(' %s=%s' % (key, value))
+                f.write('\n')
+        
+        f.write('Dumping tree %s\n' % self)
+        dumper(self.root, 1)

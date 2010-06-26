@@ -93,7 +93,7 @@ class BTreeTests(unittest.TestCase):
         # We use a small node size so that all code paths are traversed
         # during testing. Use coverage.py to make sure they do.
         self.codec = btree.NodeCodec(3)
-        self.ns = DummyNodeStore(32, self.codec)
+        self.ns = DummyNodeStore(64, self.codec)
         self.forest = DummyForest()
         self.tree = btree.BTree(self.forest, self.ns, None)
         self.dump = False
@@ -311,6 +311,14 @@ class BTreeTests(unittest.TestCase):
                 print
                 print
         self.assertEqual(self.tree.root.keys(), [])
+        
+    def test_remove_merges_leaf_with_left_sibling(self):
+        keys = ['%03d' % i for i in range(3)]
+        for key in keys:
+            self.tree.insert(key, 'x')
+        self.tree.dump(sys.stdout)
+        self.assertEqual(self.tree.remove(keys[1]), None)
+        self.tree.dump(sys.stdout)
         
     def test_persists(self):
         self.tree.insert('foo', 'bar')
