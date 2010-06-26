@@ -316,9 +316,7 @@ class BTreeTests(unittest.TestCase):
         keys = ['%03d' % i for i in range(3)]
         for key in keys:
             self.tree.insert(key, 'x')
-        self.tree.dump(sys.stdout)
         self.assertEqual(self.tree.remove(keys[1]), None)
-        self.tree.dump(sys.stdout)
         
     def test_persists(self):
         self.tree.insert('foo', 'bar')

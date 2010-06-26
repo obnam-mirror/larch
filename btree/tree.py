@@ -345,8 +345,7 @@ class BTree(object):
             new_kid = self._remove_from_index(child, key)
             index.remove(child_key)
             if len(new_kid) > 0:
-                index.add(new_kid.first_key(), new_kid.id)
-                self.increment(new_kid.id)
+                self._add_or_merge_index(index, new_kid)
             self.decrement(child.id)
         else:
             assert isinstance(child, btree.LeafNode)
@@ -363,6 +362,32 @@ class BTree(object):
 
         self.put_node(index)
         return index
+
+    def _add_or_merge_index(self, parent, index):
+        pairs = parent.pairs()
+        getkey = lambda pair: pair[0]
+        i, j = btree.bsearch(pairs, index.first_key(), getkey=getkey)
+        if i is None or not self._merge_index(parent, index, i):
+            if j is not None:
+                self._merge_index(parent, index, j)
+
+        self.put_node(index)
+        parent.add(index.first_key(), index.id)
+        self.increment(index.id)
+
+    def _merge_index(self, parent, index, sibling_index):
+        pairs = parent.pairs()
+        sibling_id = pairs[sibling_index][1]
+        sibling = self.get_node(sibling_id)
+        if len(sibling) + len(index) <= self.max_index_length:
+            for k, v in sibling.pairs():
+                index.add(k, v)
+                self.increment(v)
+            parent.remove(pairs[sibling_index][0])
+            self.decrement(sibling.id)
+            return True
+        else:
+            return False
         
     def _add_or_merge_leaf(self, parent, leaf):
         pairs = parent.pairs()
