@@ -20,6 +20,7 @@ import lru
 import os
 import StringIO
 import struct
+import tempfile
 
 import btree
 
@@ -117,6 +118,8 @@ class UploadQueue(object):
         self.ids = dict()  # maps node.id to node
         
     def put(self, node):
+        if node.id in self.ids:
+            self.remove(node.id)
         before = self.node_before[None]
         self.node_before[None] = node
         self.node_before[node] = before
@@ -128,6 +131,9 @@ class UploadQueue(object):
 
     def _push_oldest(self):
         node = self.node_after[None]
+        assert node is not None, \
+            'node is None\nids: %s\nafter: %s\nbefore: %s' % \
+            (repr(self.ids), self.node_after, self.node_before)
         self.remove(node.id)
         self.really_put(node)
 
@@ -138,6 +144,7 @@ class UploadQueue(object):
     def remove(self, node_id):
         if node_id in self.ids:
             node = self.ids[node_id]
+            assert node.id == node_id
             before = self.node_before[node]
             after = self.node_after[node]
             self.node_before[after] = before
@@ -154,6 +161,7 @@ class UploadQueue(object):
         
     def get(self, node_id):
         return self.ids.get(node_id)
+
 
 class NodeStoreDisk(btree.NodeStore):
 
@@ -195,7 +203,12 @@ class NodeStoreDisk(btree.NodeStore):
         return file(filename).read()
 
     def write_file(self, filename, contents):
-        file(filename, 'w').write(contents)
+        dirname = os.path.dirname(filename)
+        fd, tempname = tempfile.mkstemp(dir=dirname)
+        os.write(fd, contents)
+        os.fsync(fd)
+        os.close(fd)
+        os.rename(tempname, filename)
 
     def file_exists(self, filename):
         return os.path.exists(filename)
@@ -263,7 +276,7 @@ class NodeStoreDisk(btree.NodeStore):
             raise btree.NodeTooBig(node.id, len(encoded_node))
         name = self.pathname(node.id)
         if self.file_exists(name):
-            raise btree.NodeExists(node.id)
+            self.remove_file(name)
         self.mkdir(os.path.join(self.dirname, self.nodedir))
         self.write_file(name, encoded_node)
         
@@ -287,13 +300,11 @@ class NodeStoreDisk(btree.NodeStore):
     
     def remove_node(self, node_id):
         self.cache.remove(node_id)
-        if self.upload_queue.remove(node_id):
-            return
-
+        got_it = self.upload_queue.remove(node_id)
         name = self.pathname(node_id)
         if self.file_exists(name):
             self.remove_file(name)
-        else:
+        elif not got_it:
             raise btree.NodeMissing(node_id)
         
     def list_nodes(self):

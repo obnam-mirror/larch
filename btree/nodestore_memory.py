@@ -45,8 +45,6 @@ class NodeStoreMemory(btree.NodeStore):
         del self.metadata[key]
         
     def put_node(self, node):
-        if node.id in self.nodes:
-            raise btree.NodeExists(node.id)
         self.nodes[node.id] = node
         
     def get_node(self, node_id):

@@ -49,8 +49,9 @@ def do_it(keys, func, final):
 def assert_refcounts_are_one(tree):
     def helper(node_id):
         refcount = tree.node_store.rs.get_refcount(node_id)
-        assert refcount == 1, 'id=%d refcount=%d' % (node_id, refcount)
         node = tree.get_node(node_id)
+        assert refcount == 1, 'type=%s id=%d refcount=%d' % (repr(node), 
+                                                             node_id, refcount)
         if isinstance(node, btree.IndexNode):
             for key, child_id in node.pairs():
                 helper(child_id)

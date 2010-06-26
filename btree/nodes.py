@@ -28,8 +28,7 @@ class Node(object):
     '''
 
     def __init__(self, node_id, pairs=None):
-        self._pairs = pairs or []
-#        assert self._pairs == sorted(self._pairs)
+        self._pairs = (pairs or [])[:]
         self._dict = dict(pairs)
         self.id = node_id
         self.size = None
@@ -74,6 +73,38 @@ class Node(object):
             return self._pairs
         else:
             return [(k, v) for k, v in self._pairs if k not in exclude]
+
+    def add(self, key, value):
+        '''Insert a key/value pair into the right place in a node.'''
+        
+        getkey = lambda pair: pair[0]
+        i, j = btree.bsearch(self._pairs, key, getkey=getkey)
+        
+        pair = (key, value)
+        if i is None:
+            self._pairs.insert(0, pair)
+        elif i == j:
+            self._pairs[i] = pair
+        else:
+            self._pairs.insert(i+1, pair)
+        self._dict[key] = value
+        self.size = None
+
+    def remove(self, key):
+        '''Remove a key from the node.
+        
+        Raise KeyError if key does not exist in node.
+        
+        '''
+        
+        getkey = lambda pair: pair[0]
+        i, j = btree.bsearch(self._pairs, key, getkey=getkey)
+        if i == j and i is not None:
+            del self._pairs[i]
+            del self._dict[key]
+        else:
+            raise KeyError(key)
+        self.size = None
 
 
 class LeafNode(Node):
