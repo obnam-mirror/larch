@@ -108,6 +108,12 @@ class NodeTests(unittest.TestCase):
         self.assertEqual(node.pairs(), [('bar', 'xxx'), ('foo', 'bar')])
         self.assertEqual(node['bar'], 'xxx')
 
+    def test_add_resets_cached_size(self):
+        node = btree.nodes.Node(0, [])
+        node.size = 1234
+        node.add('foo', 'bar')
+        self.assertEqual(node.size, None)
+
     def test_removes_first_key(self):
         node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
                                     ('foo', 'bar')])
@@ -133,6 +139,12 @@ class NodeTests(unittest.TestCase):
         node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
                                     ('foo', 'bar')])
         self.assertRaises(KeyError, node.remove, 'yo')
+
+    def test_remove_resets_cached_size(self):
+        node = btree.nodes.Node(0, [('foo', 'bar')])
+        node.size = 1234
+        node.remove('foo')
+        self.assertEqual(node.size, None)
 
 
 class IndexNodeTests(unittest.TestCase):

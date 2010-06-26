@@ -88,6 +88,7 @@ class Node(object):
         else:
             self._pairs.insert(i+1, pair)
         self._dict[key] = value
+        self.size = None
 
     def remove(self, key):
         '''Remove a key from the node.
@@ -103,6 +104,8 @@ class Node(object):
             del self._dict[key]
         else:
             raise KeyError(key)
+        self.size = None
+
 
 class LeafNode(Node):
 
