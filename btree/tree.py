@@ -352,6 +352,7 @@ class BTree(object):
 
             # We can just make the child be the new root node.
             self.root.remove(key)
+            self.put_node(self.root) # So decrement gets modified root.
             self.decrement(self.root_id)
             self.root_id = child.id
 
