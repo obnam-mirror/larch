@@ -240,7 +240,10 @@ class BTree(object):
         if self.root_id is None or len(self.root) == 0:
             leaf = btree.LeafNode(self.new_id(), [(key, value)])
             self.put_node(leaf)
-            self._new_root([(key, leaf.id)])
+            if self.root_id is None:
+                self._new_root([(key, leaf.id)])
+            else:
+                self.root.add(key, leaf.id)
             self.increment(leaf.id)
             return
 
@@ -329,9 +332,28 @@ class BTree(object):
         if self.root_id is None:
             raise KeyError(key)
 
+        assert self.node_store.get_refcount(self.root_id) == 1
         self._remove_from_index(self.root, key)
-        if self.node_store.get_refcount(self.root.id) == 0: # pragma: no cover
-            self.node_store.set_refcount(self.root.id, 1)
+        
+        # After removing things, the top of the tree might consist of a
+        # list of index nodes with only a single child, which is also
+        # an index node. These can and should be removed, for efficiency.
+        # Further, since we've modified all of these nodes, they can all
+        # be modified in place.
+        while len(self.root) == 1:
+            key, child_id = self.root.pairs()[0]
+            assert self.node_can_be_modified_in_place(self.root)
+            assert self.node_store.get_refcount(self.root_id) == 1
+            assert self.node_store.get_refcount(child_id) == 1
+
+            child = self.get_node(child_id)
+            if isinstance(child, btree.LeafNode):
+                break
+
+            # We can just make the child be the new root node.
+            self.root.remove(key)
+            self.decrement(self.root_id)
+            self.root_id = child.id
 
     def _remove_from_index(self, index, key):
         child_key = index.find_key_for_child_containing(key)
@@ -377,13 +399,13 @@ class BTree(object):
 
     def _merge_index(self, parent, index, sibling_index):
         pairs = parent.pairs()
-        sibling_id = pairs[sibling_index][1]
+        sibling_key, sibling_id = pairs[sibling_index]
         sibling = self.get_node(sibling_id)
         if len(sibling) + len(index) <= self.max_index_length:
             for k, v in sibling.pairs():
                 index.add(k, v)
                 self.increment(v)
-            parent.remove(pairs[sibling_index][0])
+            parent.remove(sibling_key)
             self.decrement(sibling.id)
             return True
         else:
@@ -523,7 +545,7 @@ class BTree(object):
             self.node_store.remove_node(node_id)
             self.node_store.set_refcount(node_id, 0)
 
-    def dump(self, f): # pragma: no cover
+    def dump(self, f, msg=None): # pragma: no cover
         '''Dump tree structure to open file f.'''
         
         def dumper(node, indent):
@@ -540,5 +562,7 @@ class BTree(object):
                     f.write(' %s=%s' % (key, value))
                 f.write('\n')
         
+        if msg is not None:
+            f.write('%s\n' % msg)
         f.write('Dumping tree %s\n' % self)
         dumper(self.root, 1)
