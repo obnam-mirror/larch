@@ -300,13 +300,11 @@ class NodeStoreDisk(btree.NodeStore):
     
     def remove_node(self, node_id):
         self.cache.remove(node_id)
-        if self.upload_queue.remove(node_id):
-            return
-
+        got_it = self.upload_queue.remove(node_id)
         name = self.pathname(node_id)
         if self.file_exists(name):
             self.remove_file(name)
-        else:
+        elif not got_it:
             raise btree.NodeMissing(node_id)
         
     def list_nodes(self):
