@@ -25,4 +25,4 @@ check: all
 	
 clean:
 	rm -f .coverage *.py[co] btree/*.py[co] insert.prof lookup.prof
-	rm -rf build tempdir btree.log
+	rm -rf build tempdir btree.log example.tree
