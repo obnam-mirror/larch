@@ -5,6 +5,22 @@ These are the release notes for btree, a Python implementation of a
 copy-on-write tree, designed by Odah Rodeh.
 
 
+Version 0.10, released 2010-06-29
+---------------------------------
+
+* Storage of node reference counts is now more efficient. 
+* NodeStoreDisk stores reference counts and nodes in files in a subdirectory 
+  of the directory root, which is an incompatible change, so trees made by 
+  earlier versions can't be used anymore. (That's what you get for using 
+  alpha level code. Obviously, once btree is declared to be ready for
+  production, the on-disk data structures will be supported in future
+  versions.)
+* Nodes that exist in only one tree are modified in place, rather than
+  via copy-on-write. This is impure, but brings a big speed boost.
+* New test script: insert-remove-test. "make check" automatically runs it.
+* Many optimizations to NodeCodec and elsewhere, by Richard Braakman.
+
+
 Version 0.9, released 2010-05-26
 --------------------------------
 
