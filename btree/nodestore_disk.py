@@ -197,7 +197,7 @@ class NodeStoreDisk(btree.NodeStore):
 
     def mkdir(self, dirname):
         if not os.path.exists(dirname):
-            os.mkdir(dirname)
+            os.makedirs(dirname)
 
     def read_file(self, filename):
         return file(filename).read()
@@ -261,7 +261,9 @@ class NodeStoreDisk(btree.NodeStore):
         self.rename_file(self.metadata_name + '_new', self.metadata_name)
 
     def pathname(self, node_id):
-        return os.path.join(self.dirname, self.nodedir, '%d.node' % node_id)
+        basename = '%x' % node_id
+        subdir = '%d' % (node_id / (2**13))
+        return os.path.join(self.dirname, self.nodedir, subdir, basename)
         
     def put_node(self, node):
         self.cache.add(node.id, node)
@@ -277,7 +279,7 @@ class NodeStoreDisk(btree.NodeStore):
         name = self.pathname(node.id)
         if self.file_exists(name):
             self.remove_file(name)
-        self.mkdir(os.path.join(self.dirname, self.nodedir))
+        self.mkdir(os.path.dirname(name))
         self.write_file(name, encoded_node)
         
     def get_node(self, node_id):
@@ -313,8 +315,12 @@ class NodeStoreDisk(btree.NodeStore):
             basenames = self.listdir(os.path.join(self.dirname, self.nodedir))
         except OSError:
             basenames = []
-        nodenames = [x for x in basenames if x.endswith('.node')]
-        uploaded = [int(x[:-len('.node')]) for x in nodenames]
+
+        nodedir = os.path.join(self.dirname, self.nodedir)
+        uploaded = []
+        if self.file_exists(nodedir):
+            for dirname, subdirs, basenames in os.walk(nodedir):
+                uploaded += [int(x, 16) for x in basenames]
         return queued + uploaded
 
     def get_refcount(self, node_id):
