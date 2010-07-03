@@ -146,6 +146,12 @@ class NodeTests(unittest.TestCase):
         node.remove('foo')
         self.assertEqual(node.size, None)
 
+    def test_removes_index_range(self):
+        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
+                                    ('foo', 'bar')])
+        node.remove_index_range(1, 5)
+        self.assertEqual(node.pairs(), [('bar', 'bar')])
+
 
 class IndexNodeTests(unittest.TestCase):
 
