@@ -372,9 +372,52 @@ class BTreeTests(unittest.TestCase):
                            ('008', '008')])
 
     def test_remove_range_removes_everything(self):
-        self.create_tree_for_range()
+        for key in ['%03d' % i for i in range(1000)]:
+            self.tree.insert(key, key)
         self.tree.remove_range('000', '999')
         self.assertEqual(self.tree.lookup_range('000', '999'), [])
+
+    def test_remove_range_removes_single_key_in_middle(self):
+        self.create_tree_for_range()
+        self.tree.remove_range('004', '004')
+        self.assertEqual(self.tree.lookup_range('000', '999'), 
+                          [('002', '002'), 
+                           ('006', '006'),
+                           ('008', '008')])
+
+    def test_remove_range_removes_from_beginning_of_keys(self):
+        self.create_tree_for_range()
+        self.tree.remove_range('000', '004')
+        self.assertEqual(self.tree.lookup_range('000', '999'), 
+                          [('006', '006'),
+                           ('008', '008')])
+
+    def test_remove_range_removes_from_middle_of_keys(self):
+        self.create_tree_for_range()
+        self.tree.remove_range('003', '007')
+        self.assertEqual(self.tree.lookup_range('000', '999'), 
+                          [('002', '002'),
+                           ('008', '008')])
+
+    def test_remove_range_removes_from_end_of_keys(self):
+        self.create_tree_for_range()
+        self.tree.remove_range('007', '009')
+        self.assertEqual(self.tree.lookup_range('000', '999'), 
+                          [('002', '002'), 
+                           ('004', '004'),
+                           ('006', '006')])
+
+    def test_remove_range_removes_from_empty_tree(self):
+        self.create_tree_for_range()
+        self.tree.remove_range('000', '999')
+        self.tree.remove_range('007', '009')
+        self.assertEqual(self.tree.lookup_range('000', '999'), [])
+ 
+    def test_removes_range_from_leaf(self):
+        leaf = btree.LeafNode(0, 
+                              [('000', '000'), ('111', '111'), ('222', '222')])
+        new = self.tree._remove_range_from_leaf(leaf, '111', '222')
+        self.assertEqual(new.pairs(), [('000', '000')])
 
 
 class BTreeBalanceTests(unittest.TestCase):
