@@ -134,6 +134,23 @@ def main():
         remove_time = measure(keys, lambda key: tree.remove(key),
                               lambda: forest.commit())
 
+    # Measure remove_range. This requires building a new tree.
+    keys.sort()
+    ranges = []
+    range_len = 10
+    for key in keys:
+        tree.insert(key, value)
+    for i in range(0, len(keys), range_len):
+        ranges.append((keys[i], keys[i+range_len-1]))
+    random.shuffle(ranges)
+    if do_profile:
+        profile(ranges, lambda pair: tree.remove_range(pair[0], pair[1]), 
+                lambda: forest.commit(), 'remove_range')
+    else:
+        remove_range_time = measure(ranges, 
+                                    lambda x: tree.remove_range(x[0], x[1]),
+                                    lambda: forest.commit())
+
     # Report
     if do_profile:
         print 'View *.prof with ./viewprof for profiling results.'
@@ -145,6 +162,8 @@ def main():
                                                  n/lookup_range_time)
         print 'insert2     : %5.3f s (%.1f/s)' % (insert2_time, n/insert2_time)
         print 'remove      : %5.3f s (%.1f/s)' % (remove_time, n/remove_time)
+        print 'remove_range: %5.3f s (%.1f/s)' % (remove_range_time, 
+                                                  n/remove_range_time)
 
     # Clean up
     if location:
