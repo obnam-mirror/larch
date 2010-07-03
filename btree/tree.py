@@ -334,7 +334,9 @@ class BTree(object):
 
         assert self.node_store.get_refcount(self.root_id) == 1
         self._remove_from_index(self.root, key)
-        
+        self._remove_single_index_children()
+
+    def _remove_single_index_children(self):
         # After removing things, the top of the tree might consist of a
         # list of index nodes with only a single child, which is also
         # an index node. These can and should be removed, for efficiency.
@@ -344,7 +346,8 @@ class BTree(object):
             key, child_id = self.root.pairs()[0]
             assert self.node_can_be_modified_in_place(self.root)
             assert self.node_store.get_refcount(self.root_id) == 1
-            assert self.node_store.get_refcount(child_id) == 1
+            assert self.node_store.get_refcount(child_id) == 1, \
+                    (child_id, self.node_store.get_refcount(child_id))
 
             child = self.get_node(child_id)
             if isinstance(child, btree.LeafNode):
@@ -446,8 +449,85 @@ class BTree(object):
 
         '''
 
-        for key, value in self.lookup_range(minkey, maxkey):
-            self.remove(key)
+        self._remove_range_from_index(self.root, minkey, maxkey)
+        self._remove_single_index_children()
+
+    def _remove_range_from_index(self, index, minkey, maxkey):
+        new = self._shadow(index)
+
+        getkey = lambda pair: pair[0]
+        pairs = new.pairs()
+        
+        a, b = btree.bsearch(pairs, minkey, getkey=getkey)
+        i, j = btree.bsearch(pairs, maxkey, getkey=getkey)
+
+        partials = set()
+        wholesale_low = None
+        wholesale_high = None
+
+        if True:
+            assert minkey <= maxkey
+            if a is None and b is None:
+                assert i is None
+                assert j is None
+            else:
+                assert i is not None
+
+        if a is None and b is None:
+            # Empty node, nothing to remove.
+            return new
+        else:
+            if a is not None:
+                partials.add(a)
+            if b is not None:
+                partials.add(b)
+                if i-b > 1:
+                    wholesale_low = b+1
+                    wholesale_high = i-1
+            partials.add(i)
+            
+        # Delete those children that can be deleted completely.
+        partials_keys = [getkey(pairs[x]) for x in partials]
+        if wholesale_low is not None and wholesale_high is not None:
+            for key, child_id in pairs[wholesale_low:wholesale_high+1]:
+                self.decrement(child_id)
+            new.remove_index_range(wholesale_low, wholesale_high)
+        
+        # At this point, the children at indexes a and j, if they exist,
+        # may have some keys that are not in the range, so we couldn't delete
+        # them wholesale.
+        
+        for key in partials_keys:
+            child_id = new[key]
+            child = self.get_node(child_id)
+            if isinstance(child, btree.IndexNode):
+                new_kid = self._remove_range_from_index(child, minkey, maxkey)
+            else:
+                new_kid = self._remove_range_from_leaf(child, minkey, maxkey)
+            if len(new_kid) == 0:
+                new.remove(key)
+                for x in set([new_kid.id, child.id]):
+                    self.decrement(x)
+            else:
+                new.remove(key)
+                new.add(new_kid.first_key(), new_kid.id)
+                self.increment(new_kid.id)
+                self.decrement(child.id)
+
+        return new
+
+    def _remove_range_from_leaf(self, leaf, minkey, maxkey):
+        new = self._shadow(leaf)
+        
+        getkey = lambda pair: pair[0]
+        pairs = new.pairs()
+
+        a, b = btree.bsearch(pairs, minkey, getkey=getkey)
+        i, j = btree.bsearch(pairs, maxkey, getkey=getkey)
+
+        if b is not None and i is not None:
+            new.remove_index_range(b, i)
+        return new
 
     def increment(self, node_id):
         '''Non-recursively increment refcount for a node.'''

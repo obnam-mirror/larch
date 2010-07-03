@@ -105,6 +105,15 @@ class Node(object):
         else:
             raise KeyError(key)
         self.size = None
+        
+    def remove_index_range(self, lo, hi):
+        '''Remove keys given a range of indexes into pairs.
+        
+        lo and hi are inclusive.
+        
+        '''
+        
+        del self._pairs[lo:hi+1]
 
 
 class LeafNode(Node):
