@@ -457,10 +457,6 @@ class BTree(object):
 
         getkey = lambda pair: pair[0]
         pairs = new.pairs()
-        if (not pairs or 
-            getkey(pairs[-1]) < minkey or 
-            getkey(pairs[0]) > maxkey):
-            return new
         
         a, b = btree.bsearch(pairs, minkey, getkey=getkey)
         i, j = btree.bsearch(pairs, maxkey, getkey=getkey)
@@ -475,7 +471,7 @@ class BTree(object):
                 assert i is None
                 assert j is None
             else:
-                assert i is not None, (minkey, maxkey, a, b, i, j)
+                assert i is not None or j is not None
 
         if a is None and b is None:
             # Empty node, nothing to remove.
@@ -485,10 +481,11 @@ class BTree(object):
                 partials.add(a)
             if b is not None:
                 partials.add(b)
-                if i-b > 1:
+                if i is not None and i-b > 1:
                     wholesale_low = b+1
                     wholesale_high = i-1
-            partials.add(i)
+            if i is not None:
+                partials.add(i)
             
         # Delete those children that can be deleted completely.
         partials_keys = [getkey(pairs[x]) for x in partials]

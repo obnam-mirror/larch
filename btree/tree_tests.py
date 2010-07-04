@@ -412,6 +412,12 @@ class BTreeTests(unittest.TestCase):
         self.tree.remove_range('000', '999')
         self.tree.remove_range('007', '009')
         self.assertEqual(self.tree.lookup_range('000', '999'), [])
+
+    def test_bug_remove_range_when_only_key_is_larger_than_maxkey(self):
+        self.tree.insert('555', '555')
+        self.tree.remove_range('000', '111')
+        self.assertEqual(self.tree.lookup_range('000', '999'), 
+                         [('555', '555')])
  
     def test_removes_range_from_leaf(self):
         leaf = btree.LeafNode(0, 
