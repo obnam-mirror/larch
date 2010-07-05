@@ -5,6 +5,22 @@ These are the release notes for btree, a Python implementation of a
 copy-on-write tree, designed by Odah Rodeh.
 
 
+Version 0.11, released 2010-07-05
+---------------------------------
+
+* Now includes a small example program, written for the Wellington Python
+  User Group meeting where the first talk about this library was given.
+* `NodeStoreDisk` stores nodes in a simple directory hierarchy, instead of
+  a flat one, to better handle very large trees.
+* `NodeStoreDisk` now has a much larger default upload queue size (now 1024,
+  was 64), to better handle large trees.
+* `speed-test` now also tests `remove` and `remove_range` methods. Further,
+  it reports both CPU and wall clock timings, and has been refactored a bit.
+  Results for `lookup_range` are no longer comparable with old versions,
+  since the measured scenario has changed.
+* `remove_range` has been rewritten and is now much faster.
+
+
 Version 0.10, released 2010-06-29
 ---------------------------------
 
