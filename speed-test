@@ -42,6 +42,7 @@ def measure(items, func, finalize, do_profile, profname):
             func(item)
         finalize()
 
+    start_time = time.time()
     start = time.clock()
     if do_profile:
         globaldict = globals().copy()
@@ -51,7 +52,8 @@ def measure(items, func, finalize, do_profile, profname):
     else:
         helper()
     end = time.clock()
-    return end - start
+    end_time = time.time()
+    return end - start, end_time - start_time
         
 
 def main():
@@ -96,48 +98,50 @@ def main():
     # Measure inserts.
     random.shuffle(keys)
     value = 'x' * value_size
-    insert_time = measure(keys, lambda key: tree.insert(key, value), 
-                          forest.commit, do_profile, 'insert')
+    insert = measure(keys, lambda key: tree.insert(key, value), 
+                     forest.commit, do_profile, 'insert')
         
     # Measure lookups.
     random.shuffle(keys)
-    lookup_time = measure(keys, tree.lookup, nop, do_profile, 'lookup')
+    lookup = measure(keys, tree.lookup, nop, do_profile, 'lookup')
         
     # Measure range lookups.
     random.shuffle(ranges)
-    lookup_range_time = measure(ranges, 
-                                lambda x: tree.lookup_range(x[0], x[1]),
-                                nop, do_profile, 'lookup_range')
+    lookup_range = measure(ranges, lambda x: tree.lookup_range(x[0], x[1]),
+                           nop, do_profile, 'lookup_range')
 
     # Measure inserts into existing tree.
     random.shuffle(keys)
-    insert2_time = measure(keys, lambda key: tree.insert(key, value),
-                           forest.commit, do_profile, 'insert2')
+    insert2 = measure(keys, lambda key: tree.insert(key, value),
+                      forest.commit, do_profile, 'insert2')
 
     # Measure removes from tree.
     random.shuffle(keys)
-    remove_time = measure(keys, tree.remove, forest.commit, 
-                          do_profile, 'remove')
+    remove = measure(keys, tree.remove, forest.commit, do_profile, 'remove')
 
     # Measure remove_range. This requires building a new tree.
     keys.sort()
     for key in keys:
         tree.insert(key, value)
     random.shuffle(ranges)
-    remove_range_time = measure(ranges, 
-                                lambda x: tree.remove_range(x[0], x[1]),
-                                forest.commit, do_profile, 'remove_range')
+    remove_range = measure(ranges, lambda x: tree.remove_range(x[0], x[1]),
+                           forest.commit, do_profile, 'remove_range')
 
     # Report
-    def result(howlong):
-        return howlong, n / (howlong - looptime)
+    def speed(result, i):
+        return n / (result[i] - looptime[i])
+    def report(label, result):
+        cpu, wall = result
+        print '%-12s: %5.3f s (%8.1f/s) CPU; %5.3f s (%8.1f/s) wall clock' % \
+            (label, cpu, speed(result, 0), wall, speed(result, 1))
+
     print 'num_operations: %d' % n
-    print 'insert      : %5.3f s (%.1f/s)' % result(insert_time)
-    print 'lookup      : %5.3f s (%.1f/s)' % result(lookup_time)
-    print 'lookup_range: %5.3f s (%.1f/s)' % result(lookup_range_time)
-    print 'insert2     : %5.3f s (%.1f/s)' % result(insert2_time)
-    print 'remove      : %5.3f s (%.1f/s)' % result(remove_time)
-    print 'remove_range: %5.3f s (%.1f/s)' % result(remove_range_time)
+    report('insert', insert)
+    report('lookup', lookup)
+    report('lookup_range', lookup_range)
+    report('insert2', insert2)
+    report('remove', remove)
+    report('remove_range', remove_range)
     if do_profile:
         print 'View *.prof with ./viewprof for profiling results.'
 
