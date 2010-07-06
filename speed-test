@@ -42,6 +42,7 @@ def measure(items, func, finalize, do_profile, profname):
             func(item)
         finalize()
 
+    print 'measuring', profname
     start_time = time.time()
     start = time.clock()
     if do_profile:
