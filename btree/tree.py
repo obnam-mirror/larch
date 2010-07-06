@@ -171,7 +171,7 @@ class BTree(object):
         else:
             assert isinstance(node, btree.IndexNode)
             result = []
-            for child_id in self._find_children_in_range(node, minkey, maxkey):
+            for child_id in node.find_children_in_range(minkey, maxkey):
                 result += self._lookup_range(child_id, minkey, maxkey)
             return result
 
@@ -187,14 +187,6 @@ class BTree(object):
         j = max_lo
 
         return pairs[i:j+1]
-
-    def _find_children_in_range(self, node, minkey, maxkey):
-        keys = node.keys()
-        while len(keys) > 1 and keys[1] < minkey:
-            del keys[0] # pragma: no cover
-        while keys and keys[-1] > maxkey:
-            del keys[-1]
-        return [node[key] for key in keys]        
 
     def _new_root(self, pairs):
         '''Create a new root node for this tree.'''

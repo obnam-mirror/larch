@@ -150,3 +150,31 @@ class IndexNode(Node):
             return None
         else:
             return getkey(self._pairs[lo])
+
+    def find_children_in_range(self, minkey, maxkey):
+        '''Find all children whose key is in the range.
+        
+        minkey and maxkey are exclusive. Note that a child might
+        be returned even if not all of its keys are in the range,
+        just some of them.
+        
+        '''
+        
+        getkey = lambda pair: pair[0]
+        getchild = lambda pair: pair[1]
+        
+        a, b = btree.bsearch(self._pairs, minkey, getkey=getkey)
+        i, j = btree.bsearch(self._pairs, maxkey, getkey=getkey)
+        
+        if a is not None:
+            lo = a
+        elif b is not None:
+            lo = b
+        else:
+            return []
+
+        if i is None:
+            return []
+
+        return [getchild(pair) for pair in self._pairs[lo:i+1]]
+

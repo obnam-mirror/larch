@@ -170,3 +170,23 @@ class IndexNodeTests(unittest.TestCase):
     def test_returns_none_when_no_child_contains_key(self):
         self.assertEqual(self.index.find_key_for_child_containing('a'), None)
 
+    def test_finds_no_children_in_range_when_empty(self):
+        empty = btree.IndexNode(0, [])
+        self.assertEqual(empty.find_children_in_range('bar', 'foo'), [])
+
+    def test_finds_children_in_range_at_beginning(self):
+        self.assertEqual(self.index.find_children_in_range('aaa', 'ccc'), 
+                         [self.leaf1.id])
+
+    def test_finds_children_in_range_at_end(self):
+        self.assertEqual(self.index.find_children_in_range('foo', 'ggg'), 
+                         [self.leaf2.id])
+
+    def test_finds_no_children_when_range_comes_before_first_key(self):
+        self.assertEqual(self.index.find_children_in_range('aaa', 'aaa'), 
+                         [])
+
+    def test_finds_last_child_when_range_comes_after_last_key(self):
+        self.assertEqual(self.index.find_children_in_range('ggg', 'ggg'), 
+                         [self.leaf2.id])
+
