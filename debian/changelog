@@ -1,3 +1,11 @@
+python-btree (0.12) squeeze; urgency=low
+
+  * New upstream release.
+  * debian/control: Added Python-Version headers.
+  * debian/control: Bumped Standards-Version. No other changes required.
+
+ -- Lars Wirzenius <liw@liw.fi>  Sun, 11 Jul 2010 19:13:43 +1200
+
 python-btree (0.11) squeeze; urgency=low
 
   * New upstream release.

@@ -5,6 +5,14 @@ These are the release notes for btree, a Python implementation of a
 copy-on-write tree, designed by Odah Rodeh.
 
 
+Version 0.12, released 2010-07-05
+---------------------------------
+
+* Some speed optimizations.
+* The BTree objects no longer have a root_id attribute. Instead, use
+  BTree.root.id (if BTree.root is not None).
+
+
 Version 0.11, released 2010-07-05
 ---------------------------------
 
