@@ -55,12 +55,12 @@ def assert_refcounts_are_one(tree):
         if isinstance(node, btree.IndexNode):
             for key, child_id in node.pairs():
                 helper(child_id)
-    helper(tree.root_id)
+    helper(tree.root.id)
 
 
 def do_insert(tree, key, value):
     logging.debug('do_insert(%s)' % (repr(key)))
-    if tree.root_id is not None:
+    if tree.root is not None:
         assert_refcounts_are_one(tree)
     tree.insert(key, value)
     assert_refcounts_are_one(tree)

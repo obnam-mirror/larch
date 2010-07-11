@@ -320,12 +320,13 @@ class BTreeTests(unittest.TestCase):
         
     def test_persists(self):
         self.tree.insert('foo', 'bar')
-        tree2 = btree.BTree(self.forest, self.ns, self.tree.root_id)
+        tree2 = btree.BTree(self.forest, self.ns, self.tree.root.id)
         self.assertEqual(tree2.lookup('foo'), 'bar')
 
     def test_last_node_id_persists(self):
+        self.tree.insert('foo', 'bar') # make tree has root
         node1 = self.tree.new_leaf([])
-        tree2 = btree.BTree(self.forest, self.ns, self.tree.root_id)
+        tree2 = btree.BTree(self.forest, self.ns, self.tree.root.id)
         node2 = tree2.new_leaf([])
         self.assertEqual(node1.id + 1, node2.id)
 

@@ -67,7 +67,10 @@ class BTree(object):
         self.max_index_length = self.node_store.max_index_pairs()
         self.min_index_length = self.max_index_length / 2
 
-        self.root_id = root_id
+        if root_id is None:
+            self.root = None
+        else:
+            self.root = self.get_node(root_id)
 
     def check_key_size(self, key):
         if len(key) != self.node_store.codec.key_bytes:
@@ -102,7 +105,7 @@ class BTree(object):
         
     def set_root(self, node):
         '''Use a (newly created) node as the new root.'''
-        self.root_id = node.id
+        self.root = node
         self.node_store.set_refcount(node.id, 1)
 
     def new_root(self, pairs):
@@ -122,14 +125,6 @@ class BTree(object):
             node.size = self.node_store.codec.leaf_size(node.pairs())
         return node.size
 
-    @property
-    def root(self):
-        '''Return the root node.'''
-        if self.root_id is None:
-            return None
-        else:
-            return self.get_node(self.root_id)
-        
     def lookup(self, key):
         '''Return value corresponding to ``key``.
         
@@ -138,7 +133,7 @@ class BTree(object):
         '''
 
         self.check_key_size(key)
-        if self.root_id is None:
+        if self.root is None:
             raise KeyError(key)
         return self._lookup(self.root.id, key)
 
@@ -160,9 +155,9 @@ class BTree(object):
 
         '''
 
-        if self.root_id is None:
+        if self.root is None:
             return []
-        return self._lookup_range(self.root_id, minkey, maxkey)
+        return self._lookup_range(self.root.id, minkey, maxkey)
 
     def _lookup_range(self, node_id, minkey, maxkey):
         node = self.get_node(node_id)
@@ -193,7 +188,7 @@ class BTree(object):
         root = btree.IndexNode(self.new_id(), pairs)
         self.put_node(root)
         self.node_store.set_refcount(root.id, 1)
-        self.root_id = root.id
+        self.root = root
 
     def _clone_node(self, node):
         '''Make a new, identical copy of a node.
@@ -229,10 +224,10 @@ class BTree(object):
 
         # Is the tree empty? This needs special casing to keep
         # _insert_into_index simpler.
-        if self.root_id is None or len(self.root) == 0:
+        if self.root is None or len(self.root) == 0:
             leaf = btree.LeafNode(self.new_id(), [(key, value)])
             self.put_node(leaf)
-            if self.root_id is None:
+            if self.root is None:
                 self._new_root([(key, leaf.id)])
             else:
                 self.root.add(key, leaf.id)
@@ -242,7 +237,7 @@ class BTree(object):
         kids = self._insert_into_index(self.root, key, value)
         if len(kids) > 1:
             pairs = [(kid.first_key(), kid.id) for kid in kids]
-            old_root_id = self.root_id
+            old_root_id = self.root.id
             assert old_root_id is not None
             self._new_root(pairs)
             for kid in kids:
@@ -321,10 +316,10 @@ class BTree(object):
     
         self.check_key_size(key)
 
-        if self.root_id is None:
+        if self.root is None:
             raise KeyError(key)
 
-        assert self.node_store.get_refcount(self.root_id) == 1
+        assert self.node_store.get_refcount(self.root.id) == 1
         self._remove_from_index(self.root, key)
         self._remove_single_index_children()
 
@@ -337,7 +332,7 @@ class BTree(object):
         while len(self.root) == 1:
             key, child_id = self.root.pairs()[0]
             assert self.node_can_be_modified_in_place(self.root)
-            assert self.node_store.get_refcount(self.root_id) == 1
+            assert self.node_store.get_refcount(self.root.id) == 1
             assert self.node_store.get_refcount(child_id) == 1, \
                     (child_id, self.node_store.get_refcount(child_id))
 
@@ -348,8 +343,8 @@ class BTree(object):
             # We can just make the child be the new root node.
             self.root.remove(key)
             self.put_node(self.root) # So decrement gets modified root.
-            self.decrement(self.root_id)
-            self.root_id = child.id
+            self.decrement(self.root.id)
+            self.root = child
 
     def _remove_from_index(self, index, key):
         child_key = index.find_key_for_child_containing(key)

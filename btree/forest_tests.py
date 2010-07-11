@@ -42,13 +42,13 @@ class ForestTests(unittest.TestCase):
     def test_clones_a_tree(self):
         t1 = self.forest.new_tree()
         t2 = self.forest.new_tree(t1)
-        self.assertNotEqual(t1.root_id, t2.root_id)
+        self.assertNotEqual(t1.root.id, t2.root.id)
 
     def test_clones_can_be_changed_independently(self):
         t1 = self.forest.new_tree()
         t2 = self.forest.new_tree(t1)
         t1.insert('foo', 'foo')
-        self.assertNotEqual(t1.root_id, t2.root_id)
+        self.assertNotEqual(t1.root.id, t2.root.id)
 
     def test_clones_do_not_clash_in_new_node_ids(self):
         t1 = self.forest.new_tree()
@@ -63,7 +63,7 @@ class ForestTests(unittest.TestCase):
         self.forest.commit()
 
         f2 = btree.Forest(self.ns)
-        self.assertEqual([t.root_id for t in f2.trees], [t1.root_id])
+        self.assertEqual([t.root.id for t in f2.trees], [t1.root.id])
 
     def test_removes_trees(self):
         t1 = self.forest.new_tree()
@@ -81,8 +81,8 @@ class ForestTests(unittest.TestCase):
 
         f2 = btree.Forest(self.ns)
         t1a, t2a = f2.trees
-        self.assertEqual(t1.root_id, t1a.root_id)
-        self.assertEqual(t2.root_id, t2a.root_id)
+        self.assertEqual(t1.root.id, t1a.root.id)
+        self.assertEqual(t2.root.id, t2a.root.id)
         self.assertEqual(t1a.lookup('000'), 'foo')
         self.assertEqual(t1a.lookup('001'), 'bar')
         self.assertRaises(KeyError, t2a.lookup, '000')

@@ -54,7 +54,7 @@ class Forest(object):
         '''
 
         if old:
-            old_root = self.node_store.get_node(old.root_id)
+            old_root = self.node_store.get_node(old.root.id)
             pairs = old_root.pairs()
         else:
             pairs = []
@@ -76,9 +76,9 @@ class Forest(object):
         '''Make sure all changes are stored into the node store.'''
         self.node_store.push_upload_queue()
         self.node_store.set_metadata('last_id', self.last_id)
-        root_ids = ','.join('%d' % t.root_id 
+        root_ids = ','.join('%d' % t.root.id 
                             for t in self.trees 
-                            if t.root_id is not None)
+                            if t.root is not None)
         self.node_store.set_metadata('root_ids', root_ids)
         self.node_store.save_metadata()
         self.node_store.save_refcounts()
