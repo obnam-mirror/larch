@@ -1,3 +1,10 @@
+python-btree (0.13) squeeze; urgency=low
+
+  * New upstream release.
+    - NodeStoreDisk's LRU cache size is user settable
+
+ -- Lars Wirzenius <liw@liw.fi>  Tue, 13 Jul 2010 09:15:33 +1200
+
 python-btree (0.12) squeeze; urgency=low
 
   * New upstream release.

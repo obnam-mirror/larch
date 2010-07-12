@@ -5,7 +5,14 @@ These are the release notes for btree, a Python implementation of a
 copy-on-write tree, designed by Odah Rodeh.
 
 
-Version 0.12, released 2010-07-05
+Version 0.13, released 2010-07-13
+---------------------------------
+
+* Speed-related improvement: The size of NodeStoreDisk's LRU cache for
+  nodes is now user-settable.
+
+
+Version 0.12, released 2010-07-11
 ---------------------------------
 
 * Some speed optimizations.
