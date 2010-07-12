@@ -185,13 +185,14 @@ class NodeStoreDisk(btree.NodeStore):
     refcounts_per_group = 2**15
     nodedir = 'nodes'
 
-    def __init__(self, dirname, node_size, codec, upload_max=1024):
+    def __init__(self, dirname, node_size, codec, upload_max=1024, 
+                 lru_size=100):
         btree.NodeStore.__init__(self, node_size, codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
         self.metadata = None
         self.rs = RefcountStore(self)
-        self.cache = lru.LRUCache(100)
+        self.cache = lru.LRUCache(lru_size)
         self.upload_max = upload_max
         self.upload_queue = UploadQueue(self._really_put_node, self.upload_max)
 
