@@ -201,6 +201,7 @@ class BTree(object):
             new = btree.IndexNode(self.new_id(), node.pairs())
         else:
             new = btree.LeafNode(self.new_id(), node.pairs())
+            new.size = node.size
         self.put_node(new)
         return new
 
