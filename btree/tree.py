@@ -334,8 +334,9 @@ class BTree(object):
             key, child_id = self.root.pairs()[0]
             assert self.node_can_be_modified_in_place(self.root)
             assert self.node_store.get_refcount(self.root.id) == 1
-            assert self.node_store.get_refcount(child_id) == 1, \
-                    (child_id, self.node_store.get_refcount(child_id))
+            
+            if self.node_store.get_refcount(child_id) != 1:
+                break # pragma: no cover
 
             child = self.get_node(child_id)
             if isinstance(child, btree.LeafNode):
