@@ -55,10 +55,9 @@ class BtreeFsck(object):
         self._assert(value in collection, msg, 
                      '%s in %s' % (repr(value), repr(collection)))
 
-    def check_node(self, node_id, minkey, maxkey):
-        node = self.ns.get_node(node_id)
+    def check_node(self, node, minkey, maxkey):
         keys = node.keys()
-        self.assert_greater(self.ns.get_refcount(node_id), 0, 
+        self.assert_greater(self.ns.get_refcount(node.id), 0, 
                             'node refcount must be > 0')
         self.assert_greater(len(keys), 0, 'node must have children')
         self.assert_equal(sorted(keys), keys, 'node keys must be sorted')
@@ -69,55 +68,63 @@ class BtreeFsck(object):
             self.assert_in_keyrange(keys[-1], minkey, maxkey,
                                     'keys must be within range')
     
-    def check_leaf_node(self, node_id, minkey, maxkey):
-        logging.info('checking leaf node: %d' % node_id)
-        self.check_node(node_id, minkey, maxkey)
+    def check_leaf_node(self, node, minkey, maxkey):
+        pass
     
-    def check_index_node(self, node_id, minkey, maxkey):
-        logging.info('checking index node: %d' % node_id)
-        self.check_node(node_id, minkey, maxkey)
-
-        node = self.ns.get_node(node_id)
+    def check_index_node(self, node, minkey, maxkey):
         keys = node.keys()
-        child_type = None
-        height = None
+        child0_id = node[keys[0]]
+        try:
+            child0 = self.ns.get_node(child0_id)
+        except btree.NodeMissing:
+            logging.error('child missing: %d' % child0_id)
+            logging.error('index node not checked: %d' % node.id)
+            return
+        child_type = type(child0)
 
-        for i, key in enumerate(keys):
-            child_id = node[key]
-            child = self.ns.get_node(child_id)
-            next_key = (keys + [maxkey])[i+1]
+        for key in keys:
+            child = self.ns.get_node(node[key])
             
-            if child_type is None:
-                self.assert_in(type(child), [btree.IndexNode, btree.LeafNode],
-                               'type must be index or leaf')
-                child_type = type(child)
-            else:
-                self.assert_equal(type(child), child_type,
-                                  'all children must have same type')
-            if type(child) == btree.IndexNode:
-                h = self.check_index_node(child_id, key, next_key)
-            else:
-                self.check_leaf_node(child_id, key, next_key)
-                h = 1
-
-            if height is None:
-                height = h
-            else:
-                self.assert_equal(h, height, 'children must have same height')
-        
-        return height + 1
+            self.assert_in(type(child), [btree.IndexNode, btree.LeafNode],
+                           'type must be index or leaf')
+            self.assert_equal(type(child), child_type,
+                              'all children must have same type')
             
-    def check_root_node(self, root_id):
-        logging.info('checking root node: %d' % root_id)
-        root = self.ns.get_node(root_id)
-        self.assert_equal(self.ns.get_refcount(root_id), 1, 
+    def check_root_node(self, root):
+        self.assert_equal(self.ns.get_refcount(root.id), 1, 
                           'root refcount should be 1')
         self.assert_equal(type(root), btree.IndexNode, 'root must be an index')
         
+    def walk(self, node, minkey, maxkey):
+        yield node, minkey, maxkey
+        if type(node) is btree.IndexNode:
+            keys = node.keys()
+            next_keys = keys[1:] + [maxkey]
+            for i in range(len(keys)):
+                child_id = node[keys[i]]
+                try:
+                    child = self.ns.get_node(child_id)
+                except btree.NodeMissing:
+                    logging.error('node missing: %d' % child_id)
+                else:
+                    for t in self.walk(child, keys[i], next_keys[i]):
+                        yield t
+        
     def check_tree(self, root_id):
         logging.info('checking tree: %d' % root_id)
-        self.check_root_node(root_id)
-        self.check_index_node(root_id, self.minkey, self.maxkey)
+        try:
+            root = self.ns.get_node(root_id)
+        except btree.NodeMissing:
+            logging.error('root node missing: %d' % root_id)
+        else:
+            self.check_root_node(root)
+            for node, min2, max2 in self.walk(root, self.minkey, self.maxkey):
+                logging.info('checking node: %d' % node.id)
+                self.check_node(node, min2, max2)
+                if type(node) is btree.IndexNode:
+                    self.check_index_node(node, min2, max2)
+                else:
+                    self.check_leaf_node(node, min2, max2)
 
     def forest_root_ids(self):
         string = self.ns.get_metadata('root_ids')
