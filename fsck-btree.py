@@ -130,8 +130,8 @@ class BtreeFsck(object):
 
 def main():
     dirname = sys.argv[1]
-    node_size = int(sys.argv[2])
-    key_size = int(sys.argv[3])
+    node_size = 65535 # doesn't matter for reading
+    key_size = int(sys.argv[2])
     
     logging.basicConfig(stream=sys.stdout, format='%(levelname)s: %(message)s', 
                         level=logging.DEBUG)
