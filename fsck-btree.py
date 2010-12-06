@@ -80,6 +80,8 @@ class BtreeFsck(object):
         node = self.ns.get_node(node_id)
         keys = node.keys()
         child_type = None
+        height = None
+
         for i, key in enumerate(keys):
             child_id = node[key]
             child = self.ns.get_node(child_id)
@@ -93,9 +95,17 @@ class BtreeFsck(object):
                 self.assert_equal(type(child), child_type,
                                   'all children must have same type')
             if type(child) == btree.IndexNode:
-                self.check_index_node(child_id, key, next_key)
+                h = self.check_index_node(child_id, key, next_key)
             else:
                 self.check_leaf_node(child_id, key, next_key)
+                h = 1
+
+            if height is None:
+                height = h
+            else:
+                self.assert_equal(h, height, 'children must have same height')
+        
+        return height + 1
             
     def check_root_node(self, root_id):
         logging.info('checking root node: %d' % root_id)
