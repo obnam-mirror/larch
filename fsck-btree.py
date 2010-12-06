@@ -79,12 +79,19 @@ class BtreeFsck(object):
 
         node = self.ns.get_node(node_id)
         keys = node.keys()
+        child_type = None
         for i, key in enumerate(keys):
             child_id = node[key]
             child = self.ns.get_node(child_id)
             next_key = (keys + [maxkey])[i+1]
-            self.assert_in(type(child), [btree.IndexNode, btree.LeafNode],
-                           'type must be index or leaf')
+            
+            if child_type is None:
+                self.assert_in(type(child), [btree.IndexNode, btree.LeafNode],
+                               'type must be index or leaf')
+                child_type = type(child)
+            else:
+                self.assert_equal(type(child), child_type,
+                                  'all children must have same type')
             if type(child) == btree.IndexNode:
                 self.check_index_node(child_id, key, next_key)
             else:
