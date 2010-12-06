@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import logging
 import sys
+import ttystatus
 
 import btree
 
@@ -25,17 +25,27 @@ class BtreeFsck(object):
 
     '''Verify that a B-tree is logically correct.'''
     
-    def __init__(self, dirname, node_size, key_size):
+    def __init__(self, status, dirname, node_size, key_size):
+        self.status = status
+        self.dirname = dirname
+        self.node_size = node_size
+        self.key_size = key_size
         codec = btree.NodeCodec(key_size)
         self.ns = btree.NodeStoreDisk(dirname, node_size, codec)
         self.minkey = '\x00' * key_size
         self.maxkey = '\xff' * key_size
 
+    def error(self, msg):
+        self.status.notify('ERROR: %s' % msg)
+
+    def info(self, msg):
+        self.status.notify(msg)
+        
     def _assert(self, cond, msg1, msg2):
         if not cond:
             if msg1:
-                logging.error(msg1)
-            logging.error('not true: %s' % msg2)
+                self.error(msg1)
+            self.error('not true: %s' % msg2)
 
     def assert_equal(self, a, b, msg=''):
         self._assert(a == b, msg, '%s == %s' % (repr(a), repr(b)))
@@ -77,8 +87,8 @@ class BtreeFsck(object):
         try:
             child0 = self.ns.get_node(child0_id)
         except btree.NodeMissing:
-            logging.error('child missing: %d' % child0_id)
-            logging.error('index node not checked: %d' % node.id)
+            self.error('child missing: %d' % child0_id)
+            self.error('index node not checked: %d' % node.id)
             return
         child_type = type(child0)
 
@@ -105,21 +115,21 @@ class BtreeFsck(object):
                 try:
                     child = self.ns.get_node(child_id)
                 except btree.NodeMissing:
-                    logging.error('node missing: %d' % child_id)
+                    self.error('node missing: %d' % child_id)
                 else:
                     for t in self.walk(child, keys[i], next_keys[i]):
                         yield t
         
     def check_tree(self, root_id):
-        logging.info('checking tree: %d' % root_id)
         try:
             root = self.ns.get_node(root_id)
         except btree.NodeMissing:
-            logging.error('root node missing: %d' % root_id)
+            self.error('root node missing: %d' % root_id)
         else:
             self.check_root_node(root)
             for node, min2, max2 in self.walk(root, self.minkey, self.maxkey):
-                logging.info('checking node: %d' % node.id)
+                self.status['node_id'] = str(node.id)
+                self.status['nodes_done'] += 1
                 self.check_node(node, min2, max2)
                 if type(node) is btree.IndexNode:
                     self.check_index_node(node, min2, max2)
@@ -131,8 +141,22 @@ class BtreeFsck(object):
         return [int(x) for x in string.split(',')]
 
     def check_forest(self):
+        self.info('btree fsck')
+        self.info('forest: %s' % self.dirname)
+        self.info('node size: %d' % self.node_size)
+        self.info('key size: %d' % self.key_size)
+
+        nodes = self.ns.list_nodes()
+        self.info('nodes: %d' % len(nodes))
+        
+        self.status['node_id'] = '---'
+        self.status['nodes_done'] = 0
+        self.status['nodes_total'] = len(nodes)
+
         for root_id in self.forest_root_ids():
             self.check_tree(root_id)
+        
+        self.status.finish()
 
 
 def main():
@@ -140,14 +164,13 @@ def main():
     node_size = 65535 # doesn't matter for reading
     key_size = int(sys.argv[2])
     
-    logging.basicConfig(stream=sys.stdout, format='%(levelname)s: %(message)s', 
-                        level=logging.DEBUG)
-    logging.info('btree fsck')
-    logging.info('forest: %s' % dirname)
-    logging.info('node size: %d' % node_size)
-    logging.info('key size: %d' % key_size)
-
-    fsck = BtreeFsck(dirname, node_size, key_size)
+    ts = ttystatus.TerminalStatus(period=0.1)
+    ts.add(ttystatus.Literal('checking nodes '))
+    ts.add(ttystatus.PercentDone('nodes_done', 'nodes_total', decimals=2))
+    ts.add(ttystatus.Literal(' '))
+    ts.add(ttystatus.RemainingTime('nodes_done', 'nodes_total'))
+    ts.add(ttystatus.Literal(' remaining'))
+    fsck = BtreeFsck(ts, dirname, node_size, key_size)
     fsck.check_forest()
 
 
