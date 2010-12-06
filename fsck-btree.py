@@ -46,9 +46,10 @@ class BtreeFsck(object):
     def assert_ge(self, a, b, msg=''):
         self._assert(a >= b, msg, '%s >= %s' % (repr(a), repr(b)))
 
-    def assert_in_range(self, a, lo, hi, msg=''):
-        self._assert(lo <= a <= hi, msg, 
-                     '%s <= %s <= %s' % (repr(lo), repr(a), repr(hi)))
+    def assert_in_keyrange(self, a, lo, hi, msg=''):
+        '''half-open range: lo <= a < hi'''
+        self._assert(lo <= a < hi, msg, 
+                     '%s <= %s < %s' % (repr(lo), repr(a), repr(hi)))
 
     def assert_in(self, value, collection, msg=''):
         self._assert(value in collection, msg, 
@@ -62,11 +63,11 @@ class BtreeFsck(object):
         self.assert_greater(len(keys), 0, 'node must have children')
         self.assert_equal(sorted(keys), keys, 'node keys must be sorted')
         self.assert_equal(sorted(set(keys)), keys, 'node keys must be unique')
-        self.assert_in_range(keys[0], minkey, maxkey,
-                             'node keys must be within range')
+        self.assert_in_keyrange(keys[0], minkey, maxkey,
+                                'node keys must be within range')
         if len(keys) > 1:
-            self.assert_in_range(keys[-1], minkey, maxkey,
-                                 'keys must be within range')
+            self.assert_in_keyrange(keys[-1], minkey, maxkey,
+                                    'keys must be within range')
     
     def check_leaf_node(self, node_id, minkey, maxkey):
         logging.info('checking leaf node: %d' % node_id)
@@ -81,7 +82,7 @@ class BtreeFsck(object):
         for i, key in enumerate(keys):
             child_id = node[key]
             child = self.ns.get_node(child_id)
-            next_key = (keys + [maxkey])[i]
+            next_key = (keys + [maxkey])[i+1]
             self.assert_in(type(child), [btree.IndexNode, btree.LeafNode],
                            'type must be index or leaf')
             if type(child) == btree.IndexNode:
