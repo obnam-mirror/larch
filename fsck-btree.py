@@ -49,35 +49,52 @@ class BtreeFsck(object):
     def assert_in_range(self, a, lo, hi, msg=''):
         self._assert(lo <= a <= hi, msg, 
                      '%s <= %s <= %s' % (repr(lo), repr(a), repr(hi)))
-    
-    def check_index_node(self, node_id, minkey, maxkey):
-        logging.info('checking index node: %d' % node_id)
+
+    def assert_in(self, value, collection, msg=''):
+        self._assert(value in collection, msg, 
+                     '%s in %s' % (repr(value), repr(collection)))
+
+    def check_node(self, node_id, minkey, maxkey):
         node = self.ns.get_node(node_id)
         keys = node.keys()
-
         self.assert_greater(self.ns.get_refcount(node_id), 0, 
                             'node refcount must be > 0')
-        self.assert_greater(len(keys), 0, 'index node must have children')
+        self.assert_greater(len(keys), 0, 'node must have children')
         self.assert_equal(sorted(keys), keys, 'node keys must be sorted')
         self.assert_equal(sorted(set(keys)), keys, 'node keys must be unique')
         self.assert_in_range(keys[0], minkey, maxkey,
-                             'keys must be within range')
+                             'node keys must be within range')
         if len(keys) > 1:
             self.assert_in_range(keys[-1], minkey, maxkey,
                                  'keys must be within range')
+    
+    def check_leaf_node(self, node_id, minkey, maxkey):
+        logging.info('checking leaf node: %d' % node_id)
+        self.check_node(node_id, minkey, maxkey)
+    
+    def check_index_node(self, node_id, minkey, maxkey):
+        logging.info('checking index node: %d' % node_id)
+        self.check_node(node_id, minkey, maxkey)
 
+        node = self.ns.get_node(node_id)
+        keys = node.keys()
         for i, key in enumerate(keys):
             child_id = node[key]
             child = self.ns.get_node(child_id)
             next_key = (keys + [maxkey])[i]
+            self.assert_in(type(child), [btree.IndexNode, btree.LeafNode],
+                           'type must be index or leaf')
             if type(child) == btree.IndexNode:
-                self.check_index(child_id, key, next_key)
+                self.check_index_node(child_id, key, next_key)
+            else:
+                self.check_leaf_node(child_id, key, next_key)
             
     def check_root_node(self, root_id):
         logging.info('checking root node: %d' % root_id)
         root = self.ns.get_node(root_id)
         self.assert_equal(self.ns.get_refcount(root_id), 1, 
                           'root refcount should be 1')
+        self.assert_equal(type(root), btree.IndexNode, 'root must be an index')
         
     def check_tree(self, root_id):
         logging.info('checking tree: %d' % root_id)
