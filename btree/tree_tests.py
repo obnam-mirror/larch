@@ -194,6 +194,32 @@ class BTreeTests(unittest.TestCase):
         self.tree.remove('foo')
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
 
+    def get_roots_first_child(self):
+        child_key, child_id = self.tree.root.pairs()[0]
+        return self.ns.get_node(child_id)
+        
+    def test_remove_makes_tree_lower(self):
+        self.tree.insert('foo', 'bar')
+        self.assertEqual(type(self.get_roots_first_child()), btree.LeafNode)
+        root_key = self.tree.root.pairs()[0][0]
+        old_root_id = self.tree.root.id
+        self.tree.new_root([(root_key, self.tree.root.id)])
+        self.ns.set_refcount(old_root_id, 1)
+        self.assertEqual(type(self.get_roots_first_child()), btree.IndexNode)
+        self.tree._remove_single_index_children()
+        self.assertEqual(type(self.get_roots_first_child()), btree.LeafNode)
+        
+    def test_remove_does_not_make_tree_lower_when_children_are_shared(self):
+        self.tree.insert('foo', 'bar')
+        root_key = self.tree.root.pairs()[0][0]
+        old_root_id = self.tree.root.id
+        self.tree.new_root([(root_key, self.tree.root.id)])
+        self.ns.set_refcount(old_root_id, 2)
+        self.assertEqual(len(self.tree.root), 1)
+        self.assertEqual(type(self.get_roots_first_child()), btree.IndexNode)
+        self.tree._remove_single_index_children()
+        self.assertEqual(type(self.get_roots_first_child()), btree.IndexNode)
+
     def test_remove_with_wrong_size_key_raises_error(self):
         self.assertRaises(btree.KeySizeMismatch, self.tree.remove, '')
 

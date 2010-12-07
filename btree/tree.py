@@ -336,7 +336,7 @@ class BTree(object):
             assert self.node_store.get_refcount(self.root.id) == 1
             
             if self.node_store.get_refcount(child_id) != 1:
-                break # pragma: no cover
+                break
 
             child = self.get_node(child_id)
             if isinstance(child, btree.LeafNode):
