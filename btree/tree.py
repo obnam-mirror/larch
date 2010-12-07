@@ -100,7 +100,7 @@ class BTree(object):
         index = btree.IndexNode(self.new_id(), pairs)
         self.node_store.put_node(index)
         for key, child_id in pairs:
-            self.increment(child_id) # pragma: no cover
+            self.increment(child_id)
         return index
         
     def set_root(self, node):

@@ -140,6 +140,12 @@ class BTreeTests(unittest.TestCase):
         index = self.tree.new_index([])
         self.assertEqual(index, self.tree.get_node(index.id))
 
+    def test_new_index_increments_childrens_refcounts(self):
+        leaf = self.tree.new_leaf([])
+        self.assertEqual(self.ns.get_refcount(leaf.id), 0)
+        self.tree.new_index([('foo', leaf.id)])
+        self.assertEqual(self.ns.get_refcount(leaf.id), 1)
+
     def test_new_root_does_not_return_it(self):
         self.assertEqual(self.tree.new_root([]), None)
 
