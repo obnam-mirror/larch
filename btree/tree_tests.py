@@ -427,6 +427,34 @@ class BTreeTests(unittest.TestCase):
         self.assertEqual(new.pairs(), [('000', '000')])
 
 
+class BTreeDecrementTests(unittest.TestCase):
+
+    def setUp(self):
+        # We use a small node size so that all code paths are traversed
+        # during testing. Use coverage.py to make sure they do.
+        self.codec = btree.NodeCodec(3)
+        self.ns = DummyNodeStore(64, self.codec)
+        self.forest = DummyForest()
+        self.tree = btree.BTree(self.forest, self.ns, None)
+        self.tree.insert('foo', 'bar')
+        
+    def test_store_has_two_nodes(self):
+        self.assertEqual(len(self.ns.find_nodes()), 2)
+        
+    def test_initially_everything_has_refcount_1(self):
+        for node_id in self.ns.find_nodes():
+            self.assertEqual(self.ns.get_refcount(node_id), 1)
+
+    def test_decrement_removes_everything(self):
+        self.tree.decrement(self.tree.root.id)
+        self.assertEqual(len(self.ns.find_nodes()), 0)
+
+    def test_decrement_does_not_remove_anything(self):
+        self.ns.set_refcount(self.tree.root.id, 2)
+        self.tree.decrement(self.tree.root.id)
+        self.assertEqual(len(self.ns.find_nodes()), 2)
+
+
 class BTreeBalanceTests(unittest.TestCase):
 
     def setUp(self):

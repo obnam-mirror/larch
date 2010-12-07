@@ -523,7 +523,7 @@ class BTree(object):
         refcount = self.node_store.get_refcount(node_id)
         self.node_store.set_refcount(node_id, refcount + 1)
 
-    def decrement(self, node_id): # pragma: no cover
+    def decrement(self, node_id):
         '''Recursively, lazily decrement refcounts for a node and children.'''
         refcount = self.node_store.get_refcount(node_id)
         if refcount > 1:
