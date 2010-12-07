@@ -80,7 +80,7 @@ class BTree(object):
         '''Generate a new node identifier.'''
         return self.forest.new_id()
     
-    def node_can_be_modified_in_place(self, node): # pragma: no cover
+    def node_can_be_modified_in_place(self, node):
         '''Can a node be modified in place, in memory?
         
         This is true if there is only parent (refcount is 1).
