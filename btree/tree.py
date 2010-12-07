@@ -350,9 +350,6 @@ class BTree(object):
 
     def _remove_from_index(self, index, key):
         child_key = index.find_key_for_child_containing(key)
-        if child_key is None: # pragma: no cover
-            raise KeyError(key)
-
         index = self._shadow(index)
         child = self.get_node(index[child_key])
         
