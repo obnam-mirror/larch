@@ -48,9 +48,6 @@ class DummyNodeStore(object):
     def remove_file(self, filename):
         os.remove(filename)
 
-    def listdir(self, dirname):
-        return os.listdir(dirname)
-
 
 class RefcountStoreTests(unittest.TestCase):
 

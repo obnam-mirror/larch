@@ -220,9 +220,6 @@ class NodeStoreDisk(btree.NodeStore):
     def remove_file(self, filename):
         os.remove(filename)
 
-    def listdir(self, dirname):
-        return os.listdir(dirname)
-
     def _load_metadata(self):
         if self.metadata is None:
             self.metadata = ConfigParser.ConfigParser()
@@ -312,10 +309,6 @@ class NodeStoreDisk(btree.NodeStore):
         
     def list_nodes(self):
         queued = self.upload_queue.list_ids()
-        try:
-            basenames = self.listdir(os.path.join(self.dirname, self.nodedir))
-        except OSError:
-            basenames = []
 
         nodedir = os.path.join(self.dirname, self.nodedir)
         uploaded = []
