@@ -66,4 +66,8 @@ class NodeCodecTests(unittest.TestCase):
 
     def test_decode_raises_error_for_garbage(self):
         self.assertRaises(btree.CodecError, self.codec.decode, 'x'*1000)
-
+    
+    def test_returns_resonable_max_number_of_index_pairs(self):
+        # Header is 16 bytes. A pair is key_bytes + 8 = 11.
+        self.assert_(self.codec.max_index_pairs(32), 1)
+        self.assert_(self.codec.max_index_pairs(64), 4)

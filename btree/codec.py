@@ -84,7 +84,7 @@ class NodeCodec(object):
         pairs = zip(keys, values)
         return btree.LeafNode(node_id, pairs)
 
-    def max_index_pairs(self, node_size): # pragma: no cover
+    def max_index_pairs(self, node_size):
         '''Return number of index pairs that fit in a node of a given size.'''
         return (node_size - self.index_header.size) / self.index_pair_size
         
