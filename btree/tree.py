@@ -19,20 +19,7 @@ import logging
 import btree
 
 
-'''A simple B-tree implementation.
-
-Some notes:
-
-* No nodes are modified, everything is done copy-on-write. This is because
-  eventually this code will be used to handle on-disk data structures where
-  copy-on-write is essential.
-* The fullness of leaf and index nodes is determined by number of keys.
-  This is appropriate for now, but eventually we will want to inspect the
-  size in bytes of the nodes instead. This is also for on-disk data
-  structures, where fixed-sized disk sectors or such are used to store
-  the nodes.
-
-'''
+'''A simple B-tree implementation.'''
 
 
 class KeySizeMismatch(Exception):
