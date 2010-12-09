@@ -304,53 +304,56 @@ class BTree(object):
         return new_index
 
     def _add_or_merge_index(self, parent, index):
+        self._add_or_merge(parent, index, self._merge_index)
+
+    def _add_or_merge_leaf(self, parent, leaf):
+        self._add_or_merge(parent, leaf, self._merge_leaf)
+
+    def _add_or_merge(self, parent, node, merge):
         pairs = parent.pairs()
         getkey = lambda pair: pair[0]
-        i, j = btree.bsearch(pairs, index.first_key(), getkey=getkey)
-        if i is None or not self._merge_index(parent, index, i):
+        i, j = btree.bsearch(pairs, node.first_key(), getkey=getkey)
+        if i is None or not merge(parent, node, i):
             if j is not None:
-                self._merge_index(parent, index, j)
+                merge(parent, node, j)
 
-        self.put_node(index)
-        parent.add(index.first_key(), index.id)
-        self.increment(index.id)
+        self.put_node(node)
+        parent.add(node.first_key(), node.id)
+        self.increment(node.id)
 
-    def _merge_index(self, parent, index, sibling_index):
+    def _merge_index(self, parent, node, sibling_index):
+
+        def merge_indexes_p(a, b):
+            return len(a) + len(b) <= self.max_index_length
+
+        def add_to_index(n, k, v):
+            n.add(k, v)
+            self.increment(v)
+
+        return self._merge_nodes(parent, node, sibling_index,
+                                 merge_indexes_p, add_to_index)
+
+    def _merge_leaf(self, parent, node, sibling_index):
+
+        def merge_leaves_p(a, b):
+            a_size = self._leaf_size(a)
+            b_size = self._leaf_size(b)
+            return a_size + b_size <= self.node_store.node_size
+
+        def add_to_leaf(n, k, v):
+            n.add(k, v)
+
+        return self._merge_nodes(parent, node, sibling_index,
+                                 merge_leaves_p, add_to_leaf)
+
+    def _merge_nodes(self, parent, node, sibling_index, merge_p, add):
         pairs = parent.pairs()
         sibling_key, sibling_id = pairs[sibling_index]
         sibling = self.get_node(sibling_id)
-        if len(sibling) + len(index) <= self.max_index_length:
+        if merge_p(node, sibling):
             for k, v in sibling.pairs():
-                index.add(k, v)
-                self.increment(v)
+                add(node, k, v)
             parent.remove(sibling_key)
-            self.decrement(sibling.id)
-            return True
-        else:
-            return False
-        
-    def _add_or_merge_leaf(self, parent, leaf):
-        pairs = parent.pairs()
-        getkey = lambda pair: pair[0]
-        i, j = btree.bsearch(pairs, leaf.first_key(), getkey=getkey)
-        if i is None or not self._merge_leaf(parent, leaf, i):
-            if j is not None:
-                self._merge_leaf(parent, leaf, j)
-
-        self.put_node(leaf)
-        parent.add(leaf.first_key(), leaf.id)
-        self.increment(leaf.id)
-
-    def _merge_leaf(self, parent, leaf, sibling_index):
-        pairs = parent.pairs()
-        sibling_id = pairs[sibling_index][1]
-        sibling = self.get_node(sibling_id)
-        sibling_size = self._leaf_size(sibling)
-        leaf_size = self._leaf_size(leaf)
-        if sibling_size + leaf_size <= self.node_store.node_size:
-            for k, v in sibling.pairs():
-                leaf.add(k, v)
-            parent.remove(pairs[sibling_index][0])
             self.decrement(sibling.id)
             return True
         else:
