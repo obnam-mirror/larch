@@ -90,14 +90,10 @@ class BTree(object):
             self.increment(child_id)
         return index
         
-    def set_root(self, node):
-        '''Use a (newly created) node as the new root.'''
-        self.root = node
-        self.node_store.set_refcount(node.id, 1)
-
     def new_root(self, pairs):
         '''Create a new root node and keep track of it.'''
-        self.set_root(self.new_index(pairs))
+        self.root = self.new_index(pairs)
+        self.node_store.set_refcount(self.root.id, 1)
 
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
