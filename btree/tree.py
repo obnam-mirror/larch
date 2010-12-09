@@ -133,6 +133,8 @@ class BTree(object):
 
         '''
 
+        self.check_key_size(minkey)
+        self.check_key_size(maxkey)
         if self.root is None:
             return []
         return self._lookup_range(self.root.id, minkey, maxkey)
