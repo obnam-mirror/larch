@@ -210,6 +210,8 @@ class BTree(object):
             return
 
         kids = self._insert_into_index(self.root, key, value)
+        # kids is either [self.root] or it is two children, in which case
+        # a new root needs to be created.
         if len(kids) > 1:
             pairs = [(kid.first_key(), kid.id) for kid in kids]
             old_root_id = self.root.id

@@ -58,13 +58,8 @@ class Forest(object):
             pairs = old_root.pairs()
         else:
             pairs = []
-        new_root = btree.IndexNode(self.new_id(), pairs)
-        self.node_store.put_node(new_root)
-        self.node_store.set_refcount(new_root.id, 1)
-        for k, child_id in pairs:
-            refcount = self.node_store.get_refcount(child_id)
-            self.node_store.set_refcount(child_id, refcount + 1)
-        t = btree.BTree(self, self.node_store, new_root.id)
+        t = btree.BTree(self, self.node_store, None)
+        t.new_root(pairs)
         self.trees.append(t)
         return t
 
