@@ -273,7 +273,6 @@ class BTree(object):
         if self.root is None:
             raise KeyError(key)
 
-        assert self.node_store.get_refcount(self.root.id) == 1
         self._remove_from_index(self.root, key)
         self._remove_single_index_children()
 
