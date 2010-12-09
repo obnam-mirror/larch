@@ -67,8 +67,8 @@ class RefcountStore(object):
                                    for x in self.refcounts 
                                    if self.refcounts[x] == 0),
                                len(self.dirty)))
-            self.node_store.mkdir(os.path.join(self.node_store.dirname,
-                                               self.refcountdir))
+            dirname = os.path.join(self.node_store.dirname, self.refcountdir)
+            self.node_store.mkdir(dirname)
             ids = sorted(self.dirty)
             for start_id in range(self.group(ids[0]), self.group(ids[-1]) + 1, 
                                   self.per_group):
