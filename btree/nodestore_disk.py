@@ -59,14 +59,6 @@ class RefcountStore(object):
     def save_refcounts(self):
         if self.dirty:
             level = logging.getLogger().getEffectiveLevel()
-            if level <= logging.DEBUG: # pragma: no cover
-                logging.debug('btree.NodeStoreDisk.RefcountStore: '
-                              '%d refcounts in memory (%d zero), %d dirty' %
-                              (len(self.refcounts), 
-                               sum(1 
-                                   for x in self.refcounts 
-                                   if self.refcounts[x] == 0),
-                               len(self.dirty)))
             dirname = os.path.join(self.node_store.dirname, self.refcountdir)
             self.node_store.mkdir(dirname)
             ids = sorted(self.dirty)
