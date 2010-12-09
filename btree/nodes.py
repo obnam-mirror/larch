@@ -74,6 +74,24 @@ class Node(object):
         else:
             return [(k, v) for k, v in self._pairs if k not in exclude]
 
+    def find_pairs(self, minkey, maxkey):
+        '''Find pairs whose key is in desired range.
+        
+        minkey and maxkey are inclusive.
+        
+        '''
+        
+        getkey = lambda pair: pair[0]
+        min_lo, min_hi = btree.bsearch(self._pairs, minkey, getkey=getkey)
+        max_lo, max_hi = btree.bsearch(self._pairs, maxkey, getkey=getkey)
+
+        if min_hi is None or max_lo is None:
+            return []
+        i = min_hi
+        j = max_lo
+
+        return self._pairs[i:j+1]
+
     def add(self, key, value):
         '''Insert a key/value pair into the right place in a node.'''
         
