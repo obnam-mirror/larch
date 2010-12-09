@@ -201,7 +201,9 @@ class BTree(object):
         
         Return list of replacement nodes. Might be just the same node,
         or a single new node, or two nodes, one of which might be the
-        same node.
+        same node. Note that this method never makes the tree higher,
+        that is the job of the caller. If two nodes are returned,
+        they are siblings at the same height as the original node.
         
         '''
 
