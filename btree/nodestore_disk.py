@@ -181,7 +181,6 @@ class NodeStoreDisk(btree.NodeStore):
     
     '''
 
-    refcounts_per_group = 2**15
     nodedir = 'nodes'
 
     def __init__(self, dirname, node_size, codec, upload_max=1024, 
