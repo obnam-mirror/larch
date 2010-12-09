@@ -145,26 +145,13 @@ class BTree(object):
     def _lookup_range(self, node_id, minkey, maxkey):
         node = self.get_node(node_id)
         if isinstance(node, btree.LeafNode):
-            return self._lookup_range_in_leaf(node, minkey, maxkey)
+            return node.find_pairs(minkey, maxkey)
         else:
             assert isinstance(node, btree.IndexNode)
             result = []
             for child_id in node.find_children_in_range(minkey, maxkey):
                 result += self._lookup_range(child_id, minkey, maxkey)
             return result
-
-    def _lookup_range_in_leaf(self, leaf, minkey, maxkey):
-        pairs = leaf.pairs()
-        getkey = lambda pair: pair[0]
-        min_lo, min_hi = btree.bsearch(pairs, minkey, getkey=getkey)
-        max_lo, max_hi = btree.bsearch(pairs, maxkey, getkey=getkey)
-
-        if min_hi is None:
-            return []
-        i = min_hi
-        j = max_lo
-
-        return pairs[i:j+1]
 
     def _new_root(self, pairs):
         '''Create a new root node for this tree.'''
