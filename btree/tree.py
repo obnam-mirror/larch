@@ -274,31 +274,7 @@ class BTree(object):
             raise KeyError(key)
 
         self._remove_from_index(self.root, key)
-        self._remove_single_index_children()
-
-    def _remove_single_index_children(self):
-        # After removing things, the top of the tree might consist of a
-        # list of index nodes with only a single child, which is also
-        # an index node. These can and should be removed, for efficiency.
-        # Further, since we've modified all of these nodes, they can all
-        # be modified in place.
-        while len(self.root) == 1:
-            key, child_id = self.root.pairs()[0]
-            assert self.node_can_be_modified_in_place(self.root)
-            assert self.node_store.get_refcount(self.root.id) == 1
-            
-            if self.node_store.get_refcount(child_id) != 1:
-                break
-
-            child = self.get_node(child_id)
-            if isinstance(child, btree.LeafNode):
-                break
-
-            # We can just make the child be the new root node.
-            self.root.remove(key)
-            self.put_node(self.root) # So decrement gets modified root.
-            self.decrement(self.root.id)
-            self.root = child
+        self._reduce_height()
 
     def _remove_from_index(self, index, key):
         child_key = index.find_key_for_child_containing(key)
@@ -388,7 +364,7 @@ class BTree(object):
         '''
 
         self._remove_range_from_index(self.root, minkey, maxkey)
-        self._remove_single_index_children()
+        self._reduce_height()
 
     def _remove_range_from_index(self, index, minkey, maxkey):
         new = self._shadow(index)
@@ -466,6 +442,30 @@ class BTree(object):
         if b is not None and i is not None:
             new.remove_index_range(b, i)
         return new
+
+    def _reduce_height(self):
+        # After removing things, the top of the tree might consist of a
+        # list of index nodes with only a single child, which is also
+        # an index node. These can and should be removed, for efficiency.
+        # Further, since we've modified all of these nodes, they can all
+        # be modified in place.
+        while len(self.root) == 1:
+            key, child_id = self.root.pairs()[0]
+            assert self.node_can_be_modified_in_place(self.root)
+            assert self.node_store.get_refcount(self.root.id) == 1
+            
+            if self.node_store.get_refcount(child_id) != 1:
+                break
+
+            child = self.get_node(child_id)
+            if isinstance(child, btree.LeafNode):
+                break
+
+            # We can just make the child be the new root node.
+            self.root.remove(key)
+            self.put_node(self.root) # So decrement gets modified root.
+            self.decrement(self.root.id)
+            self.root = child
 
     def increment(self, node_id):
         '''Non-recursively increment refcount for a node.'''

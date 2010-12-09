@@ -206,7 +206,7 @@ class BTreeTests(unittest.TestCase):
         self.tree.new_root([(root_key, self.tree.root.id)])
         self.ns.set_refcount(old_root_id, 1)
         self.assertEqual(type(self.get_roots_first_child()), btree.IndexNode)
-        self.tree._remove_single_index_children()
+        self.tree._reduce_height()
         self.assertEqual(type(self.get_roots_first_child()), btree.LeafNode)
         
     def test_remove_does_not_make_tree_lower_when_children_are_shared(self):
@@ -217,7 +217,7 @@ class BTreeTests(unittest.TestCase):
         self.ns.set_refcount(old_root_id, 2)
         self.assertEqual(len(self.tree.root), 1)
         self.assertEqual(type(self.get_roots_first_child()), btree.IndexNode)
-        self.tree._remove_single_index_children()
+        self.tree._reduce_height()
         self.assertEqual(type(self.get_roots_first_child()), btree.IndexNode)
 
     def test_remove_with_wrong_size_key_raises_error(self):
