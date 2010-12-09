@@ -276,32 +276,32 @@ class BTree(object):
         self._remove_from_index(self.root, key)
         self._reduce_height()
 
-    def _remove_from_index(self, index, key):
-        child_key = index.find_key_for_child_containing(key)
-        index = self._shadow(index)
-        child = self.get_node(index[child_key])
+    def _remove_from_index(self, old_index, key):
+        child_key = old_index.find_key_for_child_containing(key)
+        new_index = self._shadow(old_index)
+        child = self.get_node(new_index[child_key])
         
         if isinstance(child, btree.IndexNode):
             new_kid = self._remove_from_index(child, key)
-            index.remove(child_key)
+            new_index.remove(child_key)
             if len(new_kid) > 0:
-                self._add_or_merge_index(index, new_kid)
+                self._add_or_merge_index(new_index, new_kid)
             self.decrement(child.id)
         else:
             assert isinstance(child, btree.LeafNode)
             leaf = self._shadow(child)
             leaf.remove(key)
-            index.remove(child_key)
+            new_index.remove(child_key)
             if len(leaf) > 0:
-                self._add_or_merge_leaf(index, leaf)
+                self._add_or_merge_leaf(new_index, leaf)
                 self.decrement(child.id)
             else:
                 self.decrement(leaf.id)
                 if child.id != leaf.id: # pragma: no cover
                     self.decrement(child.id)
 
-        self.put_node(index)
-        return index
+        self.put_node(new_index)
+        return new_index
 
     def _add_or_merge_index(self, parent, index):
         pairs = parent.pairs()
