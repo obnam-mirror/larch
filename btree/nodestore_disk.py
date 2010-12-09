@@ -39,7 +39,7 @@ class RefcountStore(object):
 
     def get_refcount(self, node_id):
         if node_id not in self.refcounts:
-            group = self.load_refcount_group(self.group(node_id))
+            group = self.load_refcount_group(self.start_id(node_id))
             if group is None:
                 self.refcounts[node_id] = 0
             else:
@@ -59,18 +59,11 @@ class RefcountStore(object):
     def save_refcounts(self):
         if self.dirty:
             level = logging.getLogger().getEffectiveLevel()
-            if level <= logging.DEBUG: # pragma: no cover
-                logging.debug('btree.NodeStoreDisk.RefcountStore: '
-                              '%d refcounts in memory (%d zero), %d dirty' %
-                              (len(self.refcounts), 
-                               sum(1 
-                                   for x in self.refcounts 
-                                   if self.refcounts[x] == 0),
-                               len(self.dirty)))
-            self.node_store.mkdir(os.path.join(self.node_store.dirname,
-                                               self.refcountdir))
+            dirname = os.path.join(self.node_store.dirname, self.refcountdir)
+            self.node_store.mkdir(dirname)
             ids = sorted(self.dirty)
-            for start_id in range(self.group(ids[0]), self.group(ids[-1]) + 1, 
+            for start_id in range(self.start_id(ids[0]), 
+                                  self.start_id(ids[-1]) + 1, 
                                   self.per_group):
                 encoded = self.encode_refcounts(start_id, self.per_group)
                 filename = self.group_filename(start_id)
@@ -87,7 +80,7 @@ class RefcountStore(object):
         return os.path.join(self.node_store.dirname, self.refcountdir,
                             'refcounts-%d' % start_id)
 
-    def group(self, node_id):
+    def start_id(self, node_id):
         return (node_id / self.per_group) * self.per_group
 
     def encode_refcounts(self, start_id, how_many):
@@ -178,11 +171,9 @@ class NodeStoreDisk(btree.NodeStore):
     * file_exists
     * rename_file
     * remove_file
-    * listdir
     
     '''
 
-    refcounts_per_group = 2**15
     nodedir = 'nodes'
 
     def __init__(self, dirname, node_size, codec, upload_max=1024, 
