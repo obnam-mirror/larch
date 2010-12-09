@@ -366,6 +366,8 @@ class BTree(object):
 
         '''
 
+        self.check_key_size(minkey)
+        self.check_key_size(maxkey)
         self._remove_range_from_index(self.root, minkey, maxkey)
         self._reduce_height()
 
