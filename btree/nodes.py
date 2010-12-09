@@ -148,9 +148,13 @@ class IndexNode(Node):
     def find_children_in_range(self, minkey, maxkey):
         '''Find all children whose key is in the range.
         
-        minkey and maxkey are exclusive. Note that a child might
+        minkey and maxkey are inclusive. Note that a child might
         be returned even if not all of its keys are in the range,
-        just some of them.
+        just some of them. Also, we consider potential keys here,
+        not actual keys. We have no way to retrieve the children
+        to check which keys they actually have, so instead we
+        return which keys might have the desired keys, and the
+        caller can go look at those.
         
         '''
         
