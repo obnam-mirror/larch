@@ -173,28 +173,19 @@ class BTree(object):
         self.node_store.set_refcount(root.id, 1)
         self.root = root
 
-    def _clone_node(self, node):
-        '''Make a new, identical copy of a node.
-        
-        Same contents, new id.
-        
-        '''
-
-        if isinstance(node, btree.IndexNode):
-            new = btree.IndexNode(self.new_id(), node.pairs())
-        else:
-            new = btree.LeafNode(self.new_id(), node.pairs())
-            new.size = node.size
-        self.put_node(new)
-        return new
-
     def _shadow(self, node):
         '''Shadow a node: make it possible to modify it in-place.'''
         
         if self.node_can_be_modified_in_place(node):
             return node
         else:
-            return self._clone_node(node)
+            if isinstance(node, btree.IndexNode):
+                new = btree.IndexNode(self.new_id(), node.pairs())
+            else:
+                new = btree.LeafNode(self.new_id(), node.pairs())
+                new.size = node.size
+            self.put_node(new)
+            return new
         
     def insert(self, key, value):
         '''Insert a new key/value pair into the tree.
