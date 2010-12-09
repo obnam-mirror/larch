@@ -178,7 +178,6 @@ class NodeStoreDisk(btree.NodeStore):
     * file_exists
     * rename_file
     * remove_file
-    * listdir
     
     '''
 
