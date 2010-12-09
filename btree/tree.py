@@ -40,11 +40,6 @@ class BTree(object):
     The nodes are stored in an external node store; see the NodeStore
     class. Key sizes are fixed, and given in bytes.
     
-    The tree is balanced.
-    
-    Three basic operations are available to the tree: lookup, insert, and
-    remove.
-    
     '''
 
     def __init__(self, forest, node_store, root_id):
