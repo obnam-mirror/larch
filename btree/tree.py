@@ -384,13 +384,6 @@ class BTree(object):
         wholesale_low = None
         wholesale_high = None
 
-#        assert minkey <= maxkey
-#        if a is None and b is None:
-#            assert i is None
-#            assert j is None
-#        else:
-#            assert i is not None or j is not None
-
         if a is None and b is None:
             # Empty node, nothing to remove.
             return new
