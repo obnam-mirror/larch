@@ -136,12 +136,6 @@ class IndexNode(Node):
     
     '''
 
-    def __init__(self, node_id, pairs):
-        for key, child in pairs:
-            assert type(key) == str
-            assert type(child) == int
-        Node.__init__(self, node_id, pairs)
-
     def find_key_for_child_containing(self, key):
         '''Return key for the child that contains ``key``.'''
         getkey = lambda pair: pair[0]
