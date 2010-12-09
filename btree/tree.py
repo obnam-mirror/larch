@@ -150,13 +150,6 @@ class BTree(object):
                 result += self._lookup_range(child_id, minkey, maxkey)
             return result
 
-    def _new_root(self, pairs):
-        '''Create a new root node for this tree.'''
-        root = btree.IndexNode(self.new_id(), pairs)
-        self.put_node(root)
-        self.node_store.set_refcount(root.id, 1)
-        self.root = root
-
     def _shadow(self, node):
         '''Shadow a node: make it possible to modify it in-place.'''
         
@@ -187,10 +180,10 @@ class BTree(object):
             leaf = btree.LeafNode(self.new_id(), [(key, value)])
             self.put_node(leaf)
             if self.root is None:
-                self._new_root([(key, leaf.id)])
+                self.new_root([(key, leaf.id)])
             else:
                 self.root.add(key, leaf.id)
-            self.increment(leaf.id)
+                self.increment(leaf.id)
             return
 
         kids = self._insert_into_index(self.root, key, value)
@@ -200,9 +193,7 @@ class BTree(object):
             pairs = [(kid.first_key(), kid.id) for kid in kids]
             old_root_id = self.root.id
             assert old_root_id is not None
-            self._new_root(pairs)
-            for kid in kids:
-                self.increment(kid.id)
+            self.new_root(pairs)
             self.decrement(old_root_id)
 
     def _insert_into_index(self, old_index, key, value):
