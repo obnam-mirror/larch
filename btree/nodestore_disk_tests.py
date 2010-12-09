@@ -107,17 +107,17 @@ class RefcountStoreTests(unittest.TestCase):
         self.assertEqual(decoded, [(x, x) for x in refs[:1024]])
 
     def test_group_returns_correct_start_id_for_node_zero(self):
-        self.assertEqual(self.rs.group(0), 0)
+        self.assertEqual(self.rs.start_id(0), 0)
 
     def test_group_returns_correct_start_id_for_last_id_in_group(self):
-        self.assertEqual(self.rs.group(self.rs.per_group - 1), 0)
+        self.assertEqual(self.rs.start_id(self.rs.per_group - 1), 0)
 
     def test_group_returns_correct_start_id_for_first_in_second_group(self):
-        self.assertEqual(self.rs.group(self.rs.per_group),
+        self.assertEqual(self.rs.start_id(self.rs.per_group),
                          self.rs.per_group)
 
     def test_group_returns_correct_start_id_for_second_in_second_group(self):
-        self.assertEqual(self.rs.group(self.rs.per_group + 1),
+        self.assertEqual(self.rs.start_id(self.rs.per_group + 1),
                          self.rs.per_group)
 
 
