@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
 import sys
 import ttystatus
 
@@ -106,6 +107,9 @@ class BtreeFsck(object):
         self.assert_equal(type(root), btree.IndexNode, 'root must be an index')
         
     def walk(self, node, minkey, maxkey):
+        if node.id in self.checked:
+            return
+        self.checked.add(node.id)
         yield node, minkey, maxkey
         if type(node) is btree.IndexNode:
             keys = node.keys()
@@ -153,6 +157,7 @@ class BtreeFsck(object):
         self.status['nodes_done'] = 0
         self.status['nodes_total'] = len(nodes)
 
+        self.checked = set()
         for root_id in self.forest_root_ids():
             self.check_tree(root_id)
         
@@ -163,6 +168,8 @@ def main():
     dirname = sys.argv[1]
     node_size = 65535 # doesn't matter for reading
     key_size = int(sys.argv[2])
+    
+    logging.basicConfig(filename='fsck-btree.log', level=logging.DEBUG)
     
     ts = ttystatus.TerminalStatus(period=0.1)
     ts.add(ttystatus.Literal('checking nodes '))
