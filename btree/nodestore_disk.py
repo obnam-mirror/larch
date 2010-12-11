@@ -110,6 +110,18 @@ class RefcountStore(object):
 
 class UploadQueue(object):
 
+    '''Queue of objects waiting to be uploaded to the store.
+    
+    We don't upload nodes directly, because it frequently happens
+    that a node gets modified or deleted soon after it is created,
+    it makes sense to wait a bit so we can avoid the costly upload
+    operation.
+    
+    This class holds the nodes in an LRU queue, and uploads them
+    if they get pushed out of the queue.
+    
+    '''
+
     def __init__(self, really_put, max_length):
         self.really_put = really_put
         self.max = max_length
