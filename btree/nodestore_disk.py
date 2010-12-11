@@ -27,7 +27,18 @@ import btree
 
 class RefcountStore(object):
 
-    '''Store node reference counts.'''
+    '''Store node reference counts.
+    
+    Each node has a reference count, which gets stored on disk.
+    Reference counts are grouped into blocks of self.per_group counts,
+    and each group is stored in its own file. This balances the
+    per-file overhead with the overhead of keeping a lot of unneeded
+    reference counts in memory.
+    
+    Only those blocks that are used get loaded into memory. Blocks
+    that are full of zeroes are not stored in files, to save space.
+    
+    '''
 
     per_group = 2**15
     refcountdir = 'refcounts'
