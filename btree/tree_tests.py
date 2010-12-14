@@ -136,6 +136,14 @@ class BTreeTests(unittest.TestCase):
         clone = self.tree._shadow(index)
         self.assertNotEqual(index.id, clone.id)
 
+    def test_shadow_increments_childrens_refcounts(self):
+        leaf = self.tree.new_leaf([('foo', 'bar')])
+        index = self.tree.new_index([(leaf.first_key(), leaf.id)])
+        self.assertEqual(self.ns.get_refcount(leaf.id), 1)
+        self.ns.set_refcount(index.id, 2)
+        clone = self.tree._shadow(index)
+        self.assertEqual(self.ns.get_refcount(leaf.id), 2)
+
     def test_creates_index(self):
         index = self.tree.new_index([])
         self.assertEqual(index, self.tree.get_node(index.id))
