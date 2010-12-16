@@ -48,3 +48,9 @@ class UploadQueueTests(unittest.TestCase):
         self.uq.put(self.node)
         self.assertEqual(self.uq.list_ids(), [self.node.id])
         self.assertEqual(self.uq.get(self.node.id), self.node)
+        
+    def test_put_replaces_existing_node(self):
+        node2 = btree.LeafNode(1, [('foo', 'bar')])
+        self.uq.put(self.node)
+        self.uq.put(node2)
+        self.assertEqual(self.uq.get(self.node.id), node2)
