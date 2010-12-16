@@ -36,3 +36,6 @@ class UploadQueueTests(unittest.TestCase):
 
     def test_sets_max_correctly(self):
         self.assertEqual(self.uq.max, self.max_queue)
+        
+    def test_has_no_nodes_initially(self):
+        self.assertEqual(self.uq.list_ids(), [])
