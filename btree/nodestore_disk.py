@@ -221,7 +221,6 @@ class NodeStoreDisk(btree.NodeStore):
         dirname = os.path.dirname(filename)
         fd, tempname = tempfile.mkstemp(dir=dirname)
         os.write(fd, contents)
-        os.fsync(fd)
         os.close(fd)
         os.rename(tempname, filename)
 
