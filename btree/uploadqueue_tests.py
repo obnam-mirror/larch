@@ -54,3 +54,12 @@ class UploadQueueTests(unittest.TestCase):
         self.uq.put(self.node)
         self.uq.put(node2)
         self.assertEqual(self.uq.get(self.node.id), node2)
+        
+    def test_remove_returns_false_for_nonexistent_node(self):
+        self.assertEqual(self.uq.remove(self.node.id), False)
+        
+    def test_remove_removes_node(self):
+        self.uq.put(self.node)
+        self.uq.remove(self.node.id)
+        self.assertEqual(self.uq.list_ids(), [])
+        self.assertEqual(self.uq.get(self.node.id), None)
