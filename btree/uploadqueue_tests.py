@@ -86,3 +86,8 @@ class UploadQueueTests(unittest.TestCase):
         self.uq.put(btree.LeafNode(3, []))
         self.assertEqual(self.nodes, [self.node])
 
+    def test_pushes_out_only_node_when_requested(self):
+        self.uq.put(self.node)
+        self.uq.push()
+        self.assertEqual(self.nodes, [self.node])
+
