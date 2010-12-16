@@ -16,7 +16,6 @@
 
 import ConfigParser
 import logging
-import lru
 import os
 import StringIO
 import struct
@@ -34,7 +33,7 @@ class UploadQueue(object):
     it makes sense to wait a bit so we can avoid the costly upload
     operation.
     
-    This class holds the nodes in an LRU queue, and uploads them
+    This class holds the nodes in a queue, and uploads them
     if they get pushed out of the queue.
     
     '''
