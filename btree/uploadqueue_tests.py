@@ -30,6 +30,7 @@ class UploadQueueTests(unittest.TestCase):
         self.max_queue = 4
         self.nodes = []
         self.uq = btree.UploadQueue(self.really_put, self.max_queue)
+        self.node = btree.LeafNode(1, [])
 
     def really_put(self, node):
         self.nodes.append(node)
@@ -39,3 +40,11 @@ class UploadQueueTests(unittest.TestCase):
         
     def test_has_no_nodes_initially(self):
         self.assertEqual(self.uq.list_ids(), [])
+        
+    def test_get_returns_None_for_nonexistent_node(self):
+        self.assertEqual(self.uq.get(self.node.id), None)
+        
+    def test_puts_node(self):
+        self.uq.put(self.node)
+        self.assertEqual(self.uq.list_ids(), [self.node.id])
+        self.assertEqual(self.uq.get(self.node.id), self.node)
