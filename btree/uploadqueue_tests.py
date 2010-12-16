@@ -27,7 +27,7 @@ import nodestore_disk
 class UploadQueueTests(unittest.TestCase):
 
     def setUp(self):
-        self.max_queue = 4
+        self.max_queue = 2
         self.nodes = []
         self.uq = btree.UploadQueue(self.really_put, self.max_queue)
         self.node = btree.LeafNode(1, [])
@@ -63,3 +63,26 @@ class UploadQueueTests(unittest.TestCase):
         self.uq.remove(self.node.id)
         self.assertEqual(self.uq.list_ids(), [])
         self.assertEqual(self.uq.get(self.node.id), None)
+        
+    def test_does_not_push_first_node(self):
+        self.uq.put(self.node)
+        self.assertEqual(self.nodes, [])
+
+    def test_does_not_push_second_node(self):
+        self.uq.put(self.node)
+        self.uq.put(btree.LeafNode(2, []))
+        self.assertEqual(self.nodes, [])
+
+    def test_pushes_first_node_after_third_is_pushed(self):
+        self.uq.put(self.node)
+        self.uq.put(btree.LeafNode(2, []))
+        self.uq.put(btree.LeafNode(3, []))
+        self.assertEqual(self.nodes, [self.node])
+
+    def test_pushes_oldest_even_if_recently_used(self):
+        self.uq.put(self.node)
+        self.uq.put(btree.LeafNode(2, []))
+        self.uq.get(self.node.id)
+        self.uq.put(btree.LeafNode(3, []))
+        self.assertEqual(self.nodes, [self.node])
+
