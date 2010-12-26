@@ -157,9 +157,9 @@ class BTree(object):
             return node
         else:
             if isinstance(node, btree.IndexNode):
-                new = btree.IndexNode(self.new_id(), node.pairs())
+                new = self.new_index(node.pairs())
             else:
-                new = btree.LeafNode(self.new_id(), node.pairs())
+                new = self.new_leaf(node.pairs())
                 new.size = node.size
             self.put_node(new)
             return new
