@@ -132,6 +132,7 @@ class Node(object):
         '''
         
         del self._pairs[lo:hi+1]
+        self.size = None
 
 
 class LeafNode(Node):

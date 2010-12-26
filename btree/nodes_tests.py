@@ -149,8 +149,10 @@ class NodeTests(unittest.TestCase):
     def test_removes_index_range(self):
         node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
                                     ('foo', 'bar')])
+        node.size = 12375654
         node.remove_index_range(1, 5)
         self.assertEqual(node.pairs(), [('bar', 'bar')])
+        self.assertEqual(node.size, None)
 
     def test_finds_pairs(self):
         # The children's keys are 'bar' and 'foo'. We need to test for

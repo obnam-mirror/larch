@@ -248,12 +248,23 @@ class BTree(object):
         clone = self._shadow(leaf)
         clone.add(key, value)
         if self._leaf_size(clone) > self.node_store.node_size:
-            n = len(clone) / 2
-            pairs = clone.pairs()[n:]
+            len_before = len(clone)
+            keys_before = clone.keys()
+            pairs = []
+            assert len(clone) >= 2
+            i = len(clone.pairs()) / 2 - 1
+            while self._leaf_size(clone) > self.node_store.node_size:
+                pairs.extend(clone.pairs()[:i+1])
+                clone.remove_index_range(0, i)
+                assert clone.size is None
+                i = 0
             new = btree.LeafNode(self.new_id(), pairs)
-            for k, v in pairs:
-                clone.remove(k)
-            leaves = [clone, new]
+            assert len(new) + len(clone) == len_before
+            assert new.keys() + clone.keys() == keys_before
+            assert self._leaf_size(new) <= self.node_store.node_size
+            assert len(new) > 0, 'len(new) is now %d' % len(new)
+            assert len(clone) > 0, 'len(clone) is now %d' % len(clone)
+            leaves = [new, clone]
         else:
             leaves = [clone]
 
