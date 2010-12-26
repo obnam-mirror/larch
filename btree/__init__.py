@@ -23,6 +23,8 @@ from tree import BTree, KeySizeMismatch
 from forest import Forest
 from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig, 
                        NodeExists)
+from refcountstore import RefcountStore
+from uploadqueue import UploadQueue
 from nodestore_disk import NodeStoreDisk
 from nodestore_memory import NodeStoreMemory
 
