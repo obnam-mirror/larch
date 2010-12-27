@@ -150,6 +150,16 @@ class BTree(object):
                 result += self._lookup_range(child_id, minkey, maxkey)
             return result
 
+    def range_is_empty(self, minkey, maxkey):
+        '''Is a range empty in the tree?
+        
+        This is faster than doing a range lookup for the same range,
+        and checking if there are any keys returned.
+        
+        '''
+        
+        return None
+
     def _shadow(self, node):
         '''Shadow a node: make it possible to modify it in-place.'''
         
