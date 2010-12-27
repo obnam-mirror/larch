@@ -70,6 +70,14 @@ class ForestTests(unittest.TestCase):
         self.forest.remove_tree(t1)
         self.assertEqual(self.forest.trees, [])
 
+    def test_remove_tree_removes_nodes_for_tree_as_well(self):
+        t = self.forest.new_tree()
+        t.insert('foo', 'bar')
+        self.forest.commit()
+        self.assertNotEqual(self.ns.list_nodes(), [])
+        self.forest.remove_tree(t)
+        self.assertEqual(self.ns.list_nodes(), [])
+
     def test_changes_work_across_commit(self):
         t1 = self.forest.new_tree()
         t1.insert('000', 'foo')
