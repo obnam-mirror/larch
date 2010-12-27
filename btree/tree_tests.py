@@ -412,6 +412,89 @@ class BTreeTests(unittest.TestCase):
                            ('006', '006'),
                            ('008', '008')])
 
+    def test_range_is_empty_returns_true_for_empty_tree(self):
+        self.assertTrue(self.tree.range_is_empty('bar', 'foo'))
+        
+    def test_range_is_empty_works_for_nonempty_tree(self):
+        self.create_tree_for_range()
+        
+        self.assertEqual(self.tree.range_is_empty('000', '000'), True)
+        self.assertEqual(self.tree.range_is_empty('000', '001'), True)
+        self.assertEqual(self.tree.range_is_empty('000', '002'), False)
+        self.assertEqual(self.tree.range_is_empty('000', '003'), False)
+        self.assertEqual(self.tree.range_is_empty('000', '004'), False)
+        self.assertEqual(self.tree.range_is_empty('000', '005'), False)
+        self.assertEqual(self.tree.range_is_empty('000', '006'), False)
+        self.assertEqual(self.tree.range_is_empty('000', '007'), False)
+        self.assertEqual(self.tree.range_is_empty('000', '008'), False)
+        self.assertEqual(self.tree.range_is_empty('000', '009'), False)
+        self.assertEqual(self.tree.range_is_empty('000', '999'), False)
+        
+        self.assertEqual(self.tree.range_is_empty('001', '001'), True)
+        self.assertEqual(self.tree.range_is_empty('001', '002'), False)
+        self.assertEqual(self.tree.range_is_empty('001', '003'), False)
+        self.assertEqual(self.tree.range_is_empty('001', '004'), False)
+        self.assertEqual(self.tree.range_is_empty('001', '005'), False)
+        self.assertEqual(self.tree.range_is_empty('001', '006'), False)
+        self.assertEqual(self.tree.range_is_empty('001', '007'), False)
+        self.assertEqual(self.tree.range_is_empty('001', '008'), False)
+        self.assertEqual(self.tree.range_is_empty('001', '009'), False)
+        self.assertEqual(self.tree.range_is_empty('001', '999'), False)
+        
+        self.assertEqual(self.tree.range_is_empty('002', '002'), False)
+        self.assertEqual(self.tree.range_is_empty('002', '003'), False)
+        self.assertEqual(self.tree.range_is_empty('002', '004'), False)
+        self.assertEqual(self.tree.range_is_empty('002', '005'), False)
+        self.assertEqual(self.tree.range_is_empty('002', '006'), False)
+        self.assertEqual(self.tree.range_is_empty('002', '007'), False)
+        self.assertEqual(self.tree.range_is_empty('002', '008'), False)
+        self.assertEqual(self.tree.range_is_empty('002', '009'), False)
+        self.assertEqual(self.tree.range_is_empty('002', '999'), False)
+        
+        self.assertEqual(self.tree.range_is_empty('003', '003'), True)
+        self.assertEqual(self.tree.range_is_empty('003', '004'), False)
+        self.assertEqual(self.tree.range_is_empty('003', '005'), False)
+        self.assertEqual(self.tree.range_is_empty('003', '006'), False)
+        self.assertEqual(self.tree.range_is_empty('003', '007'), False)
+        self.assertEqual(self.tree.range_is_empty('003', '008'), False)
+        self.assertEqual(self.tree.range_is_empty('003', '009'), False)
+        self.assertEqual(self.tree.range_is_empty('003', '999'), False)
+        
+        self.assertEqual(self.tree.range_is_empty('004', '004'), False)
+        self.assertEqual(self.tree.range_is_empty('004', '005'), False)
+        self.assertEqual(self.tree.range_is_empty('004', '006'), False)
+        self.assertEqual(self.tree.range_is_empty('004', '007'), False)
+        self.assertEqual(self.tree.range_is_empty('004', '008'), False)
+        self.assertEqual(self.tree.range_is_empty('004', '009'), False)
+        self.assertEqual(self.tree.range_is_empty('004', '999'), False)
+        
+        self.assertEqual(self.tree.range_is_empty('005', '005'), True)
+        self.assertEqual(self.tree.range_is_empty('005', '006'), False)
+        self.assertEqual(self.tree.range_is_empty('005', '007'), False)
+        self.assertEqual(self.tree.range_is_empty('005', '008'), False)
+        self.assertEqual(self.tree.range_is_empty('005', '009'), False)
+        self.assertEqual(self.tree.range_is_empty('005', '999'), False)
+        
+        self.assertEqual(self.tree.range_is_empty('006', '006'), False)
+        self.assertEqual(self.tree.range_is_empty('006', '007'), False)
+        self.assertEqual(self.tree.range_is_empty('006', '008'), False)
+        self.assertEqual(self.tree.range_is_empty('006', '009'), False)
+        self.assertEqual(self.tree.range_is_empty('006', '999'), False)
+        
+        self.assertEqual(self.tree.range_is_empty('007', '007'), True)
+        self.assertEqual(self.tree.range_is_empty('007', '008'), False)
+        self.assertEqual(self.tree.range_is_empty('007', '009'), False)
+        self.assertEqual(self.tree.range_is_empty('007', '999'), False)
+        
+        self.assertEqual(self.tree.range_is_empty('008', '008'), False)
+        self.assertEqual(self.tree.range_is_empty('008', '009'), False)
+        self.assertEqual(self.tree.range_is_empty('008', '999'), False)
+        
+        self.assertEqual(self.tree.range_is_empty('009', '009'), True)
+        self.assertEqual(self.tree.range_is_empty('009', '999'), True)
+        
+        self.assertEqual(self.tree.range_is_empty('999', '999'), True)
+
     def test_remove_range_removes_everything(self):
         for key in ['%03d' % i for i in range(1000)]:
             self.tree.insert(key, key)

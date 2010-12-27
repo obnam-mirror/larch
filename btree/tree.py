@@ -150,6 +150,31 @@ class BTree(object):
                 result += self._lookup_range(child_id, minkey, maxkey)
             return result
 
+    def range_is_empty(self, minkey, maxkey):
+        '''Is a range empty in the tree?
+        
+        This is faster than doing a range lookup for the same range,
+        and checking if there are any keys returned.
+        
+        '''
+        
+        self.check_key_size(minkey)
+        self.check_key_size(maxkey)
+        if self.root is None:
+            return True
+        return self._range_is_empty(self.root.id, minkey, maxkey)
+
+    def _range_is_empty(self, node_id, minkey, maxkey):
+        node = self.get_node(node_id)
+        if isinstance(node, btree.LeafNode):
+            return node.find_pairs(minkey, maxkey) == []
+        else:
+            assert isinstance(node, btree.IndexNode)
+            for child_id in node.find_children_in_range(minkey, maxkey):
+                if not self._range_is_empty(child_id, minkey, maxkey):
+                    return False
+            return True
+
     def _shadow(self, node):
         '''Shadow a node: make it possible to modify it in-place.'''
         
