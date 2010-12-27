@@ -377,6 +377,10 @@ class BTreeTests(unittest.TestCase):
         for key in ['%03d' % i for i in range(2, 10, 2)]:
             self.tree.insert(key, key)
 
+    def test_lookup_between_keys_raises_keyerror(self):
+        self.create_tree_for_range()
+        self.assertRaises(KeyError, self.tree.lookup, '000')
+
     def test_lookup_range_returns_empty_list_if_before_smallest_key(self):
         self.create_tree_for_range()
         self.assertEqual(self.tree.lookup_range('000', '001'), [])

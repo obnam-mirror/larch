@@ -111,20 +111,19 @@ class BTree(object):
         '''
 
         self.check_key_size(key)
-        if self.root is None:
-            raise KeyError(key)
-        return self._lookup(self.root.id, key)
 
-    def _lookup(self, node_id, key):
-        node = self.get_node(node_id)
-        if isinstance(node, btree.LeafNode):
-            return node[key]
-        else:
+        node = self.root
+        while node and isinstance(node, btree.IndexNode):
             k = node.find_key_for_child_containing(key)
             if k is None:
                 raise KeyError(key)
-            else:
-                return self._lookup(node[k], key)
+            node_id = node[k]
+            node = self.get_node(node_id)
+            
+        if node and isinstance(node, btree.LeafNode):
+            return node[key]
+
+        raise KeyError(key)
 
     def lookup_range(self, minkey, maxkey):
         '''Return list of (key, value) pairs for all keys in a range.
