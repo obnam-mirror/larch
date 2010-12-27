@@ -107,3 +107,13 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
         for node_id in ids:
             self.ns.cache.remove(node_id)
             self.assertEqual(self.ns.get_node(node_id).id, node_id)
+            
+    def test_gets_node_from_disk(self):
+        node = btree.LeafNode(0, [])
+        self.ns.put_node(node)
+        self.ns.push_upload_queue()
+        ns2 = self.new_ns()
+        node2 = ns2.get_node(node.id)
+        self.assertEqual(node.id, node2.id)
+        self.assertEqual(node.pairs(), node2.pairs())
+
