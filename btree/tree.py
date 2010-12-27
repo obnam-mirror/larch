@@ -134,20 +134,21 @@ class BTree(object):
 
         self.check_key_size(minkey)
         self.check_key_size(maxkey)
-        if self.root is None:
-            return []
-        return self._lookup_range(self.root.id, minkey, maxkey)
+        if self.root is not None:
+            for pair in self._lookup_range(self.root.id, minkey, maxkey):
+                yield pair
 
     def _lookup_range(self, node_id, minkey, maxkey):
         node = self.get_node(node_id)
         if isinstance(node, btree.LeafNode):
-            return node.find_pairs(minkey, maxkey)
+            for pair in node.find_pairs(minkey, maxkey):
+                yield pair
         else:
             assert isinstance(node, btree.IndexNode)
             result = []
             for child_id in node.find_children_in_range(minkey, maxkey):
-                result += self._lookup_range(child_id, minkey, maxkey)
-            return result
+                for pair in self._lookup_range(child_id, minkey, maxkey):
+                    yield pair
 
     def range_is_empty(self, minkey, maxkey):
         '''Is a range empty in the tree?

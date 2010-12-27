@@ -371,7 +371,7 @@ class BTreeTests(unittest.TestCase):
         self.assertEqual(node1.id + 1, node2.id)
 
     def test_lookup_range_returns_empty_list_if_nothing_found(self):
-        self.assertEqual(self.tree.lookup_range('bar', 'foo'), [])
+        self.assertEqual(list(self.tree.lookup_range('bar', 'foo')), [])
 
     def create_tree_for_range(self):
         for key in ['%03d' % i for i in range(2, 10, 2)]:
@@ -383,24 +383,24 @@ class BTreeTests(unittest.TestCase):
 
     def test_lookup_range_returns_empty_list_if_before_smallest_key(self):
         self.create_tree_for_range()
-        self.assertEqual(self.tree.lookup_range('000', '001'), [])
+        self.assertEqual(list(self.tree.lookup_range('000', '001')), [])
 
     def test_lookup_range_returns_empty_list_if_after_largest_key(self):
         self.create_tree_for_range()
-        self.assertEqual(self.tree.lookup_range('010', '999'), [])
+        self.assertEqual(list(self.tree.lookup_range('010', '999')), [])
 
     def test_lookup_range_returns_empty_list_if_between_keys(self):
         self.create_tree_for_range()
-        self.assertEqual(self.tree.lookup_range('003', '003'), [])
+        self.assertEqual(list(self.tree.lookup_range('003', '003')), [])
 
     def test_lookup_range_returns_single_item_in_range(self):
         self.create_tree_for_range()
-        self.assertEqual(self.tree.lookup_range('002', '002'), 
+        self.assertEqual(list(self.tree.lookup_range('002', '002')), 
                           [('002', '002')])
 
     def test_lookup_range_returns_single_item_in_range_exclusive(self):
         self.create_tree_for_range()
-        self.assertEqual(self.tree.lookup_range('001', '003'), 
+        self.assertEqual(list(self.tree.lookup_range('001', '003')), 
                           [('002', '002')])
 
     def test_lookup_range_returns_two_items_in_range(self):
@@ -503,12 +503,12 @@ class BTreeTests(unittest.TestCase):
         for key in ['%03d' % i for i in range(1000)]:
             self.tree.insert(key, key)
         self.tree.remove_range('000', '999')
-        self.assertEqual(self.tree.lookup_range('000', '999'), [])
+        self.assertEqual(list(self.tree.lookup_range('000', '999')), [])
 
     def test_remove_range_removes_single_key_in_middle(self):
         self.create_tree_for_range()
         self.tree.remove_range('004', '004')
-        self.assertEqual(self.tree.lookup_range('000', '999'), 
+        self.assertEqual(list(self.tree.lookup_range('000', '999')), 
                           [('002', '002'), 
                            ('006', '006'),
                            ('008', '008')])
@@ -516,21 +516,21 @@ class BTreeTests(unittest.TestCase):
     def test_remove_range_removes_from_beginning_of_keys(self):
         self.create_tree_for_range()
         self.tree.remove_range('000', '004')
-        self.assertEqual(self.tree.lookup_range('000', '999'), 
+        self.assertEqual(list(self.tree.lookup_range('000', '999')), 
                           [('006', '006'),
                            ('008', '008')])
 
     def test_remove_range_removes_from_middle_of_keys(self):
         self.create_tree_for_range()
         self.tree.remove_range('003', '007')
-        self.assertEqual(self.tree.lookup_range('000', '999'), 
+        self.assertEqual(list(self.tree.lookup_range('000', '999')), 
                           [('002', '002'),
                            ('008', '008')])
 
     def test_remove_range_removes_from_end_of_keys(self):
         self.create_tree_for_range()
         self.tree.remove_range('007', '009')
-        self.assertEqual(self.tree.lookup_range('000', '999'), 
+        self.assertEqual(list(self.tree.lookup_range('000', '999')), 
                           [('002', '002'), 
                            ('004', '004'),
                            ('006', '006')])
@@ -539,12 +539,12 @@ class BTreeTests(unittest.TestCase):
         self.create_tree_for_range()
         self.tree.remove_range('000', '999')
         self.tree.remove_range('007', '009')
-        self.assertEqual(self.tree.lookup_range('000', '999'), [])
+        self.assertEqual(list(self.tree.lookup_range('000', '999')), [])
 
     def test_bug_remove_range_when_only_key_is_larger_than_maxkey(self):
         self.tree.insert('555', '555')
         self.tree.remove_range('000', '111')
-        self.assertEqual(self.tree.lookup_range('000', '999'), 
+        self.assertEqual(list(self.tree.lookup_range('000', '999')), 
                          [('555', '555')])
  
     def test_removes_range_from_leaf(self):
