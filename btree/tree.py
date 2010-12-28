@@ -458,15 +458,8 @@ class BTree(object):
 
     def _remove_range_from_leaf(self, leaf, minkey, maxkey):
         new = self._shadow(leaf)
-        
-        getkey = lambda pair: pair[0]
-        pairs = new.pairs()
-
-        a, b = btree.bsearch(pairs, minkey, getkey=getkey)
-        i, j = btree.bsearch(pairs, maxkey, getkey=getkey)
-
-        if b is not None and i is not None:
-            new.remove_index_range(b, i)
+        for key, value in new.find_pairs(minkey, maxkey):
+            new.remove(key)
         return new
 
     def _reduce_height(self):
