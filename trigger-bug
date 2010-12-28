@@ -70,6 +70,8 @@ def main():
     value_size = 128
     node_size = 64*1024
 
+    random.seed(0)
+
     codec = btree.NodeCodec(key_size)
 
     if location == '':
