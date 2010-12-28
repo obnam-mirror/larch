@@ -396,27 +396,48 @@ class BTree(object):
 
         self.check_key_size(minkey)
         self.check_key_size(maxkey)
+        logging.debug('remove_range: root.id=%d' % self.root.id)
         self._remove_range_from_index(self.root, minkey, maxkey)
         self._reduce_height()
+        assert list(self.lookup_range(minkey, maxkey)) == [], \
+            list(self.lookup_range(minkey, maxkey))
 
     def _remove_range_from_index(self, index, minkey, maxkey):
+        logging.debug('_remove_range_from_index: index.id=%d' % index.id)
         new = self._shadow(index)
+        logging.debug('_remove_range_from_index: new.id=%d' % new.id)
 
         lo, hi = new.find_potential_range(minkey, maxkey)
         if (lo, hi) == (None, None):
+            logging.debug('_remove_range_from_index: empty potential range')
             return new
 
-        for key, child_id in new.pairs()[lo:hi+1]:
+        to_remove = new.pairs()[lo:hi+1]
+        for key, child_id in to_remove:
+            logging.debug('_remove_range_from_index: removing from child %s' %
+                          child_id)
+            logging.debug('_remove_range_from_index: child refcount %s' %
+                          self.node_store.get_refcount(child_id))
             child = self.get_node(child_id)
             if isinstance(child, btree.IndexNode):
+                logging.debug('_remove_range_from_index: child is index')
                 new_kid = self._remove_range_from_index(child, minkey, maxkey)
             else:
+                logging.debug('_remove_range_from_index: child is leaf')
                 new_kid = self._remove_range_from_leaf(child, minkey, maxkey)
+            logging.debug('_remove_range_from_index: new child %s' %
+                          new_kid.id)
+            logging.debug('_remove_range_from_index: new child refcount %s' %
+                          self.node_store.get_refcount(new_kid.id))
             if len(new_kid) == 0:
+                logging.debug('_remove_range_from_index: new child is empty')
                 new.remove(key)
                 for x in set([new_kid.id, child.id]):
+                    logging.debug('_remove_range_from_index: decrementing %s' %
+                                  x)
                     self.decrement(x)
             else:
+                logging.debug('_remove_range_from_index: replacing child')
                 new.remove(key)
                 new.add(new_kid.first_key(), new_kid.id)
                 self.increment(new_kid.id)
@@ -471,6 +492,7 @@ class BTree(object):
                     self.decrement(child_id)
             self.node_store.remove_node(node_id)
             self.node_store.set_refcount(node_id, 0)
+            logging.debug('decrement: removed node %d' % node_id)
 
     def dump(self, f, msg=None, keymangler=str, valuemangler=str): # pragma: no cover
         '''Dump tree structure to open file f.'''
