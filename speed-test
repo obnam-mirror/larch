@@ -108,7 +108,8 @@ def main():
         
     # Measure range lookups.
     random.shuffle(ranges)
-    lookup_range = measure(ranges, lambda x: tree.lookup_range(x[0], x[1]),
+    lookup_range = measure(ranges, 
+                           lambda x: list(tree.lookup_range(x[0], x[1])),
                            nop, do_profile, 'lookup_range')
 
     # Measure inserts into existing tree.
