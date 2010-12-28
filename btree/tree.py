@@ -402,43 +402,11 @@ class BTree(object):
     def _remove_range_from_index(self, index, minkey, maxkey):
         new = self._shadow(index)
 
-        getkey = lambda pair: pair[0]
-        pairs = new.pairs()
-        
-        a, b = btree.bsearch(pairs, minkey, getkey=getkey)
-        i, j = btree.bsearch(pairs, maxkey, getkey=getkey)
-
-        partials = set()
-        wholesale_low = None
-        wholesale_high = None
-
-        if a is None and b is None:
-            # Empty node, nothing to remove.
+        lo, hi = new.find_potential_range(minkey, maxkey)
+        if (lo, hi) == (None, None):
             return new
-        else:
-            if a is not None:
-                partials.add(a)
-            if b is not None:
-                partials.add(b)
-                if i is not None and i-b > 1:
-                    wholesale_low = b+1
-                    wholesale_high = i-1
-            if i is not None:
-                partials.add(i)
-            
-        # Delete those children that can be deleted completely.
-        partials_keys = [getkey(pairs[x]) for x in partials]
-        if wholesale_low is not None and wholesale_high is not None:
-            for key, child_id in pairs[wholesale_low:wholesale_high+1]:
-                self.decrement(child_id)
-            new.remove_index_range(wholesale_low, wholesale_high)
-        
-        # At this point, the children at indexes a and j, if they exist,
-        # may have some keys that are not in the range, so we couldn't delete
-        # them wholesale.
-        
-        for key in partials_keys:
-            child_id = new[key]
+
+        for key, child_id in new.pairs()[lo:hi+1]:
             child = self.get_node(child_id)
             if isinstance(child, btree.IndexNode):
                 new_kid = self._remove_range_from_index(child, minkey, maxkey)
