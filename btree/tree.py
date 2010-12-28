@@ -396,60 +396,9 @@ class BTree(object):
 
         self.check_key_size(minkey)
         self.check_key_size(maxkey)
-        logging.debug('remove_range: root.id=%d' % self.root.id)
-        self._remove_range_from_index(self.root, minkey, maxkey)
-        self._reduce_height()
-        assert list(self.lookup_range(minkey, maxkey)) == [], \
-            list(self.lookup_range(minkey, maxkey))
-
-    def _remove_range_from_index(self, index, minkey, maxkey):
-        logging.debug('_remove_range_from_index: index.id=%d' % index.id)
-        new = self._shadow(index)
-        logging.debug('_remove_range_from_index: new.id=%d' % new.id)
-
-        lo, hi = new.find_potential_range(minkey, maxkey)
-        if (lo, hi) == (None, None):
-            logging.debug('_remove_range_from_index: empty potential range')
-            return new
-
-        to_remove = new.pairs()[lo:hi+1]
-        for key, child_id in to_remove:
-            logging.debug('_remove_range_from_index: removing from child %s' %
-                          child_id)
-            logging.debug('_remove_range_from_index: child refcount %s' %
-                          self.node_store.get_refcount(child_id))
-            child = self.get_node(child_id)
-            if isinstance(child, btree.IndexNode):
-                logging.debug('_remove_range_from_index: child is index')
-                new_kid = self._remove_range_from_index(child, minkey, maxkey)
-            else:
-                logging.debug('_remove_range_from_index: child is leaf')
-                new_kid = self._remove_range_from_leaf(child, minkey, maxkey)
-            logging.debug('_remove_range_from_index: new child %s' %
-                          new_kid.id)
-            logging.debug('_remove_range_from_index: new child refcount %s' %
-                          self.node_store.get_refcount(new_kid.id))
-            if len(new_kid) == 0:
-                logging.debug('_remove_range_from_index: new child is empty')
-                new.remove(key)
-                for x in set([new_kid.id, child.id]):
-                    logging.debug('_remove_range_from_index: decrementing %s' %
-                                  x)
-                    self.decrement(x)
-            else:
-                logging.debug('_remove_range_from_index: replacing child')
-                new.remove(key)
-                new.add(new_kid.first_key(), new_kid.id)
-                self.increment(new_kid.id)
-                self.decrement(child.id)
-
-        return new
-
-    def _remove_range_from_leaf(self, leaf, minkey, maxkey):
-        new = self._shadow(leaf)
-        for key, value in new.find_pairs(minkey, maxkey):
-            new.remove(key)
-        return new
+        keys = [k for k, v in self.lookup_range(minkey, maxkey)]
+        for key in keys:
+            self.remove(key)
 
     def _reduce_height(self):
         # After removing things, the top of the tree might consist of a
