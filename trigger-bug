@@ -93,16 +93,14 @@ def main():
     # Create value.
     value = 'x' * value_size
     
-    # Helper functions.
-    nop = lambda *args: None
-    
     # Calibrate.
-    looptime = measure(keys, nop, nop, do_profile, 'calibrate')
+    looptime = 0
 
     # Measure remove_range. This requires building a new tree.
     keys.sort()
     for key in keys:
         tree.insert(key, value)
+    forest.commit()
     random.shuffle(ranges)
     remove_range = measure(ranges, lambda x: tree.remove_range(x[0], x[1]),
                            forest.commit, do_profile, 'remove_range')
@@ -117,8 +115,6 @@ def main():
 
     print 'num_operations: %d' % n
     report('remove_range', remove_range)
-    if do_profile:
-        print 'View *.prof with ./viewprof for profiling results.'
 
     # Clean up
     if location:
