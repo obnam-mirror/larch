@@ -101,24 +101,10 @@ def main():
     for key in keys:
         tree.insert(key, value)
     forest.commit()
+    
     random.shuffle(ranges)
     remove_range = measure(ranges, lambda x: tree.remove_range(x[0], x[1]),
                            forest.commit, do_profile, 'remove_range')
-
-    # Report
-    def speed(result, i):
-        return n / (result[i] - looptime[i])
-    def report(label, result):
-        cpu, wall = result
-        print '%-12s: %5.3f s (%8.1f/s) CPU; %5.3f s (%8.1f/s) wall clock' % \
-            (label, cpu, speed(result, 0), wall, speed(result, 1))
-
-    print 'num_operations: %d' % n
-    report('remove_range', remove_range)
-
-    # Clean up
-    if location:
-        shutil.rmtree(location)
 
 if __name__ == '__main__':
     main()
