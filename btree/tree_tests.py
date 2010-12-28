@@ -546,12 +546,6 @@ class BTreeTests(unittest.TestCase):
         self.tree.remove_range('000', '111')
         self.assertEqual(list(self.tree.lookup_range('000', '999')), 
                          [('555', '555')])
- 
-    def test_removes_range_from_leaf(self):
-        leaf = btree.LeafNode(0, 
-                              [('000', '000'), ('111', '111'), ('222', '222')])
-        new = self.tree._remove_range_from_leaf(leaf, '111', '222')
-        self.assertEqual(new.pairs(), [('000', '000')])
 
 
 class BTreeDecrementTests(unittest.TestCase):
