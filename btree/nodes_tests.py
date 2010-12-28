@@ -184,6 +184,41 @@ class NodeTests(unittest.TestCase):
 
         self.assertEqual(find('ggg', 'ggg'), [])
 
+    def test_finds_no_potential_range_in_empty_node(self):
+        node = btree.LeafNode(0, [])
+        self.assertEqual(node.find_potential_range('aaa', 'bbb'), (None, None))
+
+    def test_finds_potential_ranges(self):
+        # The children's keys are 'bar' and 'foo'. We need to test for
+        # every combination of minkey and maxkey being less than, equal,
+        # or greater than either child key (as long as minkey <= maxkey).
+        
+        node = btree.LeafNode(0, [('bar', 'bar'), ('foo', 'foo')])
+        find = node.find_potential_range
+
+        self.assertEqual(find('aaa', 'aaa'), (None, None))
+        self.assertEqual(find('aaa', 'bar'), (0, 0))
+        self.assertEqual(find('aaa', 'ccc'), (0, 0))
+        self.assertEqual(find('aaa', 'foo'), (0, 1))
+        self.assertEqual(find('aaa', 'ggg'), (0, 1))
+
+        self.assertEqual(find('bar', 'bar'), (0, 0))
+        self.assertEqual(find('bar', 'ccc'), (0, 0))
+        self.assertEqual(find('bar', 'foo'), (0, 1))
+        self.assertEqual(find('bar', 'ggg'), (0, 1))
+
+        self.assertEqual(find('ccc', 'ccc'), (0, 0))
+        self.assertEqual(find('ccc', 'foo'), (0, 1))
+        self.assertEqual(find('ccc', 'ggg'), (0, 1))
+
+        self.assertEqual(find('foo', 'foo'), (1, 1))
+        self.assertEqual(find('foo', 'ggg'), (1, 1))
+
+        # This one is a bit special. The last key may refer to a
+        # child that is an index node, so it _might_ have keys
+        # in the desired range.
+        self.assertEqual(find('ggg', 'ggg'), (1, 1))
+
 
 class IndexNodeTests(unittest.TestCase):
 

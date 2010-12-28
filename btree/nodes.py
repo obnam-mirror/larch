@@ -74,6 +74,45 @@ class Node(object):
         else:
             return [(k, v) for k, v in self._pairs if k not in exclude]
 
+    def find_potential_range(self, minkey, maxkey):
+        '''Find pairs whose key is in desired range.
+
+        minkey and maxkey are inclusive.
+
+        We take into account that for index nodes, a child's key
+        really represents a range of keys, from the key up to (but
+        not including) the next child's key. The last child's key
+        represents a range up to infinity.
+
+        Thus we return the first child, if its key lies between
+        minkey and maxkey, and the last child, if its key is at most
+        maxkey.
+
+        '''
+
+        assert minkey <= maxkey
+        
+        getkey = lambda pair: pair[0]
+        min_lo, min_hi = btree.bsearch(self._pairs, minkey, getkey=getkey)
+        max_lo, max_hi = btree.bsearch(self._pairs, maxkey, getkey=getkey)
+
+        if min_lo is None and min_hi is None:
+            assert max_lo is None and max_hi is None
+            return None, None # Node is empty
+
+        if max_lo is None:
+            assert max_hi is not None
+            assert maxkey < getkey(self._pairs[max_hi])
+            return None, None # maxkey is before first key
+
+        if min_lo is None:
+            lo = min_hi
+        else:
+            lo = min_lo
+
+        return lo, max_lo
+
+
     def find_pairs(self, minkey, maxkey):
         '''Find pairs whose key is in desired range.
         
