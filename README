@@ -24,9 +24,9 @@ Documentation is sparse. Docstrings and reading the code are your best hope.
 
 See the file speed-test for an example.
 
-* Homepage: http://liw.fi/btree/
-* Version control: bzr get http://code.liw.fi/btree/bzr/trunk/
-* Rodeh paper: http://www.cs.tau.ac.il/~ohadrode/papers/btree_TOS.pdf
+* Homepage: <http://liw.fi/btree/>
+* Version control: `bzr get http://code.liw.fi/btree/bzr/trunk/`
+* Rodeh paper: <http://www.cs.tau.ac.il/~ohadrode/papers/btree_TOS.pdf>
 
 
 Build and install
@@ -45,36 +45,55 @@ Hacking
 The actual tree code is in the btree directory, laid out as a normal
 Python package.
 
-* tree.py is the actual tree implementation
-* nodes.py has tree nodes
-* nodestore.py defines the interface for storing nodes on disk or
-  wherever; nodestore_disk.py and nodestore_memory.py are two implementations
-  of the interface
-* codec.py handles encoding of nodes for on-disk storage, and decoding too
-* forest.py handles creation of new trees and committing things to a node
+* `tree.py` is the actual tree implementation
+* `nodes.py` has tree nodes
+* `nodestore.py` defines the interface for storing nodes on disk or
+  wherever; `nodestore_disk.py` and `nodestore_memory.py` are two 
+  implementations of the interface
+* `codec.py` handles encoding of nodes for on-disk storage, and decoding too
+* `forest.py` handles creation of new trees and committing things to a node
   store
 
-Run "make check" to run the test suite. You will need my CoverageTestRunner
-and LRUCache:
+Run `make check` to run the test suite. You will need my CoverageTestRunner
+and LRUCache, and extrautils packages:
 
-* http://liw.fi/lru/
-* http://liw.fi/coverage-test-runner/
+* <http://liw.fi/lru/>
+* <http://liw.fi/coverage-test-runner/>
+* <http://liw.fi/extrautils/>
 
 The unit test modules are paired with their corresponding code modules:
-for code module foo.py there exists a unit test module foo_tests.py.
+for code module `foo.py` there exists a unit test module `foo_tests.py`.
 CoverageTestRunner makes sure each code module's unit test achieve
 100% test coverage for that module, not counting explicitly excluded
 parts of the code.
 
-I have two scripts to run simplistic benchmarks:
+I have three scripts to run simplistic benchmarks:
 
-* codec-speed tests speed of the NodeCodec class, for encoding tree nodes
+* `codec-speed` tests speed of the NodeCodec class, for encoding tree nodes
   for on-disk storage.
-* speed-test tests insert and lookup speeds in trees.
+* `speed-test` tests insert and lookup speeds in trees.
+* `bsearch-speed` compares my binary search routine with the one in the
+  Python standard library module `bisect` (mine is slower, but more
+  versatile)
 
 You may want to run either or both before and after making any changes,
 to see if you're making things better or worse.
 
-If you have any patches, please send them to me (mailto:liw@liw.fi).
+If you have any patches, please send them to me (<mailto:liw@liw.fi>).
 Bzr bundles preferred, but plain diffs are always OK. Or set up a bzr
 branch of your own and send me a URL, and I'll merge from that.
+
+
+Bugs and other things to hack
+-----------------------------
+
+There is an [SD](http://syncwith.us/sd/) bug repository for btree.
+I try to keep it up to date with regards to bugs and wishlist items,
+etc.
+
+* Bugs in SD: <http://code.liw.fi/btree/bugs/>
+
+If you're interested in hacking the btree code, speed improvements
+are always interesting. See the bug tracker for things known to be
+slow, or run `speed-test` on large numbers of keys, and use profiling 
+to see where time is wasted.
