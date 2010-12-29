@@ -2,7 +2,76 @@ NEWS for btree
 ==============
 
 These are the release notes for btree, a Python implementation of a
-copy-on-write tree, designed by Odah Rodeh.
+copy-on-write B-tree, designed by Odah Rodeh.
+
+
+Version 0.14, released 2010-12-29
+---------------------------------
+
+This version seems to work well enough for Obnam to do backups of real 
+systems. It is, however, not as fast as one would wish.
+
+Bug fixes:
+
+* When a tree was made shallower after a remove operation, the code used
+  to assume the direct children of the root node would not be shared
+  with other trees. This is obviously a wrong assumptions. I must have
+  been distracted by XKCD when writing the code.
+* A bug in cloning (shadowing) nodes when doing copy-on-write was fixed.
+  The code now increment the reference counts of an index node's children
+  correctly.
+* The cached encoded size of nodes now gets cleared by `remove_index_range`.
+* Leaf nodes are now split based on size, not key count. Key counts are OK
+  for index nodes, whose values are all of the same size. However, leaf
+  node values may vary wildly. Sometimes it happens that after splitting,
+  one of the halves is still too large.
+* `Forest.remove_tree` now actually removes the unshared nodes of the 
+  tree that is removed.
+* `BTree.remove_range` was quite fast, but not always correct. The code
+  was just tricky enough that I was unable to find the actual fault, so
+  I rewrote the method in a simplistic, but slow way. A speed improvement
+  for this needs to happen in a future version.
+  
+Speed improvements:
+
+* When a node is cloned, its previously computed size is now remembered.
+  Since the clone is identical to the original node, except for the id,
+  the size will be the same.
+  
+New features and stuff:
+
+* fsck-btree: a rudimentary checker of the B-tree data structures.
+  This will undoubtedly be improved in the future, but even the simple
+  checking it does now has already helped when debugging things.
+* Some parts of the code that used to be excluded from test coverage
+  now has tests. Now 19 statements remain that are excluded from coverage.
+* Some other code prettification has happened, including some docstring
+  improvements.
+* `BTRee.remove_range` and `lookup_range` now check that their arguments 
+  are of the correct size of keys for that tree.
+* `Node` got a new method, `find_pairs`.
+* `BTree.dump`, which is useful for debugging, is now nicer to use.
+* `NodeStoreDisk` no longer forces the use of `fsync` when it writes
+  files. It is not btree's responsibility to decide that on behalf of
+  all users. Those who want it can subclass and override the method.
+* `RefcountStore` and `UploadQueue` are their own modules, and have
+  much better test coverage now. `UploadQueue` got rewritten in terms
+  of `LRUCache`.
+* New `BTree.range_is_empty` method, for those (few) cases where one just
+  needs to know if there are any keys, and where getting all keys with
+  `lookup_range` would be slow.
+* `BTree.lookup_range` is now a generator, which should reduce memory
+  consumption and thus speed things up in cases where a very large number
+  of keys are about to be returned.
+  
+Removed stuff:
+
+* The NodeStore API no longer wants a `listdir` method. It has been
+  removed from NodeStoreDisk.
+* `RefcountStore` no longer logs statistics. They did not seem to be
+  useful.
+* `IndexNode` no longer explicitly checks the types of its arguments.
+  This was wasting CPU cycles, and it did not once find an actual bug.
 
 
 Version 0.13, released 2010-07-13

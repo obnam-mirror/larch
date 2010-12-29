@@ -1,3 +1,11 @@
+python-btree (0.14) squeeze; urgency=low
+
+  * New upstream release.
+  * debian/control: Require at least version 0.4 of python-lru, since that's
+    the version that provides the API we need for UploadQueue.
+
+ -- Lars Wirzenius <liw@liw.fi>  Wed, 29 Dec 2010 19:38:04 +0000
+
 python-btree (0.13) squeeze; urgency=low
 
   * New upstream release.
