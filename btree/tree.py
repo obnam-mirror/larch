@@ -74,13 +74,15 @@ class BTree(object):
     
     def new_leaf(self, pairs):
         '''Create a new leaf node and keep track of it.'''
-        leaf = btree.LeafNode(self.new_id(), pairs)
+        leaf = btree.LeafNode(self.new_id(), [k for k, v in pairs],
+                              [v for k, v in pairs]) # FIXME
         self.node_store.put_node(leaf)
         return leaf
         
     def new_index(self, pairs):
         '''Create a new index node and keep track of it.'''
-        index = btree.IndexNode(self.new_id(), pairs)
+        index = btree.IndexNode(self.new_id(), [k for k, v in pairs],
+                              [v for k, v in pairs]) # FIXME
         self.node_store.put_node(index)
         for key, child_id in pairs:
             self.increment(child_id)
@@ -203,7 +205,7 @@ class BTree(object):
         # Is the tree empty? This needs special casing to keep
         # _insert_into_index simpler.
         if self.root is None or len(self.root) == 0:
-            leaf = btree.LeafNode(self.new_id(), [(key, value)])
+            leaf = btree.LeafNode(self.new_id(), [key], [value])
             self.put_node(leaf)
             if self.root is None:
                 self.new_root([(key, leaf.id)])
@@ -254,7 +256,8 @@ class BTree(object):
         if len(new_index) > self.max_index_length:
             n = len(new_index) / 2
             pairs = new_index.pairs()[n:]
-            new = btree.IndexNode(self.new_id(), pairs)
+            new = btree.IndexNode(self.new_id(), [k for k,v in pairs],
+                                                 [v for k,v in pairs]) # FIXME
             for k, v in pairs:
                 new_index.remove(k)
             self.put_node(new_index)

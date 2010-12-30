@@ -19,6 +19,8 @@ echo -n "leaf_size    "
 python -m timeit \
     -s 'import btree' \
     -s 'pairs = [("%019d" % i, "%032d" % i) for i in range(1000)]' \
+    -s 'keys = [k for k, v in pairs]' \
+    -s 'values = [v for k, v in pairs]' \
     -s 'codec = btree.NodeCodec(19)' \
     'codec.leaf_size(pairs)'
 
@@ -26,7 +28,9 @@ echo -n "encode_leaf  "
 python -m timeit \
     -s 'import btree' \
     -s 'pairs = [("%019d" % i, "%032d" % i) for i in range(1000)]' \
-    -s 'node = btree.LeafNode(42, pairs)' \
+    -s 'keys = [k for k, v in pairs]' \
+    -s 'values = [v for k, v in pairs]' \
+    -s 'node = btree.LeafNode(42, keys, values)' \
     -s 'codec = btree.NodeCodec(19)' \
     'codec.encode_leaf(node)'
 
@@ -34,7 +38,9 @@ echo -n "decode leaf  "
 python -m timeit \
     -s 'import btree' \
     -s 'pairs = [("%019d" % i, "%032d" % i) for i in range(1000)]' \
-    -s 'node = btree.LeafNode(42, pairs)' \
+    -s 'keys = [k for k, v in pairs]' \
+    -s 'values = [v for k, v in pairs]' \
+    -s 'node = btree.LeafNode(42, keys, values)' \
     -s 'codec = btree.NodeCodec(19)' \
     -s 'encoded = codec.encode_leaf(node)' \
     'codec.decode(encoded)'
@@ -43,7 +49,9 @@ echo -n "encode_index "
 python -m timeit \
     -s 'import btree' \
     -s 'pairs = [("%019d" % i, i) for i in range(1000)]' \
-    -s 'node = btree.IndexNode(42, pairs)' \
+    -s 'keys = [k for k, v in pairs]' \
+    -s 'values = [v for k, v in pairs]' \
+    -s 'node = btree.IndexNode(42, keys, values)' \
     -s 'codec = btree.NodeCodec(19)' \
     'codec.encode_index(node)'
 
@@ -51,7 +59,9 @@ echo -n "decode index "
 python -m timeit \
     -s 'import btree' \
     -s 'pairs = [("%019d" % i, i) for i in range(1000)]' \
-    -s 'node = btree.IndexNode(42, pairs)' \
+    -s 'keys = [k for k, v in pairs]' \
+    -s 'values = [v for k, v in pairs]' \
+    -s 'node = btree.IndexNode(42, keys, values)' \
     -s 'codec = btree.NodeCodec(19)' \
     -s 'encoded = codec.encode_index(node)' \
     'codec.decode(encoded)'

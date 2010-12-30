@@ -29,11 +29,12 @@ class Node(object):
     
     '''
 
-    def __init__(self, node_id, pairs=None):
-        pairs = pairs or []
-        self._keys = [k for k, v in pairs]
-        self._values = [v for k, v in pairs]
-        self._dict = dict(pairs)
+    def __init__(self, node_id, keys, values):
+        self._keys = list(keys)
+        self._values = list(values)
+        self._dict = dict()
+        for i in range(len(keys)):
+            self._dict[keys[i]] = values[i]
         self.id = node_id
         self.size = None
 

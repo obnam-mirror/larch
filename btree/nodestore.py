@@ -231,13 +231,13 @@ class NodeStoreTests(object): # pragma: no cover
         self.assertEqual(self.ns.list_nodes(), [])
         
     def test_puts_and_gets_same(self):
-        node = btree.LeafNode(0, [])
+        node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         self.assertEqualNodes(self.ns.get_node(0), node)
 
     def test_removes_node(self):
-        node = btree.LeafNode(0, [])
+        node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         self.ns.remove_node(0)
@@ -245,31 +245,31 @@ class NodeStoreTests(object): # pragma: no cover
         self.assertEqual(self.ns.list_nodes(), [])
 
     def test_removes_node_from_upload_queue_if_one_exists(self):
-        node = btree.LeafNode(0, [])
+        node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.remove_node(0)
         self.assertRaises(NodeMissing, self.ns.get_node, 0)
         self.assertEqual(self.ns.list_nodes(), [])
 
     def test_lists_node_zero(self):
-        node = btree.LeafNode(0, [])
+        node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         node_ids = self.ns.list_nodes()
         self.assertEqual(node_ids, [node.id])
 
     def test_put_allows_to_overwrite_a_node(self):
-        node = btree.LeafNode(0, [])
+        node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
-        node = btree.LeafNode(0, [('foo', 'bar')])
+        node = btree.LeafNode(0, ['foo'], ['bar'])
         self.ns.put_node(node)
         self.assertEqual(self.ns.get_node(0).pairs(), [('foo', 'bar')])
 
     def test_put_allows_to_overwrite_a_node_after_upload_queue_push(self):
-        node = btree.LeafNode(0, [])
+        node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
-        node = btree.LeafNode(0, [('foo', 'bar')])
+        node = btree.LeafNode(0, ['foo'], ['bar'])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         self.assertEqual(self.ns.get_node(0).pairs(), [('foo', 'bar')])

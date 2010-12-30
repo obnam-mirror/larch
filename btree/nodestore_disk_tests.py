@@ -84,14 +84,14 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
         self.assertEqual(ns2.get_refcount(0), 1234)
 
     def test_put_refuses_too_large_a_node(self):
-        node = btree.LeafNode(0, [('000', 'x' * (self.node_size + 1))])
+        node = btree.LeafNode(0, ['000'], ['x' * (self.node_size + 1)])
         def helper(node):
             self.ns.put_node(node)
             self.ns.push_upload_queue()
         self.assertRaises(btree.NodeTooBig, helper, node)
         
     def test_puts_and_gets_same_with_cache_emptied(self):
-        node = btree.LeafNode(0, [])
+        node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.cache = lru.LRUCache(100)
         self.assertEqualNodes(self.ns.get_node(0), node)
@@ -101,7 +101,7 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
         self.ns.upload_queue.max = self.ns.upload_max
         ids = range(self.ns.upload_max + 1)
         for i in ids:
-            node = btree.LeafNode(i, [])
+            node = btree.LeafNode(i, [], [])
             self.ns.put_node(node)
         self.assertEqual(sorted(self.ns.list_nodes()), ids)
         for node_id in ids:
@@ -109,7 +109,7 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
             self.assertEqual(self.ns.get_node(node_id).id, node_id)
             
     def test_gets_node_from_disk(self):
-        node = btree.LeafNode(0, [])
+        node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         ns2 = self.new_ns()
