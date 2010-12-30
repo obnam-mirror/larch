@@ -27,5 +27,3 @@ from refcountstore import RefcountStore
 from uploadqueue import UploadQueue
 from nodestore_disk import NodeStoreDisk
 from nodestore_memory import NodeStoreMemory
-
-from bsearch import bsearch
