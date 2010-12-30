@@ -54,12 +54,9 @@ class Node(object):
     def __len__(self):
         return len(self._keys)
 
-    def keys(self, exclude=None):
+    def keys(self):
         '''Return keys in the node, sorted.'''
-        if exclude is None:
-            return self._keys
-        else:
-            return [k for k in self._keys if k not in exclude]
+        return self._keys
 
     def values(self):
         '''Return value sin the key, in same order as keys.'''

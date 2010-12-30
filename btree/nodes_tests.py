@@ -76,9 +76,6 @@ class NodeTests(unittest.TestCase):
         self.assertEqual(self.node.keys(), self.keys)
         self.assertEqual(self.node.values(), self.values)
 
-    def test_does_not_return_excluded_keys(self):
-        self.assertEqual(self.node.keys(exclude=['key1']), ['key2'])
-
     def test_adds_key_value_pair_to_empty_node(self):
         node = btree.nodes.Node(0, [], [])
         node.add('foo', 'bar')
