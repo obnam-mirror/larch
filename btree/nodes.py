@@ -213,21 +213,9 @@ class IndexNode(Node):
         
         '''
         
-        getkey = lambda pair: pair[0]
-        getchild = lambda pair: pair[1]
-        
-        a, b = btree.bsearch(self._pairs, minkey, getkey=getkey)
-        i, j = btree.bsearch(self._pairs, maxkey, getkey=getkey)
-        
-        if a is not None:
-            lo = a
-        elif b is not None:
-            lo = b
+        i, j = self.find_potential_range(minkey, maxkey)
+        if i is not None and j is not None:
+            return [v for k, v in self._pairs[i:j+1]]
         else:
             return []
-
-        if i is None:
-            return []
-
-        return [getchild(pair) for pair in self._pairs[lo:i+1]]
 
