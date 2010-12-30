@@ -101,8 +101,8 @@ class BTree(object):
 
     def _leaf_size(self, node):
         if node.size is None:
-            pairs = zip(node.keys(), node.values()) # FIXME
-            node.size = self.node_store.codec.leaf_size(pairs)
+            node.size = self.node_store.codec.leaf_size(node.keys(), 
+                                                        node.values())
         return node.size
 
     def lookup(self, key):

@@ -49,10 +49,10 @@ class NodeCodec(object):
         self.leaf_pair_fixed_size = key_bytes + struct.calcsize('!I')
         self.index_pair_size = key_bytes + struct.calcsize('!Q')
         
-    def leaf_size(self, pairs):
+    def leaf_size(self, keys, values):
         '''Return size of a leaf node with the given pairs.'''
-        return (self.leaf_header.size + len(pairs) * self.leaf_pair_fixed_size +
-                len(''.join([value for key, value in pairs])))
+        return (self.leaf_header.size + len(keys) * self.leaf_pair_fixed_size +
+                len(''.join([value for value in values])))
 
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
@@ -88,9 +88,9 @@ class NodeCodec(object):
         '''Return number of index pairs that fit in a node of a given size.'''
         return (node_size - self.index_header.size) / self.index_pair_size
         
-    def index_size(self, pairs):
-        '''Return size of an inex node with the given pairs.'''
-        return self.index_header.size + self.index_pair_size * len(pairs)
+    def index_size(self, keys, values):
+        '''Return size of an index node with the given pairs.'''
+        return self.index_header.size + self.index_pair_size * len(keys)
 
     def encode_index(self, node):
         '''Encode an index node as a byte string.'''
@@ -136,9 +136,8 @@ class NodeCodec(object):
     def size(self, node):
         keys = node.keys()
         values = node.values()
-        pairs = zip(keys, values)
         if isinstance(node, btree.LeafNode):
-            return self.leaf_size(pairs)
+            return self.leaf_size(keys, values)
         else:
-            return self.index_size(pairs)
+            return self.index_size(keys, values)
 

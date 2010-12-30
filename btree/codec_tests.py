@@ -27,10 +27,10 @@ class NodeCodecTests(unittest.TestCase):
         self.codec = btree.NodeCodec(3)
 
     def test_returns_reasonable_size_for_empty_leaf(self):
-        self.assert_(self.codec.leaf_size([]) > 10)
+        self.assert_(self.codec.leaf_size([], []) > 10)
 
     def test_returns_reasonable_size_for_empty_index(self):
-        self.assert_(self.codec.index_size([]) > 10)
+        self.assert_(self.codec.index_size([], []) > 10)
 
     def test_returns_reasonable_size_for_empty_leaf_generic(self):
         leaf = btree.LeafNode(0, [], [])

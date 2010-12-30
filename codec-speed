@@ -22,7 +22,7 @@ python -m timeit \
     -s 'keys = [k for k, v in pairs]' \
     -s 'values = [v for k, v in pairs]' \
     -s 'codec = btree.NodeCodec(19)' \
-    'codec.leaf_size(pairs)'
+    'codec.leaf_size(keys, values)'
 
 echo -n "encode_leaf  "
 python -m timeit \
