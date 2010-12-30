@@ -117,12 +117,12 @@ class BTree(object):
         node = self.root
         while isinstance(node, btree.IndexNode):
             k = node.find_key_for_child_containing(key)
-            if k is None:
-                raise KeyError(key)
-            node_id = node[k]
-            node = self.get_node(node_id)
+            # If k is None, then the indexing of node will cause KeyError
+            # to be returned, just like we want to. This saves us from
+            # having to test for it separately.
+            node = self.get_node(node[k])
             
-        if node and isinstance(node, btree.LeafNode):
+        if isinstance(node, btree.LeafNode):
             return node[key]
 
         raise KeyError(key)
