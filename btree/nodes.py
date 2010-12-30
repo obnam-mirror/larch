@@ -135,13 +135,11 @@ class Node(object):
         
         '''
         
-        getkey = lambda pair: pair[0]
-        i, j = btree.bsearch(self._pairs, key, getkey=getkey)
-        if i == j and i is not None:
-            del self._pairs[i]
-            del self._dict[key]
-        else:
+        i = bisect.bisect_left(self._pairs, (key, None))
+        if i >= len(self._pairs) or self._pairs[i][0] != key:
             raise KeyError(key)
+        del self._pairs[i]
+        del self._dict[key]
         self.size = None
         
     def remove_index_range(self, lo, hi):
