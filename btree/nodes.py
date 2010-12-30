@@ -30,7 +30,9 @@ class Node(object):
     '''
 
     def __init__(self, node_id, pairs=None):
-        self._pairs = (pairs or [])[:]
+        pairs = pairs or []
+        self._keys = [k for k, v in pairs]
+        self._values = [v for k, v in pairs]
         self._dict = dict(pairs)
         self.id = node_id
         self.size = None
@@ -42,26 +44,26 @@ class Node(object):
         return key in self._dict
 
     def __eq__(self, other):
-        return self._pairs == other._pairs
+        return self._keys == other._keys and self._values == other._values
 
     def __iter__(self):
-        for key, value in self._pairs:
+        for key in self._keys:
             yield key
 
     def __len__(self):
-        return len(self._pairs)
+        return len(self._keys)
 
     def keys(self):
         '''Return keys in the node, sorted.'''
-        return [k for k, v in self._pairs]
+        return self._keys
 
     def values(self):
         '''Return value sin the key, in same order as keys.'''
-        return [v for k, v in self._pairs]
+        return self._values
 
     def first_key(self):
         '''Return smallest key in the node.'''
-        return self._pairs[0][0]
+        return self._keys[0]
 
     def pairs(self, exclude=None):
         '''Return (key, value) pairs in the node.
@@ -72,9 +74,11 @@ class Node(object):
         '''
 
         if exclude is None:
-            return self._pairs
+            return zip(self._keys, self._values)
         else:
-            return [(k, v) for k, v in self._pairs if k not in exclude]
+            return [(self._keys[i], self._values[i])
+                    for i in range(len(self._keys))
+                    if self._keys[i] not in exclude]
 
     def find_potential_range(self, minkey, maxkey):
         '''Find pairs whose key is in desired range.
@@ -119,11 +123,13 @@ class Node(object):
     def add(self, key, value):
         '''Insert a key/value pair into the right place in a node.'''
         
-        i = bisect.bisect_left(self._pairs, (key, None))
-        if i < len(self._pairs) and self._pairs[i][0] == key:
-            self._pairs[i] = (key, value)
+        i = bisect.bisect_left(self._keys, key)
+        if i < len(self._keys) and self._keys[i] == key:
+            self._keys[i] = key
+            self._values[i] = value
         else:
-            self._pairs.insert(i, (key, value))
+            self._keys.insert(i, key)
+            self._values.insert(i, value)
 
         self._dict[key] = value
         self.size = None
@@ -135,10 +141,11 @@ class Node(object):
         
         '''
         
-        i = bisect.bisect_left(self._pairs, (key, None))
-        if i >= len(self._pairs) or self._pairs[i][0] != key:
+        i = bisect.bisect_left(self._keys, key)
+        if i >= len(self._keys) or self._keys[i] != key:
             raise KeyError(key)
-        del self._pairs[i]
+        del self._keys[i]
+        del self._values[i]
         del self._dict[key]
         self.size = None
         
@@ -149,7 +156,8 @@ class Node(object):
         
         '''
         
-        del self._pairs[lo:hi+1]
+        del self._keys[lo:hi+1]
+        del self._values[lo:hi+1]
         self.size = None
 
 
@@ -168,11 +176,12 @@ class LeafNode(Node):
         
         '''
         
-        i = bisect.bisect_left(self._pairs, (minkey, None))
-        j = bisect.bisect_left(self._pairs, (maxkey, None))
-        if j < len(self._pairs) and self._pairs[j][0] == maxkey:
+        i = bisect.bisect_left(self._keys, minkey)
+        j = bisect.bisect_left(self._keys, maxkey)
+        if j < len(self._keys) and self._keys[j] == maxkey:
             j += 1
-        return self._pairs[i:j]
+        return [(self._keys[x], self._values[x])
+                for x in range(i, j)]
 
 
 class IndexNode(Node):
@@ -187,18 +196,18 @@ class IndexNode(Node):
     def find_key_for_child_containing(self, key):
         '''Return key for the child that contains ``key``.'''
 
-        i = bisect.bisect_left(self._pairs, (key, None))
-        if i < len(self._pairs):
-            if self._pairs[i][0] == key:
+        i = bisect.bisect_left(self._keys, key)
+        if i < len(self._keys):
+            if self._keys[i] == key:
                 return key
             elif i == 0:
                 return None
             else:
-                return self._pairs[i-1][0]
+                return self._keys[i-1]
         elif i == 0:
             return None
         else:
-            return self._pairs[i-1][0]
+            return self._keys[i-1]
 
     def find_children_in_range(self, minkey, maxkey):
         '''Find all children whose key is in the range.
@@ -215,7 +224,7 @@ class IndexNode(Node):
         
         i, j = self.find_potential_range(minkey, maxkey)
         if i is not None and j is not None:
-            return [v for k, v in self._pairs[i:j+1]]
+            return self._values[i:j+1]
         else:
             return []
 
