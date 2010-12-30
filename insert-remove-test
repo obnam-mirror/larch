@@ -53,7 +53,7 @@ def assert_refcounts_are_one(tree):
         assert refcount == 1, 'type=%s id=%d refcount=%d' % (repr(node), 
                                                              node_id, refcount)
         if isinstance(node, btree.IndexNode):
-            for key, child_id in node.pairs():
+            for child_id in node.values():
                 helper(child_id)
     helper(tree.root.id)
 
