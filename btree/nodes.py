@@ -168,16 +168,11 @@ class LeafNode(Node):
         
         '''
         
-        getkey = lambda pair: pair[0]
-        min_lo, min_hi = btree.bsearch(self._pairs, minkey, getkey=getkey)
-        max_lo, max_hi = btree.bsearch(self._pairs, maxkey, getkey=getkey)
-
-        if min_hi is None or max_lo is None:
-            return []
-        i = min_hi
-        j = max_lo
-
-        return self._pairs[i:j+1]
+        i = bisect.bisect_left(self._pairs, (minkey, None))
+        j = bisect.bisect_left(self._pairs, (maxkey, None))
+        if j < len(self._pairs) and self._pairs[j][0] == maxkey:
+            j += 1
+        return self._pairs[i:j]
 
 
 class IndexNode(Node):
