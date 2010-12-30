@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import bisect
+
 import btree
 
 
@@ -89,28 +91,43 @@ class Node(object):
         maxkey.
 
         '''
-
-        assert minkey <= maxkey
+        
+        pairs = self.pairs()
+        
+        i = bisect.bisect_left(pairs, (minkey, None))
+        j = bisect.bisect_left(pairs, (maxkey, None))  
         
         getkey = lambda pair: pair[0]
-        min_lo, min_hi = btree.bsearch(self._pairs, minkey, getkey=getkey)
-        max_lo, max_hi = btree.bsearch(self._pairs, maxkey, getkey=getkey)
 
-        if min_lo is None and min_hi is None:
-            assert max_lo is None and max_hi is None
-            return None, None # Node is empty
-
-        if max_lo is None:
-            assert max_hi is not None
-            assert maxkey < getkey(self._pairs[max_hi])
-            return None, None # maxkey is before first key
-
-        if min_lo is None:
-            lo = min_hi
+        if i < len(pairs):
+            if getkey(pairs[i]) > minkey:
+                if i == 0:
+                    pass
+                else:
+                    i -= 1
+            else:
+                pass
         else:
-            lo = min_lo
+            if i == 0:
+                i = None
+            else:
+                i -= 1
 
-        return lo, max_lo
+        if j < len(pairs):
+            if getkey(pairs[j]) > maxkey:
+                if j == 0:
+                    i = j = None
+                else:
+                    j -= 1
+            else:
+                pass
+        else:
+            if j == 0:
+                j = None
+            else:
+                j -= 1
+
+        return i, j
 
     def add(self, key, value):
         '''Insert a key/value pair into the right place in a node.'''
