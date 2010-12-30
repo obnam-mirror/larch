@@ -25,7 +25,9 @@ class NodeTests(unittest.TestCase):
         self.node_id = 12765
         self.pairs = [('key2', 'value2'), ('key1', 'value1')]
         self.pairs.sort()
-        self.node = btree.nodes.Node(self.node_id, self.pairs)
+        self.keys = [k for k, v in self.pairs]
+        self.values = [v for k, v in self.pairs]
+        self.node = btree.nodes.Node(self.node_id, self.keys, self.values)
 
     def test_has_id(self):
         self.assertEqual(self.node.id, self.node_id)
@@ -70,122 +72,125 @@ class NodeTests(unittest.TestCase):
     def test_returns_correct_first_key(self):
         self.assertEqual(self.node.first_key(), 'key1')
 
-    def test_returns_pairs(self):
-        self.assertEqual(self.node.pairs(), sorted(self.pairs))
-
-    def test_does_not_return_excluded_pairs(self):
-        self.assertEqual(self.node.pairs(exclude=['key1']), 
-                         [('key2', 'value2')])
+    def test_returns_keys_and_values(self):
+        self.assertEqual(self.node.keys(), self.keys)
+        self.assertEqual(self.node.values(), self.values)
 
     def test_adds_key_value_pair_to_empty_node(self):
-        node = btree.nodes.Node(0, [])
+        node = btree.nodes.Node(0, [], [])
         node.add('foo', 'bar')
-        self.assertEqual(node.pairs(), [('foo', 'bar')])
+        self.assertEqual(node.keys(), ['foo'])
+        self.assertEqual(node.values(), ['bar'])
         self.assertEqual(node['foo'], 'bar')
 
     def test_adds_key_value_pair_to_end_of_node_of_one_element(self):
-        node = btree.nodes.Node(0, [('foo', 'bar')])
-        node.add('foo2', 'bar')
-        self.assertEqual(node.pairs(), [('foo', 'bar'), ('foo2', 'bar')])
-        self.assertEqual(node['foo2'], 'bar')
+        node = btree.nodes.Node(0, ['foo'], ['bar'])
+        node.add('foo2', 'bar2')
+        self.assertEqual(node.keys(), ['foo', 'foo2'])
+        self.assertEqual(node.values(), ['bar', 'bar2'])
+        self.assertEqual(node['foo2'], 'bar2')
 
     def test_adds_key_value_pair_to_beginning_of_node_of_one_element(self):
-        node = btree.nodes.Node(0, [('foo', 'bar')])
+        node = btree.nodes.Node(0, ['foo'], ['bar'])
         node.add('bar', 'bar')
-        self.assertEqual(node.pairs(), [('bar', 'bar'), ('foo', 'bar')])
+        self.assertEqual(node.keys(), ['bar', 'foo'])
+        self.assertEqual(node.values(), ['bar', 'bar'])
         self.assertEqual(node['bar'], 'bar')
 
     def test_adds_key_value_pair_to_middle_of_node_of_two_elements(self):
-        node = btree.nodes.Node(0, [('bar', 'bar'), ('foo', 'bar')])
+        node = btree.nodes.Node(0, ['bar', 'foo'], ['bar', 'bar'])
         node.add('duh', 'bar')
-        self.assertEqual(node.pairs(), [('bar', 'bar'), ('duh', 'bar'), 
-                                        ('foo', 'bar')])
+        self.assertEqual(node.keys(), ['bar', 'duh', 'foo'])
+        self.assertEqual(node.values(), ['bar', 'bar', 'bar'])
         self.assertEqual(node['duh'], 'bar')
 
     def test_add_replaces_value_for_existing_key(self):
-        node = btree.nodes.Node(0, [('bar', 'bar'), ('foo', 'bar')])
+        node = btree.nodes.Node(0, ['bar', 'foo'], ['bar', 'bar'])
         node.add('bar', 'xxx')
-        self.assertEqual(node.pairs(), [('bar', 'xxx'), ('foo', 'bar')])
+        self.assertEqual(node.keys(), ['bar', 'foo'])
+        self.assertEqual(node.values(), ['xxx', 'bar'])
         self.assertEqual(node['bar'], 'xxx')
 
     def test_add_resets_cached_size(self):
-        node = btree.nodes.Node(0, [])
+        node = btree.nodes.Node(0, [], [])
         node.size = 1234
         node.add('foo', 'bar')
         self.assertEqual(node.size, None)
 
     def test_removes_first_key(self):
-        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
-                                    ('foo', 'bar')])
+        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+                                   ['bar', 'bar', 'bar'])
         node.remove('bar')
-        self.assertEqual(node.pairs(), [('duh', 'bar'), ('foo', 'bar')])
+        self.assertEqual(node.keys(), ['duh', 'foo'])
+        self.assertEqual(node.values(), ['bar', 'bar'])
         self.assertRaises(KeyError, node.__getitem__, 'bar')
 
     def test_removes_last_key(self):
-        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
-                                    ('foo', 'bar')])
+        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+                                   ['bar', 'bar', 'bar'])
         node.remove('foo')
-        self.assertEqual(node.pairs(), [('bar', 'bar'), ('duh', 'bar')])
+        self.assertEqual(node.keys(), ['bar', 'duh'])
+        self.assertEqual(node.values(), ['bar', 'bar'])
         self.assertRaises(KeyError, node.__getitem__, 'foo')
 
     def test_removes_middle_key(self):
-        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
-                                    ('foo', 'bar')])
+        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+                                   ['bar', 'bar', 'bar'])
         node.remove('duh')
-        self.assertEqual(node.pairs(), [('bar', 'bar'), ('foo', 'bar')])
+        self.assertEqual(node.keys(), ['bar', 'foo'])
+        self.assertEqual(node.values(), ['bar', 'bar'])
         self.assertRaises(KeyError, node.__getitem__, 'duh')
 
     def test_raises_exception_when_removing_unknown_key(self):
-        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
-                                    ('foo', 'bar')])
+        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+                                   ['bar', 'bar', 'bar'])
         self.assertRaises(KeyError, node.remove, 'yo')
 
     def test_remove_resets_cached_size(self):
-        node = btree.nodes.Node(0, [('foo', 'bar')])
+        node = btree.nodes.Node(0, ['foo'], ['bar'])
         node.size = 1234
         node.remove('foo')
         self.assertEqual(node.size, None)
 
     def test_removes_index_range(self):
-        node = btree.nodes.Node(0, [('bar', 'bar'), ('duh', 'bar'), 
-                                    ('foo', 'bar')])
+        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+                                   ['bar', 'bar', 'bar'])
         node.size = 12375654
         node.remove_index_range(1, 5)
-        self.assertEqual(node.pairs(), [('bar', 'bar')])
+        self.assertEqual(node.keys(), ['bar'])
+        self.assertEqual(node.values(), ['bar'])
         self.assertEqual(node.size, None)
 
-    def test_finds_pairs(self):
+    def test_finds_keys_in_range(self):
         # The children's keys are 'bar' and 'foo'. We need to test for
         # every combination of minkey and maxkey being less than, equal,
         # or greater than either child key (as long as minkey <= maxkey).
         
-        bar = ('bar', 'bar')
-        foo = ('foo', 'foo')
-        node = btree.LeafNode(0, [('bar', 'bar'), ('foo', 'foo')])
-        find = node.find_pairs
+        node = btree.LeafNode(0, ['bar', 'foo'], ['bar', 'foo']) 
+        find = node.find_keys_in_range
 
         self.assertEqual(find('aaa', 'aaa'), [])
-        self.assertEqual(find('aaa', 'bar'), [bar])
-        self.assertEqual(find('aaa', 'ccc'), [bar])
-        self.assertEqual(find('aaa', 'foo'), [bar, foo])
-        self.assertEqual(find('aaa', 'ggg'), [bar, foo])
+        self.assertEqual(find('aaa', 'bar'), ['bar'])
+        self.assertEqual(find('aaa', 'ccc'), ['bar'])
+        self.assertEqual(find('aaa', 'foo'), ['bar', 'foo'])
+        self.assertEqual(find('aaa', 'ggg'), ['bar', 'foo'])
 
-        self.assertEqual(find('bar', 'bar'), [bar])
-        self.assertEqual(find('bar', 'ccc'), [bar])
-        self.assertEqual(find('bar', 'foo'), [bar, foo])
-        self.assertEqual(find('bar', 'ggg'), [bar, foo])
+        self.assertEqual(find('bar', 'bar'), ['bar'])
+        self.assertEqual(find('bar', 'ccc'), ['bar'])
+        self.assertEqual(find('bar', 'foo'), ['bar', 'foo'])
+        self.assertEqual(find('bar', 'ggg'), ['bar', 'foo'])
 
         self.assertEqual(find('ccc', 'ccc'), [])
-        self.assertEqual(find('ccc', 'foo'), [foo])
-        self.assertEqual(find('ccc', 'ggg'), [foo])
+        self.assertEqual(find('ccc', 'foo'), ['foo'])
+        self.assertEqual(find('ccc', 'ggg'), ['foo'])
 
-        self.assertEqual(find('foo', 'foo'), [foo])
-        self.assertEqual(find('foo', 'ggg'), [foo])
+        self.assertEqual(find('foo', 'foo'), ['foo'])
+        self.assertEqual(find('foo', 'ggg'), ['foo'])
 
         self.assertEqual(find('ggg', 'ggg'), [])
 
     def test_finds_no_potential_range_in_empty_node(self):
-        node = btree.LeafNode(0, [])
+        node = btree.LeafNode(0, [], [])
         self.assertEqual(node.find_potential_range('aaa', 'bbb'), (None, None))
 
     def test_finds_potential_ranges(self):
@@ -193,7 +198,7 @@ class NodeTests(unittest.TestCase):
         # every combination of minkey and maxkey being less than, equal,
         # or greater than either child key (as long as minkey <= maxkey).
         
-        node = btree.LeafNode(0, [('bar', 'bar'), ('foo', 'foo')])
+        node = btree.LeafNode(0, ['bar', 'foo'], ['bar', 'foo'])
         find = node.find_potential_range
 
         self.assertEqual(find('aaa', 'aaa'), (None, None))
@@ -223,22 +228,31 @@ class NodeTests(unittest.TestCase):
 class IndexNodeTests(unittest.TestCase):
 
     def setUp(self):
-        self.leaf1 = btree.LeafNode(0, [('bar', 'bar')])
-        self.leaf2 = btree.LeafNode(1, [('foo', 'foo')])
+        self.leaf1 = btree.LeafNode(0, ['bar'], ['bar'])
+        self.leaf2 = btree.LeafNode(1, ['foo'], ['foo'])
         self.index_id = 1234
-        self.index = btree.IndexNode(self.index_id,
-                                     [('bar', self.leaf1.id), 
-                                      ('foo', self.leaf2.id)])
+        self.index = btree.IndexNode(self.index_id, ['bar', 'foo'],
+                                     [self.leaf1.id, self.leaf2.id])
 
-    def test_finds_child_containing_key(self):
-        self.assertEqual(self.index.find_key_for_child_containing('barbar'),
-                         'bar')
+
+    def test_find_key_for_child_containing(self):
+        find = self.index.find_key_for_child_containing
+
+        self.assertEqual(find('aaa'), None)
+        self.assertEqual(find('bar'), 'bar')
+        self.assertEqual(find('bar2'), 'bar')
+        self.assertEqual(find('foo'), 'foo')
+        self.assertEqual(find('foo2'), 'foo')
 
     def test_returns_none_when_no_child_contains_key(self):
         self.assertEqual(self.index.find_key_for_child_containing('a'), None)
 
+    def test_finds_no_key_when_node_is_empty(self):
+        empty = btree.IndexNode(0, [], [])
+        self.assertEqual(empty.find_key_for_child_containing('f00'), None)
+
     def test_finds_no_children_in_range_when_empty(self):
-        empty = btree.IndexNode(0, [])
+        empty = btree.IndexNode(0, [], [])
         self.assertEqual(empty.find_children_in_range('bar', 'foo'), [])
 
     def test_finds_children_in_ranges(self):

@@ -49,15 +49,16 @@ class NodeCodec(object):
         self.leaf_pair_fixed_size = key_bytes + struct.calcsize('!I')
         self.index_pair_size = key_bytes + struct.calcsize('!Q')
         
-    def leaf_size(self, pairs):
+    def leaf_size(self, keys, values):
         '''Return size of a leaf node with the given pairs.'''
-        return (self.leaf_header.size + len(pairs) * self.leaf_pair_fixed_size +
-                len(''.join([value for key, value in pairs])))
+        return (self.leaf_header.size + len(keys) * self.leaf_pair_fixed_size +
+                len(''.join([value for value in values])))
 
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
 
-        keys, values = zip(*node.pairs()) or [(), ()]
+        keys = node.keys()
+        values = node.values()
         return (self.leaf_header.pack('ORBL', node.id, len(keys)) +
                 ''.join(keys) +
                 struct.pack('!%dI' % len(values), *map(len, values)) +
@@ -79,23 +80,23 @@ class NodeCodec(object):
         offset = self.leaf_header.size + self.leaf_pair_fixed_size * num_pairs
         append = values.append
         for length in lengths:
-          append(encoded[offset:offset + length])
-          offset += length
-        pairs = zip(keys, values)
-        return btree.LeafNode(node_id, pairs)
+            append(encoded[offset:offset + length])
+            offset += length
+        return btree.LeafNode(node_id, keys, values)
 
     def max_index_pairs(self, node_size):
         '''Return number of index pairs that fit in a node of a given size.'''
         return (node_size - self.index_header.size) / self.index_pair_size
         
-    def index_size(self, pairs):
-        '''Return size of an inex node with the given pairs.'''
-        return self.index_header.size + self.index_pair_size * len(pairs)
+    def index_size(self, keys, values):
+        '''Return size of an index node with the given pairs.'''
+        return self.index_header.size + self.index_pair_size * len(keys)
 
     def encode_index(self, node):
         '''Encode an index node as a byte string.'''
 
-        keys, child_ids = zip(*node.pairs()) or [(), ()]
+        keys = node.keys()
+        child_ids = node.values()
         return (self.index_header.pack('ORBI', node.id, len(keys)) +
                 ''.join(keys) +
                 struct.pack('!%dQ' % len(child_ids), *child_ids))
@@ -115,7 +116,7 @@ class NodeCodec(object):
         assert len(keys) == len(child_ids)
         for x in child_ids:
             assert type(x) == int
-        return btree.IndexNode(node_id, zip(keys, child_ids))
+        return btree.IndexNode(node_id, keys, child_ids)
 
     def encode(self, node):
         if isinstance(node, btree.LeafNode):
@@ -133,8 +134,10 @@ class NodeCodec(object):
                              repr(encoded[:4]))
 
     def size(self, node):
+        keys = node.keys()
+        values = node.values()
         if isinstance(node, btree.LeafNode):
-            return self.leaf_size(node.pairs())
+            return self.leaf_size(keys, values)
         else:
-            return self.index_size(node.pairs())
+            return self.index_size(keys, values)
 

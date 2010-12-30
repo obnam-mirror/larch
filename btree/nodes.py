@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import bisect
+
 import btree
 
 
@@ -27,9 +29,12 @@ class Node(object):
     
     '''
 
-    def __init__(self, node_id, pairs=None):
-        self._pairs = (pairs or [])[:]
-        self._dict = dict(pairs)
+    def __init__(self, node_id, keys, values):
+        self._keys = list(keys)
+        self._values = list(values)
+        self._dict = dict()
+        for i in range(len(keys)):
+            self._dict[keys[i]] = values[i]
         self.id = node_id
         self.size = None
 
@@ -40,39 +45,26 @@ class Node(object):
         return key in self._dict
 
     def __eq__(self, other):
-        return self._pairs == other._pairs
+        return self._keys == other._keys and self._values == other._values
 
     def __iter__(self):
-        for key, value in self._pairs:
+        for key in self._keys:
             yield key
 
     def __len__(self):
-        return len(self._pairs)
+        return len(self._keys)
 
     def keys(self):
         '''Return keys in the node, sorted.'''
-        return [k for k, v in self._pairs]
+        return self._keys
 
     def values(self):
         '''Return value sin the key, in same order as keys.'''
-        return [v for k, v in self._pairs]
+        return self._values
 
     def first_key(self):
         '''Return smallest key in the node.'''
-        return self._pairs[0][0]
-
-    def pairs(self, exclude=None):
-        '''Return (key, value) pairs in the node.
-        
-        ``exclude`` can be set to a list of keys that should be excluded
-        from the list.
-        
-        '''
-
-        if exclude is None:
-            return self._pairs
-        else:
-            return [(k, v) for k, v in self._pairs if k not in exclude]
+        return self._keys[0]
 
     def find_potential_range(self, minkey, maxkey):
         '''Find pairs whose key is in desired range.
@@ -89,42 +81,40 @@ class Node(object):
         maxkey.
 
         '''
-
-        assert minkey <= maxkey
         
-        getkey = lambda pair: pair[0]
-        min_lo, min_hi = btree.bsearch(self._pairs, minkey, getkey=getkey)
-        max_lo, max_hi = btree.bsearch(self._pairs, maxkey, getkey=getkey)
+        def helper(key, default):
+            x = bisect.bisect_left(self._keys, key)
+            if x < len(self._keys):
+                if self._keys[x] > key:
+                    if x == 0:
+                        x = default
+                    else:
+                        x -= 1
+            else:
+                if x == 0:
+                    x = None
+                else:
+                    x -= 1
+            return x
 
-        if min_lo is None and min_hi is None:
-            assert max_lo is None and max_hi is None
-            return None, None # Node is empty
+        i = helper(minkey, 0)
+        j = helper(maxkey, None)
+        if j is None:
+            i = None
 
-        if max_lo is None:
-            assert max_hi is not None
-            assert maxkey < getkey(self._pairs[max_hi])
-            return None, None # maxkey is before first key
-
-        if min_lo is None:
-            lo = min_hi
-        else:
-            lo = min_lo
-
-        return lo, max_lo
+        return i, j
 
     def add(self, key, value):
         '''Insert a key/value pair into the right place in a node.'''
         
-        getkey = lambda pair: pair[0]
-        i, j = btree.bsearch(self._pairs, key, getkey=getkey)
-        
-        pair = (key, value)
-        if i is None:
-            self._pairs.insert(0, pair)
-        elif i == j:
-            self._pairs[i] = pair
+        i = bisect.bisect_left(self._keys, key)
+        if i < len(self._keys) and self._keys[i] == key:
+            self._keys[i] = key
+            self._values[i] = value
         else:
-            self._pairs.insert(i+1, pair)
+            self._keys.insert(i, key)
+            self._values.insert(i, value)
+
         self._dict[key] = value
         self.size = None
 
@@ -135,13 +125,12 @@ class Node(object):
         
         '''
         
-        getkey = lambda pair: pair[0]
-        i, j = btree.bsearch(self._pairs, key, getkey=getkey)
-        if i == j and i is not None:
-            del self._pairs[i]
-            del self._dict[key]
-        else:
+        i = bisect.bisect_left(self._keys, key)
+        if i >= len(self._keys) or self._keys[i] != key:
             raise KeyError(key)
+        del self._keys[i]
+        del self._values[i]
+        del self._dict[key]
         self.size = None
         
     def remove_index_range(self, lo, hi):
@@ -151,7 +140,8 @@ class Node(object):
         
         '''
         
-        del self._pairs[lo:hi+1]
+        del self._keys[lo:hi+1]
+        del self._values[lo:hi+1]
         self.size = None
 
 
@@ -163,23 +153,18 @@ class LeafNode(Node):
     
     '''
 
-    def find_pairs(self, minkey, maxkey):
+    def find_keys_in_range(self, minkey, maxkey):
         '''Find pairs whose key is in desired range.
         
         minkey and maxkey are inclusive.
         
         '''
         
-        getkey = lambda pair: pair[0]
-        min_lo, min_hi = btree.bsearch(self._pairs, minkey, getkey=getkey)
-        max_lo, max_hi = btree.bsearch(self._pairs, maxkey, getkey=getkey)
-
-        if min_hi is None or max_lo is None:
-            return []
-        i = min_hi
-        j = max_lo
-
-        return self._pairs[i:j+1]
+        i = bisect.bisect_left(self._keys, minkey)
+        j = bisect.bisect_left(self._keys, maxkey)
+        if j < len(self._keys) and self._keys[j] == maxkey:
+            j += 1
+        return self._keys[i:j]
 
 
 class IndexNode(Node):
@@ -193,12 +178,19 @@ class IndexNode(Node):
 
     def find_key_for_child_containing(self, key):
         '''Return key for the child that contains ``key``.'''
-        getkey = lambda pair: pair[0]
-        lo, hi = btree.bsearch(self._pairs, key, getkey=getkey)
-        if lo is None:
+
+        i = bisect.bisect_left(self._keys, key)
+        if i < len(self._keys):
+            if self._keys[i] == key:
+                return key
+            elif i == 0:
+                return None
+            else:
+                return self._keys[i-1]
+        elif i == 0:
             return None
         else:
-            return getkey(self._pairs[lo])
+            return self._keys[i-1]
 
     def find_children_in_range(self, minkey, maxkey):
         '''Find all children whose key is in the range.
@@ -213,21 +205,9 @@ class IndexNode(Node):
         
         '''
         
-        getkey = lambda pair: pair[0]
-        getchild = lambda pair: pair[1]
-        
-        a, b = btree.bsearch(self._pairs, minkey, getkey=getkey)
-        i, j = btree.bsearch(self._pairs, maxkey, getkey=getkey)
-        
-        if a is not None:
-            lo = a
-        elif b is not None:
-            lo = b
+        i, j = self.find_potential_range(minkey, maxkey)
+        if i is not None and j is not None:
+            return self._values[i:j+1]
         else:
             return []
-
-        if i is None:
-            return []
-
-        return [getchild(pair) for pair in self._pairs[lo:i+1]]
 
