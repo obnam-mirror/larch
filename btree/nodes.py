@@ -102,8 +102,6 @@ class Node(object):
                         x = default
                     else:
                         x -= 1
-                else:
-                    pass
             else:
                 if x == 0:
                     x = None
