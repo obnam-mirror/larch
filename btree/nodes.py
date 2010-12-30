@@ -54,9 +54,12 @@ class Node(object):
     def __len__(self):
         return len(self._keys)
 
-    def keys(self):
+    def keys(self, exclude=None):
         '''Return keys in the node, sorted.'''
-        return self._keys
+        if exclude is None:
+            return self._keys
+        else:
+            return [k for k in self._keys if k not in exclude]
 
     def values(self):
         '''Return value sin the key, in same order as keys.'''
@@ -65,21 +68,6 @@ class Node(object):
     def first_key(self):
         '''Return smallest key in the node.'''
         return self._keys[0]
-
-    def pairs(self, exclude=None):
-        '''Return (key, value) pairs in the node.
-        
-        ``exclude`` can be set to a list of keys that should be excluded
-        from the list.
-        
-        '''
-
-        if exclude is None:
-            return zip(self._keys, self._values)
-        else:
-            return [(self._keys[i], self._values[i])
-                    for i in range(len(self._keys))
-                    if self._keys[i] not in exclude]
 
     def find_potential_range(self, minkey, maxkey):
         '''Find pairs whose key is in desired range.
@@ -98,11 +86,9 @@ class Node(object):
         '''
         
         def helper(key, default):
-            pairs = self.pairs()
-            getkey = lambda pair: pair[0]
-            x = bisect.bisect_left(pairs, (key, None))
-            if x < len(pairs):
-                if getkey(pairs[x]) > key:
+            x = bisect.bisect_left(self._keys, key)
+            if x < len(self._keys):
+                if self._keys[x] > key:
                     if x == 0:
                         x = default
                     else:

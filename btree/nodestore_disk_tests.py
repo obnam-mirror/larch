@@ -115,5 +115,6 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
         ns2 = self.new_ns()
         node2 = ns2.get_node(node.id)
         self.assertEqual(node.id, node2.id)
-        self.assertEqual(node.pairs(), node2.pairs())
+        self.assertEqual(node.keys(), node2.keys())
+        self.assertEqual(node.values(), node2.values())
 

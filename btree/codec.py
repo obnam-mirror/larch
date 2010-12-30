@@ -95,7 +95,8 @@ class NodeCodec(object):
     def encode_index(self, node):
         '''Encode an index node as a byte string.'''
 
-        keys, child_ids = zip(*node.pairs()) or [(), ()]
+        keys = node.keys()
+        child_ids = node.values()
         return (self.index_header.pack('ORBI', node.id, len(keys)) +
                 ''.join(keys) +
                 struct.pack('!%dQ' % len(child_ids), *child_ids))
@@ -133,8 +134,11 @@ class NodeCodec(object):
                              repr(encoded[:4]))
 
     def size(self, node):
+        keys = node.keys()
+        values = node.values()
+        pairs = zip(keys, values)
         if isinstance(node, btree.LeafNode):
-            return self.leaf_size(node.pairs())
+            return self.leaf_size(pairs)
         else:
-            return self.index_size(node.pairs())
+            return self.index_size(pairs)
 

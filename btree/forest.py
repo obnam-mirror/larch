@@ -55,11 +55,13 @@ class Forest(object):
 
         if old:
             old_root = self.node_store.get_node(old.root.id)
-            pairs = old_root.pairs()
+            keys = old_root.keys()
+            values = old_root.values()
         else:
-            pairs = []
+            keys = []
+            values = []
         t = btree.BTree(self, self.node_store, None)
-        t.new_root(pairs)
+        t.new_root(zip(keys, values))
         self.trees.append(t)
         return t
 

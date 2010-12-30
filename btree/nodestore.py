@@ -263,7 +263,9 @@ class NodeStoreTests(object): # pragma: no cover
         self.ns.put_node(node)
         node = btree.LeafNode(0, ['foo'], ['bar'])
         self.ns.put_node(node)
-        self.assertEqual(self.ns.get_node(0).pairs(), [('foo', 'bar')])
+        new = self.ns.get_node(0)
+        self.assertEqual(new.keys(), ['foo'])
+        self.assertEqual(new.values(), ['bar'])
 
     def test_put_allows_to_overwrite_a_node_after_upload_queue_push(self):
         node = btree.LeafNode(0, [], [])
@@ -272,7 +274,9 @@ class NodeStoreTests(object): # pragma: no cover
         node = btree.LeafNode(0, ['foo'], ['bar'])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
-        self.assertEqual(self.ns.get_node(0).pairs(), [('foo', 'bar')])
+        new = self.ns.get_node(0)
+        self.assertEqual(new.keys(), ['foo'])
+        self.assertEqual(new.values(), ['bar'])
 
     def test_remove_raises_nodemissing_if_node_does_not_exist(self):
         self.assertRaises(NodeMissing, self.ns.remove_node, 0)

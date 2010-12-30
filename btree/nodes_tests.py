@@ -72,17 +72,18 @@ class NodeTests(unittest.TestCase):
     def test_returns_correct_first_key(self):
         self.assertEqual(self.node.first_key(), 'key1')
 
-    def test_returns_pairs(self):
-        self.assertEqual(self.node.pairs(), sorted(self.pairs))
+    def test_returns_keys_and_values(self):
+        self.assertEqual(self.node.keys(), self.keys)
+        self.assertEqual(self.node.values(), self.values)
 
-    def test_does_not_return_excluded_pairs(self):
-        self.assertEqual(self.node.pairs(exclude=['key1']), 
-                         [('key2', 'value2')])
+    def test_does_not_return_excluded_keys(self):
+        self.assertEqual(self.node.keys(exclude=['key1']), ['key2'])
 
     def test_adds_key_value_pair_to_empty_node(self):
         node = btree.nodes.Node(0, [], [])
         node.add('foo', 'bar')
-        self.assertEqual(node.pairs(), [('foo', 'bar')])
+        self.assertEqual(node.keys(), ['foo'])
+        self.assertEqual(node.values(), ['bar'])
         self.assertEqual(node['foo'], 'bar')
 
     def test_adds_key_value_pair_to_end_of_node_of_one_element(self):
@@ -102,14 +103,15 @@ class NodeTests(unittest.TestCase):
     def test_adds_key_value_pair_to_middle_of_node_of_two_elements(self):
         node = btree.nodes.Node(0, ['bar', 'foo'], ['bar', 'bar'])
         node.add('duh', 'bar')
-        self.assertEqual(node.pairs(), [('bar', 'bar'), ('duh', 'bar'), 
-                                        ('foo', 'bar')])
+        self.assertEqual(node.keys(), ['bar', 'duh', 'foo'])
+        self.assertEqual(node.values(), ['bar', 'bar', 'bar'])
         self.assertEqual(node['duh'], 'bar')
 
     def test_add_replaces_value_for_existing_key(self):
         node = btree.nodes.Node(0, ['bar', 'foo'], ['bar', 'bar'])
         node.add('bar', 'xxx')
-        self.assertEqual(node.pairs(), [('bar', 'xxx'), ('foo', 'bar')])
+        self.assertEqual(node.keys(), ['bar', 'foo'])
+        self.assertEqual(node.values(), ['xxx', 'bar'])
         self.assertEqual(node['bar'], 'xxx')
 
     def test_add_resets_cached_size(self):
@@ -122,21 +124,24 @@ class NodeTests(unittest.TestCase):
         node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
                                    ['bar', 'bar', 'bar'])
         node.remove('bar')
-        self.assertEqual(node.pairs(), [('duh', 'bar'), ('foo', 'bar')])
+        self.assertEqual(node.keys(), ['duh', 'foo'])
+        self.assertEqual(node.values(), ['bar', 'bar'])
         self.assertRaises(KeyError, node.__getitem__, 'bar')
 
     def test_removes_last_key(self):
         node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
                                    ['bar', 'bar', 'bar'])
         node.remove('foo')
-        self.assertEqual(node.pairs(), [('bar', 'bar'), ('duh', 'bar')])
+        self.assertEqual(node.keys(), ['bar', 'duh'])
+        self.assertEqual(node.values(), ['bar', 'bar'])
         self.assertRaises(KeyError, node.__getitem__, 'foo')
 
     def test_removes_middle_key(self):
         node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
                                    ['bar', 'bar', 'bar'])
         node.remove('duh')
-        self.assertEqual(node.pairs(), [('bar', 'bar'), ('foo', 'bar')])
+        self.assertEqual(node.keys(), ['bar', 'foo'])
+        self.assertEqual(node.values(), ['bar', 'bar'])
         self.assertRaises(KeyError, node.__getitem__, 'duh')
 
     def test_raises_exception_when_removing_unknown_key(self):
@@ -155,7 +160,8 @@ class NodeTests(unittest.TestCase):
                                    ['bar', 'bar', 'bar'])
         node.size = 12375654
         node.remove_index_range(1, 5)
-        self.assertEqual(node.pairs(), [('bar', 'bar')])
+        self.assertEqual(node.keys(), ['bar'])
+        self.assertEqual(node.values(), ['bar'])
         self.assertEqual(node.size, None)
 
     def test_finds_pairs(self):
