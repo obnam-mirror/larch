@@ -143,8 +143,8 @@ class BTree(object):
     def _lookup_range(self, node_id, minkey, maxkey):
         node = self.get_node(node_id)
         if isinstance(node, btree.LeafNode):
-            for pair in node.find_pairs(minkey, maxkey):
-                yield pair
+            for key in node.find_keys_in_range(minkey, maxkey):
+                yield key, node[key]
         else:
             assert isinstance(node, btree.IndexNode)
             result = []
@@ -169,7 +169,7 @@ class BTree(object):
     def _range_is_empty(self, node_id, minkey, maxkey):
         node = self.get_node(node_id)
         if isinstance(node, btree.LeafNode):
-            return node.find_pairs(minkey, maxkey) == []
+            return node.find_keys_in_range(minkey, maxkey) == []
         else:
             assert isinstance(node, btree.IndexNode)
             for child_id in node.find_children_in_range(minkey, maxkey):

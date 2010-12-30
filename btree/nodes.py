@@ -156,7 +156,7 @@ class LeafNode(Node):
     
     '''
 
-    def find_pairs(self, minkey, maxkey):
+    def find_keys_in_range(self, minkey, maxkey):
         '''Find pairs whose key is in desired range.
         
         minkey and maxkey are inclusive.
@@ -167,8 +167,7 @@ class LeafNode(Node):
         j = bisect.bisect_left(self._keys, maxkey)
         if j < len(self._keys) and self._keys[j] == maxkey:
             j += 1
-        return [(self._keys[x], self._values[x])
-                for x in range(i, j)]
+        return self._keys[i:j]
 
 
 class IndexNode(Node):

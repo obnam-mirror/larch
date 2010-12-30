@@ -164,33 +164,31 @@ class NodeTests(unittest.TestCase):
         self.assertEqual(node.values(), ['bar'])
         self.assertEqual(node.size, None)
 
-    def test_finds_pairs(self):
+    def test_finds_keys_in_range(self):
         # The children's keys are 'bar' and 'foo'. We need to test for
         # every combination of minkey and maxkey being less than, equal,
         # or greater than either child key (as long as minkey <= maxkey).
         
-        bar = ('bar', 'bar')
-        foo = ('foo', 'foo')
         node = btree.LeafNode(0, ['bar', 'foo'], ['bar', 'foo']) 
-        find = node.find_pairs
+        find = node.find_keys_in_range
 
         self.assertEqual(find('aaa', 'aaa'), [])
-        self.assertEqual(find('aaa', 'bar'), [bar])
-        self.assertEqual(find('aaa', 'ccc'), [bar])
-        self.assertEqual(find('aaa', 'foo'), [bar, foo])
-        self.assertEqual(find('aaa', 'ggg'), [bar, foo])
+        self.assertEqual(find('aaa', 'bar'), ['bar'])
+        self.assertEqual(find('aaa', 'ccc'), ['bar'])
+        self.assertEqual(find('aaa', 'foo'), ['bar', 'foo'])
+        self.assertEqual(find('aaa', 'ggg'), ['bar', 'foo'])
 
-        self.assertEqual(find('bar', 'bar'), [bar])
-        self.assertEqual(find('bar', 'ccc'), [bar])
-        self.assertEqual(find('bar', 'foo'), [bar, foo])
-        self.assertEqual(find('bar', 'ggg'), [bar, foo])
+        self.assertEqual(find('bar', 'bar'), ['bar'])
+        self.assertEqual(find('bar', 'ccc'), ['bar'])
+        self.assertEqual(find('bar', 'foo'), ['bar', 'foo'])
+        self.assertEqual(find('bar', 'ggg'), ['bar', 'foo'])
 
         self.assertEqual(find('ccc', 'ccc'), [])
-        self.assertEqual(find('ccc', 'foo'), [foo])
-        self.assertEqual(find('ccc', 'ggg'), [foo])
+        self.assertEqual(find('ccc', 'foo'), ['foo'])
+        self.assertEqual(find('ccc', 'ggg'), ['foo'])
 
-        self.assertEqual(find('foo', 'foo'), [foo])
-        self.assertEqual(find('foo', 'ggg'), [foo])
+        self.assertEqual(find('foo', 'foo'), ['foo'])
+        self.assertEqual(find('foo', 'ggg'), ['foo'])
 
         self.assertEqual(find('ggg', 'ggg'), [])
 
