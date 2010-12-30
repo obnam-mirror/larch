@@ -186,12 +186,19 @@ class IndexNode(Node):
 
     def find_key_for_child_containing(self, key):
         '''Return key for the child that contains ``key``.'''
-        getkey = lambda pair: pair[0]
-        lo, hi = btree.bsearch(self._pairs, key, getkey=getkey)
-        if lo is None:
+
+        i = bisect.bisect_left(self._pairs, (key, None))
+        if i < len(self._pairs):
+            if self._pairs[i][0] == key:
+                return key
+            elif i == 0:
+                return None
+            else:
+                return self._pairs[i-1][0]
+        elif i == 0:
             return None
         else:
-            return getkey(self._pairs[lo])
+            return self._pairs[i-1][0]
 
     def find_children_in_range(self, minkey, maxkey):
         '''Find all children whose key is in the range.
