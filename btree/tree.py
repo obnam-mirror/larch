@@ -115,7 +115,7 @@ class BTree(object):
         self.check_key_size(key)
 
         node = self.root
-        while node and isinstance(node, btree.IndexNode):
+        while isinstance(node, btree.IndexNode):
             k = node.find_key_for_child_containing(key)
             if k is None:
                 raise KeyError(key)
