@@ -53,8 +53,8 @@ class ForestTests(unittest.TestCase):
     def test_clones_do_not_clash_in_new_node_ids(self):
         t1 = self.forest.new_tree()
         t2 = self.forest.new_tree(t1)
-        node1 = t1.new_leaf([])
-        node2 = t2.new_leaf([])
+        node1 = t1.new_leaf([], [])
+        node2 = t2.new_leaf([], [])
         self.assertEqual(node1.id + 1, node2.id)
 
     def test_is_persistent(self):

@@ -72,25 +72,23 @@ class BTree(object):
         
         return self.node_store.get_refcount(node.id) == 1
     
-    def new_leaf(self, pairs):
+    def new_leaf(self, keys, values):
         '''Create a new leaf node and keep track of it.'''
-        leaf = btree.LeafNode(self.new_id(), [k for k, v in pairs],
-                              [v for k, v in pairs]) # FIXME
+        leaf = btree.LeafNode(self.new_id(), keys, values)
         self.node_store.put_node(leaf)
         return leaf
         
-    def new_index(self, pairs):
+    def new_index(self, keys, values):
         '''Create a new index node and keep track of it.'''
-        index = btree.IndexNode(self.new_id(), [k for k, v in pairs],
-                              [v for k, v in pairs]) # FIXME
+        index = btree.IndexNode(self.new_id(), keys, values)
         self.node_store.put_node(index)
-        for key, child_id in pairs:
+        for child_id in values:
             self.increment(child_id)
         return index
         
-    def new_root(self, pairs):
+    def new_root(self, keys, values):
         '''Create a new root node and keep track of it.'''
-        self.root = self.new_index(pairs)
+        self.root = self.new_index(keys, values)
         self.node_store.set_refcount(self.root.id, 1)
 
     def get_node(self, node_id):
@@ -185,11 +183,10 @@ class BTree(object):
         if self.node_can_be_modified_in_place(node):
             return node
         else:
-            pairs = zip(node.keys(), node.values())
             if isinstance(node, btree.IndexNode):
-                new = self.new_index(pairs)
+                new = self.new_index(node.keys(), node.values())
             else:
-                new = self.new_leaf(pairs)
+                new = self.new_leaf(node.keys(), node.values())
                 new.size = node.size
             self.put_node(new)
             return new
@@ -210,7 +207,7 @@ class BTree(object):
             leaf = btree.LeafNode(self.new_id(), [key], [value])
             self.put_node(leaf)
             if self.root is None:
-                self.new_root([(key, leaf.id)])
+                self.new_root([key], [leaf.id])
             else:
                 self.root.add(key, leaf.id)
                 self.increment(leaf.id)
@@ -220,10 +217,11 @@ class BTree(object):
         # kids is either [self.root] or it is two children, in which case
         # a new root needs to be created.
         if len(kids) > 1:
-            pairs = [(kid.first_key(), kid.id) for kid in kids]
+            keys = [kid.first_key() for kid in kids]
+            values = [kid.id for kid in kids]
             old_root_id = self.root.id
             assert old_root_id is not None
-            self.new_root(pairs)
+            self.new_root(keys, values)
             self.decrement(old_root_id)
 
     def _insert_into_index(self, old_index, key, value):
@@ -288,7 +286,7 @@ class BTree(object):
             clone.remove(key)
             
         if keys:
-            new = self.new_leaf(zip(keys, values))
+            new = self.new_leaf(keys, values)
             leaves = [new, clone]
         else:
             leaves = [clone]
