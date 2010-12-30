@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import bisect
 import logging
 
 import btree
@@ -340,11 +341,13 @@ class BTree(object):
     def _add_or_merge(self, parent, node, merge):
         pairs = parent.pairs()
         getkey = lambda pair: pair[0]
-        i, j = btree.bsearch(pairs, node.first_key(), getkey=getkey)
-        if i is None or not merge(parent, node, i):
-            if j is not None:
-                merge(parent, node, j)
-
+        
+        key = node.first_key()
+        i = bisect.bisect_left(pairs, (key, None))
+        if i == 0 or not merge(parent, node, i-1):
+            if i < len(pairs):
+                merge(parent, node, i)
+            
         self.put_node(node)
         parent.add(node.first_key(), node.id)
         self.increment(node.id)
