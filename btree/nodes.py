@@ -92,40 +92,29 @@ class Node(object):
 
         '''
         
-        pairs = self.pairs()
-        
-        i = bisect.bisect_left(pairs, (minkey, None))
-        j = bisect.bisect_left(pairs, (maxkey, None))  
-        
-        getkey = lambda pair: pair[0]
-
-        if i < len(pairs):
-            if getkey(pairs[i]) > minkey:
-                if i == 0:
+        def helper(key, default):
+            pairs = self.pairs()
+            getkey = lambda pair: pair[0]
+            x = bisect.bisect_left(pairs, (key, None))
+            if x < len(pairs):
+                if getkey(pairs[x]) > key:
+                    if x == 0:
+                        x = default
+                    else:
+                        x -= 1
+                else:
                     pass
+            else:
+                if x == 0:
+                    x = None
                 else:
-                    i -= 1
-            else:
-                pass
-        else:
-            if i == 0:
-                i = None
-            else:
-                i -= 1
+                    x -= 1
+            return x
 
-        if j < len(pairs):
-            if getkey(pairs[j]) > maxkey:
-                if j == 0:
-                    i = j = None
-                else:
-                    j -= 1
-            else:
-                pass
-        else:
-            if j == 0:
-                j = None
-            else:
-                j -= 1
+        i = helper(minkey, 0)
+        j = helper(maxkey, None)
+        if j is None:
+            i = None
 
         return i, j
 
