@@ -5,6 +5,16 @@ These are the release notes for btree, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
+Version 0.15, released 2011-01-02
+---------------------------------
+
+* This version replaces all use of my custom `bsearch` function with the
+  `bisect` module in the Python standard library. This speeds up all
+  operations, some more than others. In-memory benchmarks with ´speed-test`
+  sped up from about 20% for `remove_range` up to 240% for `lookup`.
+  No other changes, but I felt this warranted a release on its own.
+
+
 Version 0.14, released 2010-12-29
 ---------------------------------
 
