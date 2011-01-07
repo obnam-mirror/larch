@@ -5,6 +5,15 @@ These are the release notes for btree, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
+Version 0.16, released 2011-01-07
+---------------------------------
+
+* The code to split over-full leaf nodes into two is fixed. Before version 
+  0.14 we had a problem where one of the two halves might still be too big. 
+  The code in 0.14 fixed that, but introduced a new problem where one of
+  the new nodes would be very small. Now they should be just right.
+  No, I have not read Goldilocks recently, why do you ask?
+
 Version 0.15, released 2011-01-02
 ---------------------------------
 
