@@ -302,6 +302,8 @@ class BTree(object):
             assert size(a) <= max_size
             assert size(b) <= max_size
 
+            if leaf.id != clone.id: # pragma: no cover
+                self.decrement(clone.id)
             leaves = [a, b]
 
         for x in leaves:
