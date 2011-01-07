@@ -1,3 +1,10 @@
+python-btree (0.16) squeeze; urgency=low
+
+  * New upstream release.
+    - fix bug that resulted in many very small leaf nodes
+
+ -- Lars Wirzenius <liw@liw.fi>  Fri, 07 Jan 2011 22:00:14 +0000
+
 python-btree (0.15) squeeze; urgency=low
 
   * New upstream release.
