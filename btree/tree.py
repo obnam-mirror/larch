@@ -277,20 +277,33 @@ class BTree(object):
         clone = self._shadow(leaf)
         clone.add(key, value)
         
-        keys = []
-        values = []
-        while self._leaf_size(clone) > self.node_store.node_size:
-            key = clone.keys()[0]
-            keys.append(key)
-            values.append(clone[key])
-            clone.remove(key)
-            
-        if keys:
-            new = self.new_leaf(keys, values)
-            leaves = [new, clone]
-        else:
+        max_size = self.node_store.node_size
+        size = self._leaf_size
+        if size(clone) <= max_size:
             leaves = [clone]
-        
+        else:
+            keys = clone.keys()
+            values = clone.values()
+            n = len(keys) / 2
+            a = self.new_leaf(keys[:n], values[:n])
+            b = self.new_leaf(keys[n:], values[n:])
+            if size(b) > max_size: # pragma: no cover
+                assert size(a) < max_size
+                while size(b) > max_size:
+                    key = b.keys()[0]
+                    a.add(key, b[key])
+                    b.remove(key)
+            elif size(a) > max_size: # pragma: no cover
+                assert size(b) < max_size
+                while size(a) > max_size:
+                    key = a.keys()[-1]
+                    b.add(key, a[key])
+                    a.remove(key)
+            assert size(a) <= max_size
+            assert size(b) <= max_size
+
+            leaves = [a, b]
+
         for x in leaves:
             self.put_node(x)
         return leaves
