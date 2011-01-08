@@ -288,6 +288,8 @@ class BTree(object):
             n = len(keys) / 2
             a = self.new_leaf(keys[:n], values[:n])
             b = self.new_leaf(keys[n:], values[n:])
+            assert size(a) > 0
+            assert size(b) > 0
             if size(b) > max_size: # pragma: no cover
                 assert size(a) < max_size
                 while size(b) > max_size:
