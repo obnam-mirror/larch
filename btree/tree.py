@@ -283,8 +283,18 @@ class BTree(object):
         if size(clone) <= max_size:
             leaves = [clone]
         else:
+            # We need to make sure the clone is high in the node store upload
+            # queue, so it doesn't get pushed out while we create the new 
+            # nodes. It must not, because it is too large.  We can't remove 
+            # the clone here, because it might still be the same as leaf, and 
+            # the parent holds a reference and will get confused if we remove.  
+            # So we move things in the upload queue so it does not get pushed
+            # while too big when we create the two new leaf nodes. Subtle bug.
+            self.get_node(clone.id)
+
             keys = clone.keys()
             values = clone.values()
+
             n = len(keys) / 2
             a = self.new_leaf(keys[:n], values[:n])
             b = self.new_leaf(keys[n:], values[n:])
