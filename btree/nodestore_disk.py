@@ -133,7 +133,7 @@ class NodeStoreDisk(btree.NodeStore):
     def _really_put_node(self, node):
         encoded_node = self.codec.encode(node)
         if len(encoded_node) > self.node_size:
-            raise btree.NodeTooBig(node.id, len(encoded_node))
+            raise btree.NodeTooBig(node, len(encoded_node))
         name = self.pathname(node.id)
         if self.file_exists(name):
             self.remove_file(name)

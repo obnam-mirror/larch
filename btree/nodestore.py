@@ -32,12 +32,14 @@ class NodeTooBig(Exception): # pragma: no cover
 
     '''User tried to put a node that was too big into the store.'''
     
-    def __init__(self, node_id, node_size):
-        self.node_id = node_id
+    def __init__(self, node, node_size):
+        self.node_type = node.__class__.__name__
+        self.node_id = node.id
         self.node_size = node_size
         
     def __str__(self):
-        return 'Node %d is too big (%d bytes)' % (self.node_id, self.node_size)
+        return ('%s %d is too big (%d bytes)' % 
+                (self.node_type, self.node_id, self.node_size))
         
         
 class NodeExists(Exception): # pragma: no cover
