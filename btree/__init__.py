@@ -19,7 +19,7 @@ version = '0.16'
 
 from nodes import LeafNode, IndexNode
 from codec import NodeCodec, CodecError
-from tree import BTree, KeySizeMismatch
+from tree import BTree, KeySizeMismatch, ValueTooLarge
 from forest import Forest
 from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig, 
                        NodeExists)

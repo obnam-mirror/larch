@@ -95,7 +95,8 @@ class NodeStore(object): # pragma: no cover
     def __init__(self, node_size, codec):
         self.node_size = node_size
         self.codec = codec
-      
+        self.max_value_size = (node_size / 2) - codec.leaf_header.size
+
     def max_index_pairs(self):
         return self.codec.max_index_pairs(self.node_size)
         
@@ -191,6 +192,10 @@ class NodeStoreTests(object): # pragma: no cover
     
     def test_sets_node_size(self):
         self.assertEqual(self.ns.node_size, self.node_size)
+        
+    def test_sets_max_value_size(self):
+        self.assert_(self.ns.max_value_size > 1)
+        self.assert_(self.ns.max_value_size < self.node_size / 2)
 
     def test_has_no_metadata_initially(self):
         self.assertEqual(self.ns.get_metadata_keys(), [])

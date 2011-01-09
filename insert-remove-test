@@ -83,7 +83,7 @@ def main():
 
     key_size = 19
     value_size = 128
-    node_size = 256
+    node_size = 300
 
     codec = btree.NodeCodec(key_size)
 

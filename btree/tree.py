@@ -32,6 +32,17 @@ class KeySizeMismatch(Exception):
     def __str__(self):
         return 'Key %s is of wrong length (%d, should be %d)' % \
                 (repr(self.key), len(self.key), self.wanted_size)
+
+
+class ValueTooLarge(Exception):
+
+    def __init__(self, value, max_size):
+        self.value = value
+        self.max_size = max_size
+        
+    def __str__(self):
+        return 'Value %s is too long (%d, max %d)' % \
+                (repr(self.value), len(self.value), self.max_size)
        
 
 class BTree(object):
@@ -39,7 +50,9 @@ class BTree(object):
     '''B-tree.
     
     The nodes are stored in an external node store; see the NodeStore
-    class. Key sizes are fixed, and given in bytes.
+    class. Key sizes are fixed, and given in bytes. Values may be of
+    any size up to slightly less than half the maximum size of a node.
+    See NodeStore.max_value_size for the exact value.
     
     '''
 
@@ -58,6 +71,10 @@ class BTree(object):
     def check_key_size(self, key):
         if len(key) != self.node_store.codec.key_bytes:
             raise KeySizeMismatch(key, self.node_store.codec.key_bytes)
+
+    def check_value_size(self, value):
+        if len(value) > self.node_store.max_value_size:
+            raise ValueTooLarge(value, self.node_store.max_value_size)
 
     def new_id(self):
         '''Generate a new node identifier.'''
@@ -201,6 +218,7 @@ class BTree(object):
         '''
 
         self.check_key_size(key)
+        self.check_value_size(value)
 
         # Is the tree empty? This needs special casing to keep
         # _insert_into_index simpler.

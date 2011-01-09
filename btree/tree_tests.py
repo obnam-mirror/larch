@@ -35,6 +35,7 @@ class DummyNodeStore(object):
 
     def __init__(self, node_size, codec):
         self.node_size = node_size
+        self.max_value_size = node_size / 2 - 1
         self.codec = codec
         self.nodes = dict()
         self.metadata = dict()
@@ -85,6 +86,18 @@ class KeySizeMismatchTests(unittest.TestCase):
         
     def test_error_message_contains_wanted_size(self):
         self.assert_('4' in str(self.err))
+
+
+class ValueTooLargeTests(unittest.TestCase):
+
+    def setUp(self):
+        self.err = btree.ValueTooLarge('foobar', 3)
+        
+    def test_error_message_contains_value(self):
+        self.assert_('foobar' in str(self.err))
+        
+    def test_error_message_contains_max_size(self):
+        self.assert_('3' in str(self.err))
 
 
 class BTreeTests(unittest.TestCase):
@@ -189,6 +202,10 @@ class BTreeTests(unittest.TestCase):
 
     def test_insert_with_wrong_size_key_raises_error(self):
         self.assertRaises(btree.KeySizeMismatch, self.tree.insert, '', '')
+
+    def test_insert_with_too_large_value_raises_error(self):
+        self.assertRaises(btree.ValueTooLarge, self.tree.insert, 'xxx', 
+                          'x' * (self.ns.max_value_size + 1))
 
     def test_remove_from_empty_tree_raises_keyerror(self):
         self.assertRaises(KeyError, self.tree.remove, 'foo')
