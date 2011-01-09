@@ -5,6 +5,30 @@ These are the release notes for btree, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
+Version 0.16.1, released 2011-01-07
+---------------------------------
+
+* Bug fix: Remove temporary node used while splitting a leaf node that has
+  grown too large.
+* Bug fix: Since we do, in fact, modify nodes in-place when they are not
+  shared between trees, it was possible for a node to be put into the
+  node store upload queue, and later modified. This is not a problem as
+  such, but when inserting a value into a leaf node, we modify it in place
+  making it too large, and then create one or two new nodes. If the 
+  too-large node was at the beginning of the upload queue, creating the
+  new node might push it out, resulting in a bug. We fix this by moving
+  the too-large node to the end of the queue, ensuring it will not be
+  pushed out. A cleaner solution would be to not modify the node if it
+  will grow too big, but that change will need to wait for a later date.
+* BTree now checks that nodes are not too big when they are put into the
+  node store. The node store already did the checking, but only at the
+  point where it was ready to write the node to disk, and that meant the
+  problem was caught at a time that was hard to debug.
+* BTree now sets an explicit maximum size of the values inserted into the
+  tree: slightly less than half the size of a node. This is necessary for
+  leaf node splitting to work correctly without requiring more than more
+  than two nodes to hold everything.
+
 Version 0.16, released 2011-01-07
 ---------------------------------
 

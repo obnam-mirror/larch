@@ -1,3 +1,14 @@
+python-btree (0.16.1) squeeze; urgency=low
+
+  * New upstream release.
+    - remove temporary nodes used while splitting a leaf node
+    - prevent too-large leaf nodes from getting pushed out of the upload
+      queue during splitting
+    - introduce explicit maximum size for values stored in the tree
+      (slightly less than half the size of a node)
+
+ -- Lars Wirzenius <liw@liw.fi>  Sun, 09 Jan 2011 11:38:16 +0000
+
 python-btree (0.16) squeeze; urgency=low
 
   * New upstream release.
