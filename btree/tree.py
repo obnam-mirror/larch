@@ -92,13 +92,13 @@ class BTree(object):
     def new_leaf(self, keys, values):
         '''Create a new leaf node and keep track of it.'''
         leaf = btree.LeafNode(self.new_id(), keys, values)
-        self.node_store.put_node(leaf)
+        self.put_node(leaf)
         return leaf
         
     def new_index(self, keys, values):
         '''Create a new index node and keep track of it.'''
         index = btree.IndexNode(self.new_id(), keys, values)
-        self.node_store.put_node(index)
+        self.put_node(index)
         for child_id in values:
             self.increment(child_id)
         return index
