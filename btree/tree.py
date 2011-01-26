@@ -92,13 +92,13 @@ class BTree(object):
     def new_leaf(self, keys, values):
         '''Create a new leaf node and keep track of it.'''
         leaf = btree.LeafNode(self.new_id(), keys, values)
-        self.node_store.put_node(leaf)
+        self.put_node(leaf)
         return leaf
         
     def new_index(self, keys, values):
         '''Create a new index node and keep track of it.'''
         index = btree.IndexNode(self.new_id(), keys, values)
-        self.node_store.put_node(index)
+        self.put_node(index)
         for child_id in values:
             self.increment(child_id)
         return index
@@ -293,29 +293,21 @@ class BTree(object):
         
         '''
         
-        clone = self._shadow(leaf)
-        clone.add(key, value)
-        
+        new = btree.LeafNode(self.new_id(), leaf.keys(), leaf.values())
+        new.add(key, value)
+
         max_size = self.node_store.node_size
         size = self._leaf_size
-        if size(clone) <= max_size:
-            leaves = [clone]
-        else:
-            # We need to make sure the clone is high in the node store upload
-            # queue, so it doesn't get pushed out while we create the new 
-            # nodes. It must not, because it is too large.  We can't remove 
-            # the clone here, because it might still be the same as leaf, and 
-            # the parent holds a reference and will get confused if we remove.  
-            # So we move things in the upload queue so it does not get pushed
-            # while too big when we create the two new leaf nodes. Subtle bug.
-            self.get_node(clone.id)
 
-            keys = clone.keys()
-            values = clone.values()
+        if size(new) <= max_size:
+            leaves = [new]
+        else:
+            keys = new.keys()
+            values = new.values()
 
             n = len(keys) / 2
-            a = self.new_leaf(keys[:n], values[:n])
-            b = self.new_leaf(keys[n:], values[n:])
+            a = btree.LeafNode(self.new_id(), keys[:n], values[:n])
+            b = btree.LeafNode(self.new_id(), keys[n:], values[n:])
             assert size(a) > 0
             assert size(b) > 0
             if size(b) > max_size: # pragma: no cover
@@ -330,11 +322,11 @@ class BTree(object):
                     key = a.keys()[-1]
                     b.add(key, a[key])
                     a.remove(key)
+            assert size(a) > 0
+            assert size(b) > 0
             assert size(a) <= max_size
             assert size(b) <= max_size
 
-            if leaf.id != clone.id: # pragma: no cover
-                self.decrement(clone.id)
             leaves = [a, b]
 
         for x in leaves:
