@@ -224,6 +224,21 @@ class NodeTests(unittest.TestCase):
         # in the desired range.
         self.assertEqual(find('ggg', 'ggg'), (1, 1))
 
+    def test_is_not_frozen(self):
+        self.assertEqual(self.node.frozen, False)
+
+    def test_freezing_makes_add_raise_error(self):
+        self.node.frozen = True
+        self.assertRaises(btree.FrozenNode, self.node.add, 'foo', 'bar')
+
+    def test_freezing_makes_remove_raise_error(self):
+        self.node.frozen = True
+        self.assertRaises(btree.FrozenNode, self.node.remove, 'foo')
+
+    def test_freezing_makes_remove_index_range_raise_error(self):
+        self.node.frozen = True
+        self.assertRaises(btree.FrozenNode, self.node.remove_index_range, 0, 1)
+
 
 class IndexNodeTests(unittest.TestCase):
 

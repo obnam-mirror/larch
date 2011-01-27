@@ -19,6 +19,15 @@ import bisect
 import btree
 
 
+class FrozenNode(Exception):
+
+    def __init__(self, node):
+        self.node = node
+        
+    def __str__(self):
+        return 'Node %s is frozen against modifications' % self.node.id
+
+
 class Node(object):
 
     '''Abstract base class for index and leaf nodes.
