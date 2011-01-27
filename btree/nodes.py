@@ -46,6 +46,7 @@ class Node(object):
             self._dict[keys[i]] = values[i]
         self.id = node_id
         self.size = None
+        self.frozen = False
 
     def __getitem__(self, key):
         return self._dict[key]
