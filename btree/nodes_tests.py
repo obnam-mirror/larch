@@ -19,6 +19,14 @@ import unittest
 import btree
 
 
+class FrozenNodeTests(unittest.TestCase):
+
+    def test_node_id_is_in_error_message(self):
+        node = btree.nodes.Node(123, [], [])
+        e = btree.FrozenNode(node)
+        self.assert_('123' in str(e))
+
+
 class NodeTests(unittest.TestCase):
 
     def setUp(self):
