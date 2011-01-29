@@ -124,6 +124,7 @@ class NodeStoreDisk(btree.NodeStore):
         return os.path.join(self.dirname, self.nodedir, subdir, basename)
         
     def put_node(self, node):
+        node.frozen = True
         self.cache.add(node.id, node)
         self.upload_queue.put(node)
 
@@ -153,6 +154,7 @@ class NodeStoreDisk(btree.NodeStore):
         if self.file_exists(name):
             encoded = self.read_file(name)
             node = self.codec.decode(encoded)
+            node.frozen = True
             self.cache.add(node.id, node)
             return node
         else:
