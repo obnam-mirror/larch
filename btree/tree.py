@@ -353,7 +353,6 @@ class BTree(object):
             new_index.remove(child_key)
             if len(new_kid) > 0:
                 self._add_or_merge_index(new_index, new_kid)
-            self.decrement(child.id)
         else:
             assert isinstance(child, btree.LeafNode)
             leaf = self._shadow(child)
@@ -361,10 +360,8 @@ class BTree(object):
             new_index.remove(child_key)
             if len(leaf) > 0:
                 self._add_or_merge_leaf(new_index, leaf)
-                self.decrement(child.id)
-            else:
-                self.decrement(child.id)
 
+        self.decrement(child.id)
         self.put_node(new_index)
         return new_index
 
