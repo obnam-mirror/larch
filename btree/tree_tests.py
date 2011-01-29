@@ -60,7 +60,10 @@ class DummyNodeStore(object):
         self.nodes[node.id] = node
         
     def get_node(self, node_id):
-        return self.nodes[node_id]
+        if node_id in self.nodes:
+            return self.nodes[node_id]
+        else:
+            raise btree.NodeMissing(node_id)
         
     def find_nodes(self):
         return self.nodes.keys()
