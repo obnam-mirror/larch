@@ -123,12 +123,17 @@ class BTreeTests(unittest.TestCase):
         clone = self.tree._shadow(index)
         self.assertEqual(self.ns.get_refcount(leaf.id), 2)
 
-    def test_creates_index(self):
+    def test_new_leaf_does_not_put_node_into_store(self):
+        leaf = self.tree.new_leaf([], [])
+        self.assertRaises(btree.NodeMissing, self.tree.get_node, leaf.id)
+
+    def test_new_index_does_not_put_node_into_store(self):
         index = self.tree.new_index([], [])
-        self.assertEqual(index, self.tree.get_node(index.id))
+        self.assertRaises(btree.NodeMissing, self.tree.get_node, index.id)
 
     def test_new_index_increments_childrens_refcounts(self):
         leaf = self.tree.new_leaf([], [])
+        self.tree.put_node(leaf)
         self.assertEqual(self.ns.get_refcount(leaf.id), 0)
         self.tree.new_index(['foo'], [leaf.id])
         self.assertEqual(self.ns.get_refcount(leaf.id), 1)
