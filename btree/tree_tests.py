@@ -115,16 +115,6 @@ class BTreeTests(unittest.TestCase):
         leaf = self.tree.new_leaf([], [])
         self.assertEqual(leaf, self.tree.get_node(leaf.id))
 
-    def test_knows_node_with_refcount_1_can_be_modified_in_place(self):
-        node = self.tree.new_leaf([], [])
-        self.ns.set_refcount(node.id, 1)
-        self.assert_(self.tree.node_can_be_modified_in_place(node))
-
-    def test_knows_node_with_refcount_2_cannot_be_modified_in_place(self):
-        node = self.tree.new_leaf([], [])
-        self.ns.set_refcount(node.id, 2)
-        self.assertFalse(self.tree.node_can_be_modified_in_place(node))
-
     def test_shadow_increments_childrens_refcounts(self):
         leaf = self.tree.new_leaf(['foo'], ['bar'])
         index = self.tree.new_index([leaf.first_key()], [leaf.id])
