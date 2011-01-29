@@ -363,7 +363,6 @@ class BTree(object):
                 self._add_or_merge_leaf(new_index, leaf)
                 self.decrement(child.id)
             else:
-                self.decrement(leaf.id)
                 if child.id != leaf.id: # pragma: no cover
                     self.decrement(child.id)
 
