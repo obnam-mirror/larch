@@ -57,6 +57,7 @@ class DummyNodeStore(object):
         pass
     
     def put_node(self, node):
+        node.frozen = True
         self.nodes[node.id] = node
         
     def get_node(self, node_id):

@@ -359,6 +359,7 @@ class BTree(object):
             leaf.remove(key)
             new_index.remove(child_key)
             if len(leaf) > 0:
+                self.put_node(leaf)
                 self._add_or_merge_leaf(new_index, leaf)
 
         self.decrement(child.id)
@@ -372,17 +373,29 @@ class BTree(object):
         self._add_or_merge(parent, leaf, self._merge_leaf)
 
     def _add_or_merge(self, parent, node, merge):
+        assert not parent.frozen
+        assert node.frozen
+
         keys = parent.keys()
         
         key = node.first_key()
         i = bisect.bisect_left(keys, key)
-        if i == 0 or not merge(parent, node, i-1):
-            if i < len(keys):
-                merge(parent, node, i)
-            
-        self.put_node(node)
-        parent.add(node.first_key(), node.id)
-        self.increment(node.id)
+        
+        new_node = None
+        if i > 0:
+            new_node = merge(parent, node, i-1)
+        if new_node is None and i < len(keys):
+            new_node = merge(parent, node, i)
+        if new_node is None:
+            new_node = node
+
+        assert new_node is not None
+        self.put_node(new_node)
+        parent.add(new_node.first_key(), new_node.id)
+        self.increment(new_node.id)
+        if new_node != node:
+            # We made a new node, so get rid of the old one.
+            self.decrement(node.id)
 
     def _merge_index(self, parent, node, sibling_index):
 
@@ -414,13 +427,15 @@ class BTree(object):
         sibling_id = parent[sibling_key]
         sibling = self.get_node(sibling_id)
         if merge_p(node, sibling):
+            new_node = self._shadow(node)
             for k in sibling:
-                add(node, k, sibling[k])
+                add(new_node, k, sibling[k])
+            self.put_node(new_node)
             parent.remove(sibling_key)
             self.decrement(sibling.id)
-            return True
+            return new_node
         else:
-            return False
+            return None
 
     def remove_range(self, minkey, maxkey):
         '''Remove all keys in the given range.
