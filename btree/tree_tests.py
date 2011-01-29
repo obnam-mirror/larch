@@ -183,8 +183,8 @@ class BTreeTests(unittest.TestCase):
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
 
     def get_roots_first_child(self):
-        child_key = self.tree.root.keys()[0]
-        child_id = self.tree.root.values()[0]
+        child_key = self.tree.root.first_key()
+        child_id = self.tree.root[child_key]
         return self.ns.get_node(child_id)
         
     def test_remove_with_wrong_size_key_raises_error(self):
@@ -264,6 +264,34 @@ class BTreeTests(unittest.TestCase):
             self.assert_(self.proper_search_tree(self.tree.root),
                          msg='insert of %d in %s failed to keep tree ok' %
                          (i, ints))
+
+    def test_reduce_height_makes_tree_lower(self):
+        self.tree.insert('foo', 'bar')
+
+        old_root = self.tree.root
+        extra_root = self.tree.new_index([old_root.first_key()], [old_root.id])
+        self.tree.set_root(extra_root)
+        # Fix old root's refcount, since it got incremented to 2.
+        self.ns.set_refcount(old_root.id, 1)
+        
+        self.assertEqual(self.tree.root, extra_root)
+        self.tree._reduce_height()
+        self.assertEqual(self.tree.root, old_root)
+        
+    def test_reduce_height_does_not_lower_tree_when_children_are_shared(self):
+        self.tree.insert('foo', 'bar')
+
+        old_root = self.tree.root
+        extra_root = self.tree.new_index([old_root.first_key()], [old_root.id])
+        self.tree.set_root(extra_root)
+        
+        # Make old root's refcount be 2, so it looks like it is shared
+        # between trees.
+        self.ns.set_refcount(old_root.id, 2)
+        
+        self.assertEqual(self.tree.root, extra_root)
+        self.tree._reduce_height()
+        self.assertEqual(self.tree.root, extra_root)
 
     def dump_tree(self, node, f=sys.stdout, level=0):
         if not self.dump:

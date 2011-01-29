@@ -97,7 +97,6 @@ class BTree(object):
             self.decrement(self.root.id)
         self.put_node(new_root)
         self.root = new_root
-        assert self.node_store.get_refcount(self.root.id) == 0
         self.node_store.set_refcount(self.root.id, 1)
         
     def get_node(self, node_id):
@@ -447,7 +446,7 @@ class BTree(object):
         # Further, since we've modified all of these nodes, they can all
         # be modified in place.
         while len(self.root) == 1:
-            key = self.root.keys()[0]
+            key = self.root.first_key()
             child_id = self.root[key]
             assert self.node_store.get_refcount(self.root.id) == 1
             
@@ -459,10 +458,11 @@ class BTree(object):
                 break
 
             # We can just make the child be the new root node.
-            self.root.remove(key)
-            self.put_node(self.root) # So decrement gets modified root.
-            self.decrement(self.root.id)
-            self.root = child
+            assert type(child) == btree.IndexNode
+            # Prevent child from getting removed when parent's refcount
+            # gets decremented. set_root will set the refcount to be 1.
+            self.node_store.set_refcount(child.id, 2)
+            self.set_root(child)
 
     def increment(self, node_id):
         '''Non-recursively increment refcount for a node.'''
