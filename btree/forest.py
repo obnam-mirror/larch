@@ -61,7 +61,7 @@ class Forest(object):
             keys = []
             values = []
         t = btree.BTree(self, self.node_store, None)
-        t.new_root(keys, values)
+        t.set_root(t.new_index(keys, values))
         self.trees.append(t)
         return t
 

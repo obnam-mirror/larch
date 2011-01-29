@@ -90,6 +90,15 @@ class BTree(object):
         for child_id in values:
             self.increment(child_id)
         return index
+
+    def set_root(self, new_root):
+        '''Replace existing root node.'''
+        if self.root is not None:
+            self.decrement(self.root.id)
+        self.put_node(new_root)
+        self.root = new_root
+        assert self.node_store.get_refcount(self.root.id) == 0
+        self.node_store.set_refcount(self.root.id, 1)
         
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
@@ -227,12 +236,7 @@ class BTree(object):
                 values = [kid.id for kid in kids]
                 new_root = self.new_index(keys, values)
 
-        if self.root is not None:
-            self.decrement(self.root.id)
-        self.put_node(new_root)
-        self.root = new_root
-        assert self.node_store.get_refcount(self.root.id) == 0
-        self.node_store.set_refcount(self.root.id, 1)
+        self.set_root(new_root)
 
     def _insert_into_index(self, old_index, key, value):
         '''Insert key, value into an index node.
