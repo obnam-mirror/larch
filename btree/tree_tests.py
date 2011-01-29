@@ -114,10 +114,6 @@ class BTreeTests(unittest.TestCase):
         self.tree = btree.BTree(self.forest, self.ns, None)
         self.dump = False
 
-    def test_creates_leaf(self):
-        leaf = self.tree.new_leaf([], [])
-        self.assertEqual(leaf, self.tree.get_node(leaf.id))
-
     def test_shadow_increments_childrens_refcounts(self):
         leaf = self.tree.new_leaf(['foo'], ['bar'])
         index = self.tree.new_index([leaf.first_key()], [leaf.id])
