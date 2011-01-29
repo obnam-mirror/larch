@@ -340,7 +340,8 @@ class BTree(object):
         if self.root is None:
             raise KeyError(key)
 
-        self._remove_from_index(self.root, key)
+        new_root = self._remove_from_index(self.root, key)
+        self.set_root(new_root)
         self._reduce_height()
 
     def _remove_from_index(self, old_index, key):
