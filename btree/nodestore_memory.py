@@ -1,4 +1,4 @@
-# Copyright 2010  Lars Wirzenius
+# Copyright 2010, 2011  Lars Wirzenius
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ class NodeStoreMemory(btree.NodeStore):
         del self.metadata[key]
         
     def put_node(self, node):
+        node.frozen = True
         self.nodes[node.id] = node
         
     def get_node(self, node_id):

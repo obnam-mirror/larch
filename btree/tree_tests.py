@@ -57,10 +57,14 @@ class DummyNodeStore(object):
         pass
     
     def put_node(self, node):
+        node.frozen = True
         self.nodes[node.id] = node
         
     def get_node(self, node_id):
-        return self.nodes[node_id]
+        if node_id in self.nodes:
+            return self.nodes[node_id]
+        else:
+            raise btree.NodeMissing(node_id)
         
     def find_nodes(self):
         return self.nodes.keys()
@@ -111,44 +115,6 @@ class BTreeTests(unittest.TestCase):
         self.tree = btree.BTree(self.forest, self.ns, None)
         self.dump = False
 
-    def test_creates_leaf(self):
-        leaf = self.tree.new_leaf([], [])
-        self.assertEqual(leaf, self.tree.get_node(leaf.id))
-
-    def test_knows_node_with_refcount_1_can_be_modified_in_place(self):
-        node = self.tree.new_leaf([], [])
-        self.ns.set_refcount(node.id, 1)
-        self.assert_(self.tree.node_can_be_modified_in_place(node))
-
-    def test_knows_node_with_refcount_2_cannot_be_modified_in_place(self):
-        node = self.tree.new_leaf([], [])
-        self.ns.set_refcount(node.id, 2)
-        self.assertFalse(self.tree.node_can_be_modified_in_place(node))
-
-    def test_shadow_returns_leaf_itself_when_refcount_is_1(self):
-        leaf = self.tree.new_leaf([], [])
-        self.ns.set_refcount(leaf.id, 1)
-        clone = self.tree._shadow(leaf)
-        self.assertEqual(leaf.id, clone.id)
-
-    def test_shadow_returns_new_leaf_when_refcount_is_2(self):
-        leaf = self.tree.new_leaf([], [])
-        self.ns.set_refcount(leaf.id, 2)
-        clone = self.tree._shadow(leaf)
-        self.assertNotEqual(leaf.id, clone.id)
-
-    def test_shadow_returns_index_itself_when_refcount_is_1(self):
-        index = self.tree.new_index([], [])
-        self.ns.set_refcount(index.id, 1)
-        clone = self.tree._shadow(index)
-        self.assertEqual(index.id, clone.id)
-
-    def test_shadow_returns_new_index_when_refcount_is_2(self):
-        index = self.tree.new_index([], [])
-        self.ns.set_refcount(index.id, 2)
-        clone = self.tree._shadow(index)
-        self.assertNotEqual(index.id, clone.id)
-
     def test_shadow_increments_childrens_refcounts(self):
         leaf = self.tree.new_leaf(['foo'], ['bar'])
         index = self.tree.new_index([leaf.first_key()], [leaf.id])
@@ -157,22 +123,20 @@ class BTreeTests(unittest.TestCase):
         clone = self.tree._shadow(index)
         self.assertEqual(self.ns.get_refcount(leaf.id), 2)
 
-    def test_creates_index(self):
+    def test_new_leaf_does_not_put_node_into_store(self):
+        leaf = self.tree.new_leaf([], [])
+        self.assertRaises(btree.NodeMissing, self.tree.get_node, leaf.id)
+
+    def test_new_index_does_not_put_node_into_store(self):
         index = self.tree.new_index([], [])
-        self.assertEqual(index, self.tree.get_node(index.id))
+        self.assertRaises(btree.NodeMissing, self.tree.get_node, index.id)
 
     def test_new_index_increments_childrens_refcounts(self):
         leaf = self.tree.new_leaf([], [])
+        self.tree.put_node(leaf)
         self.assertEqual(self.ns.get_refcount(leaf.id), 0)
         self.tree.new_index(['foo'], [leaf.id])
         self.assertEqual(self.ns.get_refcount(leaf.id), 1)
-
-    def test_new_root_does_not_return_it(self):
-        self.assertEqual(self.tree.new_root([], []), None)
-
-    def test_creates_root_from_nothing(self):
-        self.tree.new_root([], [])
-        self.assertEqual(self.tree.root.id, 1) # first node always id 1
 
     def test_insert_changes_root_id(self):
         self.tree.insert('foo', 'bar')
@@ -220,32 +184,10 @@ class BTreeTests(unittest.TestCase):
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
 
     def get_roots_first_child(self):
-        child_key = self.tree.root.keys()[0]
-        child_id = self.tree.root.values()[0]
+        child_key = self.tree.root.first_key()
+        child_id = self.tree.root[child_key]
         return self.ns.get_node(child_id)
         
-    def test_remove_makes_tree_lower(self):
-        self.tree.insert('foo', 'bar')
-        self.assertEqual(type(self.get_roots_first_child()), btree.LeafNode)
-        root_key = self.tree.root.keys()[0]
-        old_root_id = self.tree.root.id
-        self.tree.new_root([root_key], [self.tree.root.id])
-        self.ns.set_refcount(old_root_id, 1)
-        self.assertEqual(type(self.get_roots_first_child()), btree.IndexNode)
-        self.tree._reduce_height()
-        self.assertEqual(type(self.get_roots_first_child()), btree.LeafNode)
-        
-    def test_remove_does_not_make_tree_lower_when_children_are_shared(self):
-        self.tree.insert('foo', 'bar')
-        root_key = self.tree.root.keys()[0]
-        old_root_id = self.tree.root.id
-        self.tree.new_root([root_key], [self.tree.root.id])
-        self.ns.set_refcount(old_root_id, 2)
-        self.assertEqual(len(self.tree.root), 1)
-        self.assertEqual(type(self.get_roots_first_child()), btree.IndexNode)
-        self.tree._reduce_height()
-        self.assertEqual(type(self.get_roots_first_child()), btree.IndexNode)
-
     def test_remove_with_wrong_size_key_raises_error(self):
         self.assertRaises(btree.KeySizeMismatch, self.tree.remove, '')
 
@@ -323,6 +265,34 @@ class BTreeTests(unittest.TestCase):
             self.assert_(self.proper_search_tree(self.tree.root),
                          msg='insert of %d in %s failed to keep tree ok' %
                          (i, ints))
+
+    def test_reduce_height_makes_tree_lower(self):
+        self.tree.insert('foo', 'bar')
+
+        old_root = self.tree.root
+        extra_root = self.tree.new_index([old_root.first_key()], [old_root.id])
+        self.tree.set_root(extra_root)
+        # Fix old root's refcount, since it got incremented to 2.
+        self.ns.set_refcount(old_root.id, 1)
+        
+        self.assertEqual(self.tree.root, extra_root)
+        self.tree._reduce_height()
+        self.assertEqual(self.tree.root, old_root)
+        
+    def test_reduce_height_does_not_lower_tree_when_children_are_shared(self):
+        self.tree.insert('foo', 'bar')
+
+        old_root = self.tree.root
+        extra_root = self.tree.new_index([old_root.first_key()], [old_root.id])
+        self.tree.set_root(extra_root)
+        
+        # Make old root's refcount be 2, so it looks like it is shared
+        # between trees.
+        self.ns.set_refcount(old_root.id, 2)
+        
+        self.assertEqual(self.tree.root, extra_root)
+        self.tree._reduce_height()
+        self.assertEqual(self.tree.root, extra_root)
 
     def dump_tree(self, node, f=sys.stdout, level=0):
         if not self.dump:

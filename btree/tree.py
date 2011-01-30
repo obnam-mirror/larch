@@ -80,34 +80,25 @@ class BTree(object):
         '''Generate a new node identifier.'''
         return self.forest.new_id()
     
-    def node_can_be_modified_in_place(self, node):
-        '''Can a node be modified in place, in memory?
-        
-        This is true if there is only parent (refcount is 1).
-        
-        '''
-        
-        return self.node_store.get_refcount(node.id) == 1
-    
     def new_leaf(self, keys, values):
-        '''Create a new leaf node and keep track of it.'''
-        leaf = btree.LeafNode(self.new_id(), keys, values)
-        self.put_node(leaf)
-        return leaf
+        '''Create a new leaf node.'''
+        return btree.LeafNode(self.new_id(), keys, values)
         
     def new_index(self, keys, values):
-        '''Create a new index node and keep track of it.'''
+        '''Create a new index node.'''
         index = btree.IndexNode(self.new_id(), keys, values)
-        self.put_node(index)
         for child_id in values:
             self.increment(child_id)
         return index
-        
-    def new_root(self, keys, values):
-        '''Create a new root node and keep track of it.'''
-        self.root = self.new_index(keys, values)
-        self.node_store.set_refcount(self.root.id, 1)
 
+    def set_root(self, new_root):
+        '''Replace existing root node.'''
+        if self.root is not None:
+            self.decrement(self.root.id)
+        self.put_node(new_root)
+        self.root = new_root
+        self.node_store.set_refcount(self.root.id, 1)
+        
     def get_node(self, node_id):
         '''Return node corresponding to a node id.'''
         return self.node_store.get_node(node_id)
@@ -197,17 +188,15 @@ class BTree(object):
 
     def _shadow(self, node):
         '''Shadow a node: make it possible to modify it in-place.'''
-        
-        if self.node_can_be_modified_in_place(node):
-            return node
+
+        # We cannot ever modify nodes that are in the node store already,
+        # so we always make a new copy.
+        if isinstance(node, btree.IndexNode):
+            new = self.new_index(node.keys(), node.values())
         else:
-            if isinstance(node, btree.IndexNode):
-                new = self.new_index(node.keys(), node.values())
-            else:
-                new = self.new_leaf(node.keys(), node.values())
-                new.size = node.size
-            self.put_node(new)
-            return new
+            new = self.new_leaf(node.keys(), node.values())
+            new.size = node.size
+        return new
         
     def insert(self, key, value):
         '''Insert a new key/value pair into the tree.
@@ -226,22 +215,27 @@ class BTree(object):
             leaf = btree.LeafNode(self.new_id(), [key], [value])
             self.put_node(leaf)
             if self.root is None:
-                self.new_root([key], [leaf.id])
+                new_root = self.new_index([key], [leaf.id])
             else:
-                self.root.add(key, leaf.id)
+                new_root = self._shadow(self.root)
+                new_root.add(key, leaf.id)
                 self.increment(leaf.id)
-            return
+        else:
+            kids = self._insert_into_index(self.root, key, value)
+            # kids contains either one or more index nodes. If one,
+            # we use that as the new root. Otherwise, we create a new one,
+            # making the tree higher because we must.
+            assert len(kids) > 0
+            for kid in kids:
+                assert type(kid) == btree.IndexNode
+            if len(kids) == 1:
+                new_root = kids[0]
+            else:
+                keys = [kid.first_key() for kid in kids]
+                values = [kid.id for kid in kids]
+                new_root = self.new_index(keys, values)
 
-        kids = self._insert_into_index(self.root, key, value)
-        # kids is either [self.root] or it is two children, in which case
-        # a new root needs to be created.
-        if len(kids) > 1:
-            keys = [kid.first_key() for kid in kids]
-            values = [kid.id for kid in kids]
-            old_root_id = self.root.id
-            assert old_root_id is not None
-            self.new_root(keys, values)
-            self.decrement(old_root_id)
+        self.set_root(new_root)
 
     def _insert_into_index(self, old_index, key, value):
         '''Insert key, value into an index node.
@@ -345,7 +339,8 @@ class BTree(object):
         if self.root is None:
             raise KeyError(key)
 
-        self._remove_from_index(self.root, key)
+        new_root = self._remove_from_index(self.root, key)
+        self.set_root(new_root)
         self._reduce_height()
 
     def _remove_from_index(self, old_index, key):
@@ -358,20 +353,16 @@ class BTree(object):
             new_index.remove(child_key)
             if len(new_kid) > 0:
                 self._add_or_merge_index(new_index, new_kid)
-            self.decrement(child.id)
         else:
             assert isinstance(child, btree.LeafNode)
             leaf = self._shadow(child)
             leaf.remove(key)
             new_index.remove(child_key)
             if len(leaf) > 0:
+                self.put_node(leaf)
                 self._add_or_merge_leaf(new_index, leaf)
-                self.decrement(child.id)
-            else:
-                self.decrement(leaf.id)
-                if child.id != leaf.id: # pragma: no cover
-                    self.decrement(child.id)
 
+        self.decrement(child.id)
         self.put_node(new_index)
         return new_index
 
@@ -382,17 +373,29 @@ class BTree(object):
         self._add_or_merge(parent, leaf, self._merge_leaf)
 
     def _add_or_merge(self, parent, node, merge):
+        assert not parent.frozen
+        assert node.frozen
+
         keys = parent.keys()
         
         key = node.first_key()
         i = bisect.bisect_left(keys, key)
-        if i == 0 or not merge(parent, node, i-1):
-            if i < len(keys):
-                merge(parent, node, i)
-            
-        self.put_node(node)
-        parent.add(node.first_key(), node.id)
-        self.increment(node.id)
+        
+        new_node = None
+        if i > 0:
+            new_node = merge(parent, node, i-1)
+        if new_node is None and i < len(keys):
+            new_node = merge(parent, node, i)
+        if new_node is None:
+            new_node = node
+
+        assert new_node is not None
+        self.put_node(new_node)
+        parent.add(new_node.first_key(), new_node.id)
+        self.increment(new_node.id)
+        if new_node != node:
+            # We made a new node, so get rid of the old one.
+            self.decrement(node.id)
 
     def _merge_index(self, parent, node, sibling_index):
 
@@ -424,13 +427,15 @@ class BTree(object):
         sibling_id = parent[sibling_key]
         sibling = self.get_node(sibling_id)
         if merge_p(node, sibling):
+            new_node = self._shadow(node)
             for k in sibling:
-                add(node, k, sibling[k])
+                add(new_node, k, sibling[k])
+            self.put_node(new_node)
             parent.remove(sibling_key)
             self.decrement(sibling.id)
-            return True
+            return new_node
         else:
-            return False
+            return None
 
     def remove_range(self, minkey, maxkey):
         '''Remove all keys in the given range.
@@ -452,9 +457,8 @@ class BTree(object):
         # Further, since we've modified all of these nodes, they can all
         # be modified in place.
         while len(self.root) == 1:
-            key = self.root.keys()[0]
+            key = self.root.first_key()
             child_id = self.root[key]
-            assert self.node_can_be_modified_in_place(self.root)
             assert self.node_store.get_refcount(self.root.id) == 1
             
             if self.node_store.get_refcount(child_id) != 1:
@@ -465,10 +469,11 @@ class BTree(object):
                 break
 
             # We can just make the child be the new root node.
-            self.root.remove(key)
-            self.put_node(self.root) # So decrement gets modified root.
-            self.decrement(self.root.id)
-            self.root = child
+            assert type(child) == btree.IndexNode
+            # Prevent child from getting removed when parent's refcount
+            # gets decremented. set_root will set the refcount to be 1.
+            self.node_store.set_refcount(child.id, 2)
+            self.set_root(child)
 
     def increment(self, node_id):
         '''Non-recursively increment refcount for a node.'''

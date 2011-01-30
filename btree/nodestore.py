@@ -1,4 +1,4 @@
-# Copyright 2010  Lars Wirzenius
+# Copyright 2010, 2011  Lars Wirzenius
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -242,6 +242,17 @@ class NodeStoreTests(object): # pragma: no cover
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         self.assertEqualNodes(self.ns.get_node(0), node)
+
+    def test_put_freezes_ndoe(self):
+        node = btree.LeafNode(0, [], [])
+        self.ns.put_node(node)
+        self.assert_(node.frozen)
+
+    def test_get_freezes_ndoe(self):
+        node = btree.LeafNode(0, [], [])
+        self.ns.put_node(node)
+        node2 = self.ns.get_node(0)
+        self.assert_(node2.frozen)
 
     def test_removes_node(self):
         node = btree.LeafNode(0, [], [])

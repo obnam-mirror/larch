@@ -19,6 +19,15 @@ import bisect
 import btree
 
 
+class FrozenNode(Exception):
+
+    def __init__(self, node):
+        self.node = node
+        
+    def __str__(self):
+        return 'Node %s is frozen against modifications' % self.node.id
+
+
 class Node(object):
 
     '''Abstract base class for index and leaf nodes.
@@ -37,6 +46,7 @@ class Node(object):
             self._dict[keys[i]] = values[i]
         self.id = node_id
         self.size = None
+        self.frozen = False
 
     def __getitem__(self, key):
         return self._dict[key]
@@ -104,9 +114,15 @@ class Node(object):
 
         return i, j
 
+    def _error_if_frozen(self):
+        if self.frozen:
+            raise FrozenNode(self)
+
     def add(self, key, value):
         '''Insert a key/value pair into the right place in a node.'''
-        
+
+        self._error_if_frozen()
+
         i = bisect.bisect_left(self._keys, key)
         if i < len(self._keys) and self._keys[i] == key:
             self._keys[i] = key
@@ -125,6 +141,8 @@ class Node(object):
         
         '''
         
+        self._error_if_frozen()
+
         i = bisect.bisect_left(self._keys, key)
         if i >= len(self._keys) or self._keys[i] != key:
             raise KeyError(key)
@@ -140,6 +158,8 @@ class Node(object):
         
         '''
         
+        self._error_if_frozen()
+
         del self._keys[lo:hi+1]
         del self._values[lo:hi+1]
         self.size = None
