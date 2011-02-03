@@ -16,6 +16,7 @@
 
 import bisect
 import logging
+import tracing
 
 import btree
 
@@ -67,6 +68,8 @@ class BTree(object):
             self.root = None
         else:
             self.root = self.get_node(root_id)
+            
+        tracing.trace('init BTree %s with root_id %s' % (self, root_id))
 
     def check_key_size(self, key):
         if len(key) != self.node_store.codec.key_bytes:
@@ -82,21 +85,27 @@ class BTree(object):
     
     def new_leaf(self, keys, values):
         '''Create a new leaf node.'''
-        return btree.LeafNode(self.new_id(), keys, values)
+        node = btree.LeafNode(self.new_id(), keys, values)
+        tracing.trace('id=%s' % node.id)
+        return node
         
     def new_index(self, keys, values):
         '''Create a new index node.'''
         index = btree.IndexNode(self.new_id(), keys, values)
         for child_id in values:
             self.increment(child_id)
+        tracing.trace('id=%s' % index.id)
         return index
 
     def set_root(self, new_root):
         '''Replace existing root node.'''
+        tracing.trace('new_root.id=%s' % new_root.id)
         if self.root is not None:
+            tracing.trace('decrement old root %s' % self.root.id)
             self.decrement(self.root.id)
         self.put_node(new_root)
         self.root = new_root
+        tracing.trace('setting node %s refcount to 1' % self.root.id)
         self.node_store.set_refcount(self.root.id, 1)
         
     def get_node(self, node_id):
@@ -105,6 +114,7 @@ class BTree(object):
 
     def put_node(self, node):
         '''Put node into node store.'''
+        tracing.trace('node.id=%s' % node.id)
         assert self.node_store.codec.size(node) <= self.node_store.node_size
         return self.node_store.put_node(node)
 
@@ -206,13 +216,16 @@ class BTree(object):
         
         '''
 
+        tracing.trace('key=%s' % repr(key))
+        tracing.trace('value=%s' % repr(value))
         self.check_key_size(key)
         self.check_value_size(value)
 
         # Is the tree empty? This needs special casing to keep
         # _insert_into_index simpler.
         if self.root is None or len(self.root) == 0:
-            leaf = btree.LeafNode(self.new_id(), [key], [value])
+            tracing.trace('tree is empty')
+            leaf = self.new_leaf([key], [value])
             self.put_node(leaf)
             if self.root is None:
                 new_root = self.new_index([key], [leaf.id])
@@ -221,6 +234,7 @@ class BTree(object):
                 new_root.add(key, leaf.id)
                 self.increment(leaf.id)
         else:
+            tracing.trace('tree is not empty')
             kids = self._insert_into_index(self.root, key, value)
             # kids contains either one or more index nodes. If one,
             # we use that as the new root. Otherwise, we create a new one,
@@ -230,10 +244,12 @@ class BTree(object):
                 assert type(kid) == btree.IndexNode
             if len(kids) == 1:
                 new_root = kids[0]
+                tracing.trace('only one kid: id=%s' % new_root.id)
             else:
                 keys = [kid.first_key() for kid in kids]
                 values = [kid.id for kid in kids]
                 new_root = self.new_index(keys, values)
+                tracing.trace('create new root: id=%s' % new_root.id)
 
         self.set_root(new_root)
 
@@ -248,6 +264,7 @@ class BTree(object):
         
         '''
 
+        tracing.trace('old_index.id=%s' % old_index.id)
         new_index = self._shadow(old_index)
 
         child_key = new_index.find_key_for_child_containing(key)
@@ -267,16 +284,19 @@ class BTree(object):
         self.decrement(child.id)
 
         if len(new_index) > self.max_index_length:
+            tracing.trace('need to split index node id=%s' % new_index.id)
             n = len(new_index) / 2
             keys = new_index.keys()[n:]
             values = new_index.values()[n:]
             new = btree.IndexNode(self.new_id(), keys, values)
+            tracing.trace('new index node id=%s' % new.id)
             for k in keys:
                 new_index.remove(k)
             self.put_node(new_index)
             self.put_node(new)
             return [new_index, new]
         else:
+            tracing.trace('no need to split index node id=%s' % new_index.id)
             self.put_node(new_index)
             return [new_index]
 
@@ -287,21 +307,24 @@ class BTree(object):
         
         '''
         
-        new = btree.LeafNode(self.new_id(), leaf.keys(), leaf.values())
+        tracing.trace('leaf.id=%s' % leaf.id)
+        new = self._shadow(leaf)
         new.add(key, value)
 
         max_size = self.node_store.node_size
         size = self._leaf_size
 
         if size(new) <= max_size:
+            tracing.trace('leaf did not grow too big')
             leaves = [new]
         else:
+            tracing.trace('leaf grew too big, splitting')
             keys = new.keys()
             values = new.values()
 
             n = len(keys) / 2
-            a = btree.LeafNode(self.new_id(), keys[:n], values[:n])
-            b = btree.LeafNode(self.new_id(), keys[n:], values[n:])
+            a = self.new_leaf(keys[:n], values[:n])
+            b = self.new_leaf(keys[n:], values[n:])
             assert size(a) > 0
             assert size(b) > 0
             if size(b) > max_size: # pragma: no cover
@@ -333,10 +356,12 @@ class BTree(object):
         If key is not in the tree, ``KeyValue`` is raised.
         
         '''
-    
+
+        tracing.trace('key=%s' % repr(key))    
         self.check_key_size(key)
 
         if self.root is None:
+            tracing.trace('no root')
             raise KeyError(key)
 
         new_root = self._remove_from_index(self.root, key)
@@ -344,6 +369,7 @@ class BTree(object):
         self._reduce_height()
 
     def _remove_from_index(self, old_index, key):
+        tracing.trace('old_index.id=%s' % old_index.id)
         child_key = old_index.find_key_for_child_containing(key)
         new_index = self._shadow(old_index)
         child = self.get_node(new_index[child_key])
@@ -353,6 +379,8 @@ class BTree(object):
             new_index.remove(child_key)
             if len(new_kid) > 0:
                 self._add_or_merge_index(new_index, new_kid)
+            else:
+                tracing.trace('new_kid is empty, forgetting it')
         else:
             assert isinstance(child, btree.LeafNode)
             leaf = self._shadow(child)
@@ -361,6 +389,8 @@ class BTree(object):
             if len(leaf) > 0:
                 self.put_node(leaf)
                 self._add_or_merge_leaf(new_index, leaf)
+            else:
+                tracing.trace('new leaf is empty, forgetting it')
 
         self.decrement(child.id)
         self.put_node(new_index)
@@ -395,6 +425,7 @@ class BTree(object):
         self.increment(new_node.id)
         if new_node != node:
             # We made a new node, so get rid of the old one.
+            tracing.trace('decrementing unused node id=%s' % node.id)
             self.decrement(node.id)
 
     def _merge_index(self, parent, node, sibling_index):
@@ -427,11 +458,13 @@ class BTree(object):
         sibling_id = parent[sibling_key]
         sibling = self.get_node(sibling_id)
         if merge_p(node, sibling):
+            tracing.trace('merging nodes %s and %s' % (node.id, sibling.id))
             new_node = self._shadow(node)
             for k in sibling:
                 add(new_node, k, sibling[k])
             self.put_node(new_node)
             parent.remove(sibling_key)
+            tracing.trace('decrementing now-unused sibling %s' % sibling.id)
             self.decrement(sibling.id)
             return new_node
         else:
@@ -456,38 +489,52 @@ class BTree(object):
         # an index node. These can and should be removed, for efficiency.
         # Further, since we've modified all of these nodes, they can all
         # be modified in place.
+        tracing.trace('start reducing height')
         while len(self.root) == 1:
+            tracing.trace('self.root.id=%s' % self.root.id)
             key = self.root.first_key()
             child_id = self.root[key]
             assert self.node_store.get_refcount(self.root.id) == 1
             
             if self.node_store.get_refcount(child_id) != 1:
+                tracing.trace('only child is shared')
                 break
 
             child = self.get_node(child_id)
             if isinstance(child, btree.LeafNode):
+                tracing.trace('only child is a leaf node')
                 break
 
             # We can just make the child be the new root node.
             assert type(child) == btree.IndexNode
             # Prevent child from getting removed when parent's refcount
             # gets decremented. set_root will set the refcount to be 1.
+            tracing.trace('setting node %s refcount to 2' % child.id)
             self.node_store.set_refcount(child.id, 2)
             self.set_root(child)
+        tracing.trace('done reducing height')
 
     def increment(self, node_id):
         '''Non-recursively increment refcount for a node.'''
         refcount = self.node_store.get_refcount(node_id)
-        self.node_store.set_refcount(node_id, refcount + 1)
+        refcount += 1
+        self.node_store.set_refcount(node_id, refcount)
+        tracing.trace('node %s refcount grew to %s' % (node_id, refcount))
 
     def decrement(self, node_id):
         '''Recursively, lazily decrement refcounts for a node and children.'''
+        tracing.trace('decrementing node %s refcount' % node_id)
         refcount = self.node_store.get_refcount(node_id)
         if refcount > 1:
-            self.node_store.set_refcount(node_id, refcount - 1)
+            refcount -= 1
+            self.node_store.set_refcount(node_id, refcount)
+            tracing.trace('node %s refcount now %s' % (node_id, refcount))
         else:
+            tracing.trace('node %s refcount %s, removing node' % 
+                         (node_id, refcount))
             node = self.node_store.get_node(node_id)
             if isinstance(node, btree.IndexNode):
+                tracing.trace('reducing refcounts for children')
                 for child_id in node.values():
                     self.decrement(child_id)
             self.node_store.remove_node(node_id)
