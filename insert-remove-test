@@ -76,6 +76,8 @@ def do_remove(tree, key):
 def main():
     if True:
         import logging
+        import tracing
+        tracing.trace_add_pattern('tree')
         logging.basicConfig(filename='btree.log', level=logging.DEBUG)
 
     location = sys.argv[1]
