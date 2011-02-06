@@ -15,7 +15,6 @@
 
 
 import bisect
-import logging
 import tracing
 
 import btree
@@ -539,7 +538,6 @@ class BTree(object):
                     self.decrement(child_id)
             self.node_store.remove_node(node_id)
             self.node_store.set_refcount(node_id, 0)
-            logging.debug('decrement: removed node %d' % node_id)
 
     def dump(self, f, msg=None, keymangler=str, valuemangler=str): # pragma: no cover
         '''Dump tree structure to open file f.'''
