@@ -22,7 +22,7 @@ for on-disk storage.
 Documentation is sparse. Docstrings and reading the code are your best hope.
 (Help and feedback welcome!)
 
-See the file speed-test for an example.
+See the file example.py for an example.
 
 * Homepage: <http://liw.fi/btree/>
 * Version control: `bzr get http://code.liw.fi/btree/bzr/trunk/`
@@ -69,8 +69,8 @@ parts of the code.
 
 I have three scripts to run simplistic benchmarks:
 
-* `codec-speed` tests speed of the NodeCodec class, for encoding tree nodes
-  for on-disk storage.
+* `codec-speed 1000 no` tests speed of the NodeCodec class, 
+  for encoding tree nodes for on-disk storage.
 * `speed-test` tests insert and lookup speeds in trees.
 * `bsearch-speed` compares my binary search routine with the one in the
   Python standard library module `bisect` (mine is slower, but more
