@@ -323,28 +323,29 @@ class BTree(object):
             values = new.values()
 
             n = len(keys) / 2
-            a = self.new_leaf(keys[:n], values[:n])
-            b = self.new_leaf(keys[n:], values[n:])
-            assert size(a) > 0
-            assert size(b) > 0
-            if size(b) > max_size: # pragma: no cover
-                assert size(a) < max_size
-                while size(b) > max_size:
-                    key = b.keys()[0]
-                    a.add(key, b[key])
-                    b.remove(key)
-            elif size(a) > max_size: # pragma: no cover
-                assert size(b) < max_size
-                while size(a) > max_size:
-                    key = a.keys()[-1]
-                    b.add(key, a[key])
-                    a.remove(key)
-            assert size(a) > 0
-            assert size(b) > 0
-            assert size(a) <= max_size
-            assert size(b) <= max_size
+            new2 = self.new_leaf(keys[n:], values[n:])
+            for key in new2:
+                new.remove(key)
+            assert size(new) > 0
+            assert size(new2) > 0
+            if size(new2) > max_size: # pragma: no cover
+                assert size(new) < max_size
+                while size(new2) > max_size:
+                    key = new2.keys()[0]
+                    new.add(key, new2[key])
+                    new2.remove(key)
+            elif size(new) > max_size: # pragma: no cover
+                assert size(new2) < max_size
+                while size(new) > max_size:
+                    key = new.keys()[-1]
+                    new2.add(key, new[key])
+                    new.remove(key)
+            assert size(new) > 0
+            assert size(new2) > 0
+            assert size(new) <= max_size
+            assert size(new2) <= max_size
 
-            leaves = [a, b]
+            leaves = [new, new2]
 
         for x in leaves:
             self.put_node(x)
