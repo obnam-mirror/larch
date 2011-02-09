@@ -53,6 +53,17 @@ class NodeExists(Exception): # pragma: no cover
         return 'Node %d is already in the store' % self.node_id
         
         
+class NodeCannotBeModified(Exception): # pragma: no cover
+
+    '''User called start_modification on node that cannot be modified.'''
+    
+    def __init__(self, node_id):
+        self.node_id = node_id
+        
+    def __str__(self):
+        return 'Node %d cannot be modified' % self.node_id
+        
+        
 class NodeStore(object): # pragma: no cover
 
     '''Abstract base class for storing nodes externally.
@@ -131,6 +142,20 @@ class NodeStore(object): # pragma: no cover
         Raise the NodeMissing exception if the node is not in the
         store (has never been, or has been removed). Raise other
         errors as suitable.
+        
+        '''
+
+    def can_be_modified(self, node):
+        '''Can a node be modified?'''
+        return False
+        
+    def start_modification(self, node):
+        '''Start modification of a node.
+        
+        User must call this before modifying a node in place.
+        
+        If a node cannot be modified, NodeCannotBeModified exception
+        will be raised.
         
         '''
         
@@ -253,6 +278,42 @@ class NodeStoreTests(object): # pragma: no cover
         self.ns.put_node(node)
         node2 = self.ns.get_node(0)
         self.assert_(node2.frozen)
+
+    def test_node_not_in_store_can_not_be_modified(self):
+        node = btree.LeafNode(0, [], [])
+        self.assertFalse(self.ns.can_be_modified(node))
+
+    def test_node_with_refcount_0_can_not_be_modified(self):
+        node = btree.LeafNode(0, [], [])
+        self.ns.put_node(node)
+        self.ns.set_refcount(node.id, 0)
+        self.assertFalse(self.ns.can_be_modified(node))
+
+    def test_node_with_refcount_1_can_be_modified(self):
+        node = btree.LeafNode(0, [], [])
+        self.ns.put_node(node)
+        self.ns.set_refcount(node.id, 1)
+        self.assertTrue(self.ns.can_be_modified(node))
+
+    def test_node_with_refcount_2_can_not_be_modified(self):
+        node = btree.LeafNode(0, [], [])
+        self.ns.put_node(node)
+        self.ns.set_refcount(node.id, 2)
+        self.assertTrue(self.ns.can_be_modified(node))
+
+    def test_unfreezes_node_when_modification_starts(self):
+        node = btree.LeafNode(0, [], [])
+        self.ns.put_node(node)
+        self.ns.set_refcount(node.id, 1)
+        self.ns.start_modification(node)
+        self.assertFalse(node.frozen)
+
+    def test_start_modification_on_unmodifiable_node_fails(self):
+        node = btree.LeafNode(0, [], [])
+        self.ns.put_node(node)
+        self.ns.set_refcount(node.id, 2)
+        self.assertRaises(NodeCannotBeModified, 
+                          self.ns.start_modification, node)
 
     def test_removes_node(self):
         node = btree.LeafNode(0, [], [])
