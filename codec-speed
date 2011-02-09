@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright 2010  Lars Wirzenius
+#!/usr/bin/python
+# Copyright 2010-2011  Lars Wirzenius
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,54 +15,80 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-echo -n "leaf_size    "
-python -m timeit \
-    -s 'import btree' \
-    -s 'pairs = [("%019d" % i, "%032d" % i) for i in range(1000)]' \
-    -s 'keys = [k for k, v in pairs]' \
-    -s 'values = [v for k, v in pairs]' \
-    -s 'codec = btree.NodeCodec(19)' \
-    'codec.leaf_size(keys, values)'
+import cProfile
+import sys
+import time
 
-echo -n "encode_leaf  "
-python -m timeit \
-    -s 'import btree' \
-    -s 'pairs = [("%019d" % i, "%032d" % i) for i in range(1000)]' \
-    -s 'keys = [k for k, v in pairs]' \
-    -s 'values = [v for k, v in pairs]' \
-    -s 'node = btree.LeafNode(42, keys, values)' \
-    -s 'codec = btree.NodeCodec(19)' \
-    'codec.encode_leaf(node)'
+import btree
 
-echo -n "decode leaf  "
-python -m timeit \
-    -s 'import btree' \
-    -s 'pairs = [("%019d" % i, "%032d" % i) for i in range(1000)]' \
-    -s 'keys = [k for k, v in pairs]' \
-    -s 'values = [v for k, v in pairs]' \
-    -s 'node = btree.LeafNode(42, keys, values)' \
-    -s 'codec = btree.NodeCodec(19)' \
-    -s 'encoded = codec.encode_leaf(node)' \
-    'codec.decode(encoded)'
 
-echo -n "encode_index "
-python -m timeit \
-    -s 'import btree' \
-    -s 'pairs = [("%019d" % i, i) for i in range(1000)]' \
-    -s 'keys = [k for k, v in pairs]' \
-    -s 'values = [v for k, v in pairs]' \
-    -s 'node = btree.IndexNode(42, keys, values)' \
-    -s 'codec = btree.NodeCodec(19)' \
-    'codec.encode_index(node)'
+def measure(n, unit_size, func, do_profile, profname):
+    def helper():
+        for i in range(n):
+            func()
 
-echo -n "decode index "
-python -m timeit \
-    -s 'import btree' \
-    -s 'pairs = [("%019d" % i, i) for i in range(1000)]' \
-    -s 'keys = [k for k, v in pairs]' \
-    -s 'values = [v for k, v in pairs]' \
-    -s 'node = btree.IndexNode(42, keys, values)' \
-    -s 'codec = btree.NodeCodec(19)' \
-    -s 'encoded = codec.encode_index(node)' \
-    'codec.decode(encoded)'
+    start_time = time.time()
+    start = time.clock()
+    if do_profile:
+        globaldict = globals().copy()
+        localdict = locals().copy()
+        cProfile.runctx('helper()', globaldict, localdict, 
+                        '%s.prof' % profname)
+    else:
+        helper()
+    end = time.clock()
+    end_time = time.time()
+    
+    def speed(secs):
+        MiB = 1024**2
+        return float(n * unit_size) / float(secs) / MiB
+    cpu_speed = speed(end - start)
+    wall_speed = speed(end_time - start_time)
+        
+    fmt = '%12s    %6.0f MiB/s (CPU)   %6.0f MiBs (wall)'
+    print fmt % (profname, cpu_speed, wall_speed)
 
+def main():
+    n = int(sys.argv[1])
+    do_profile = True if sys.argv[2] == 'yes' else False
+
+    # Prepare data for tests.
+
+    key_size = 19
+    value_size = 128
+    node_size = 64*1024
+
+    codec = btree.NodeCodec(key_size)
+
+    key_fmt = '%%0%dd' % key_size
+    keys = [key_fmt % i for i in range(n)]
+    
+    value_fmt = '%%0%dd' % value_size
+    leaf_values = [value_fmt % i for i in range(n)]
+    index_values = range(n)
+
+    leaf = btree.LeafNode(42, keys, leaf_values)
+    encoded_leaf = codec.encode_leaf(leaf)
+
+    index = btree.IndexNode(42, keys, index_values)
+    encoded_index = codec.encode_index(index)
+
+    # Measure and report.
+    print 'num_operations: %d' % n
+    measure(n, len(encoded_leaf), lambda: codec.leaf_size(keys, leaf_values), 
+            do_profile, 'leaf_size')
+    measure(n, len(encoded_leaf), lambda: codec.encode_leaf(leaf), 
+            do_profile, 'encode_leaf')
+    measure(n, len(encoded_leaf), lambda: codec.decode(encoded_leaf), 
+            do_profile, 'decode_leaf')
+    measure(n, len(encoded_index), lambda: codec.encode_index(index), 
+            do_profile, 'encode_index')
+    measure(n, len(encoded_index), lambda: codec.decode_index(encoded_index), 
+            do_profile, 'decode_index')
+
+    if do_profile:
+        print 'View *.prof with ./viewprof for profiling results.'
+
+
+if __name__ == '__main__':
+    main()
