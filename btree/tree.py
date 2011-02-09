@@ -99,7 +99,7 @@ class BTree(object):
     def set_root(self, new_root):
         '''Replace existing root node.'''
         tracing.trace('new_root.id=%s' % new_root.id)
-        if self.root is not None:
+        if self.root is not None and self.root.id != new_root.id:
             tracing.trace('decrement old root %s' % self.root.id)
             self.decrement(self.root.id)
         self.put_node(new_root)
@@ -198,9 +198,10 @@ class BTree(object):
     def _shadow(self, node):
         '''Shadow a node: make it possible to modify it in-place.'''
 
-        # We cannot ever modify nodes that are in the node store already,
-        # so we always make a new copy.
-        if isinstance(node, btree.IndexNode):
+        if self.node_store.can_be_modified(node):
+            self.node_store.start_modification(node)
+            new = node
+        elif isinstance(node, btree.IndexNode):
             new = self.new_index(node.keys(), node.values())
         else:
             new = self.new_leaf(node.keys(), node.values())
