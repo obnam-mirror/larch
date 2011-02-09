@@ -423,7 +423,7 @@ class BTree(object):
         self.put_node(new_node)
         parent.add(new_node.first_key(), new_node.id)
         self.increment(new_node.id)
-        if new_node != node:
+        if new_node != node: # pragma: no cover
             # We made a new node, so get rid of the old one.
             tracing.trace('decrementing unused node id=%s' % node.id)
             self.decrement(node.id)
