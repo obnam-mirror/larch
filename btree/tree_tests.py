@@ -31,53 +31,10 @@ class DummyForest(object):
         return self.last_id
 
 
-class DummyNodeStore(object):
+class DummyNodeStore(btree.NodeStoreMemory):
 
-    def __init__(self, node_size, codec):
-        self.node_size = node_size
-        self.max_value_size = node_size / 2 - 1
-        self.codec = codec
-        self.nodes = dict()
-        self.metadata = dict()
-        self.refcounts = dict()
-
-    def max_index_pairs(self):
-        return 4
-
-    def get_metadata_keys(self):
-        return self.metadata.keys()
-
-    def get_metadata(self, key):
-        return self.metadata[key]
-        
-    def set_metadata(self, key, value):
-        self.metadata[key] = value
-
-    def save_metadata(self):
-        pass
-    
-    def put_node(self, node):
-        node.frozen = True
-        self.nodes[node.id] = node
-        
-    def get_node(self, node_id):
-        if node_id in self.nodes:
-            return self.nodes[node_id]
-        else:
-            raise btree.NodeMissing(node_id)
-        
     def find_nodes(self):
         return self.nodes.keys()
-
-    def remove_node(self, node_id):
-        del self.nodes[node_id]
-        self.set_refcount(node_id, 0)
-
-    def get_refcount(self, node_id):
-        return self.refcounts.get(node_id, 0)
-
-    def set_refcount(self, node_id, refcount):
-        self.refcounts[node_id] = refcount
 
 
 class KeySizeMismatchTests(unittest.TestCase):
