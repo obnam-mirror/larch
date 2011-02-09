@@ -147,7 +147,7 @@ class NodeStore(object): # pragma: no cover
 
     def can_be_modified(self, node):
         '''Can a node be modified?'''
-        return False
+        return self.get_refcount(node.id) == 1
         
     def start_modification(self, node):
         '''Start modification of a node.
@@ -299,7 +299,7 @@ class NodeStoreTests(object): # pragma: no cover
         node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.set_refcount(node.id, 2)
-        self.assertTrue(self.ns.can_be_modified(node))
+        self.assertFalse(self.ns.can_be_modified(node))
 
     def test_unfreezes_node_when_modification_starts(self):
         node = btree.LeafNode(0, [], [])
