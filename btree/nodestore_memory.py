@@ -53,6 +53,11 @@ class NodeStoreMemory(btree.NodeStore):
             return self.nodes[node_id]
         else:
             raise btree.NodeMissing(node_id)
+
+    def start_modification(self, node):
+        if not self.can_be_modified(node):
+            raise btree.NodeCannotBeModified(node.id)
+        node.frozen = False
     
     def remove_node(self, node_id):
         if node_id in self.nodes:
