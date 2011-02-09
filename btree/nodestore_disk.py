@@ -159,6 +159,12 @@ class NodeStoreDisk(btree.NodeStore):
             return node
         else:
             raise btree.NodeMissing(node_id)
+
+    def start_modification(self, node):
+        if not self.can_be_modified(node):
+            raise btree.NodeCannotBeModified(node.id)
+        self.upload_queue.remove(node.id)
+        node.frozen = False
     
     def remove_node(self, node_id):
         self.cache.remove(node_id)

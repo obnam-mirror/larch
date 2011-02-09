@@ -159,9 +159,6 @@ class NodeStore(object): # pragma: no cover
         
         '''
         
-        if not self.can_be_modified(node):
-            raise NodeCannotBeModified(node.id)
-        
     def remove_node(self, node_id):
         '''Remove a node from the store.'''
         

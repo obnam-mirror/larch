@@ -22,7 +22,7 @@ from codec import NodeCodec, CodecError
 from tree import BTree, KeySizeMismatch, ValueTooLarge
 from forest import Forest
 from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig, 
-                       NodeExists)
+                       NodeExists, NodeCannotBeModified)
 from refcountstore import RefcountStore
 from uploadqueue import UploadQueue
 from nodestore_disk import NodeStoreDisk
