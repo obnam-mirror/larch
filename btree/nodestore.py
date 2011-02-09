@@ -243,12 +243,12 @@ class NodeStoreTests(object): # pragma: no cover
         self.ns.push_upload_queue()
         self.assertEqualNodes(self.ns.get_node(0), node)
 
-    def test_put_freezes_ndoe(self):
+    def test_put_freezes_node(self):
         node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.assert_(node.frozen)
 
-    def test_get_freezes_ndoe(self):
+    def test_get_freezes_node(self):
         node = btree.LeafNode(0, [], [])
         self.ns.put_node(node)
         node2 = self.ns.get_node(0)
