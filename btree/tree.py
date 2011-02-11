@@ -390,13 +390,13 @@ class BTree(object):
             leaf.remove(key)
             self.put_node(leaf)
             new_index.remove(child_key)
+            if leaf.id != child.id:
+                self.decrement(child.id)
             if len(leaf) > 0:
                 self._add_or_merge_leaf(new_index, leaf)
             else:
                 tracing.trace('new leaf is empty, forgetting it')
-                self.decrement(child.id)
-                if leaf.id != child.id:
-                    self.decrement(leaf.id)
+                self.decrement(leaf.id)
 
         self.put_node(new_index)
         return new_index
