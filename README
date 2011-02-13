@@ -60,6 +60,7 @@ and LRUCache, and extrautils packages:
 * <http://liw.fi/lru/>
 * <http://liw.fi/coverage-test-runner/>
 * <http://liw.fi/extrautils/>
+* <http://liw.fi/tracing/>
 
 The unit test modules are paired with their corresponding code modules:
 for code module `foo.py` there exists a unit test module `foo_tests.py`.

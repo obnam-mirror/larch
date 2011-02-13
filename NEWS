@@ -8,6 +8,21 @@ copy-on-write B-tree, designed by Odah Rodeh.
 Version 0.16.2, released 2011-01-07
 ---------------------------------
 
+* Use the python-tracing library to add logging of node creation and
+  removal and other operations. The library makes it possible for the
+  user to enable and disable logging for specific code modules, and
+  defaults to being disabled, so that the logging will not affect
+  normal execution speed.
+* `codec-speed` now reports MiB/s, instead of seconds, giving an easy
+  way to compare encoding and decoding speeds with, say, hard disk
+  or network speeds.
+* B-tree now again modifies nodes, and does so by first removing
+  them from the node store's upload queue. This returns the library
+  back to useful speeds.
+
+Version 0.16.2, released 2011-01-07
+---------------------------------
+
 * Really fix problems with nodes growing too big while in the upload
   queue. The previous fixes meant well, but didn't really do the trick.
   Now we stop modifying nodes at all while in the upload queue, which
