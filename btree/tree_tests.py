@@ -31,53 +31,10 @@ class DummyForest(object):
         return self.last_id
 
 
-class DummyNodeStore(object):
+class DummyNodeStore(btree.NodeStoreMemory):
 
-    def __init__(self, node_size, codec):
-        self.node_size = node_size
-        self.max_value_size = node_size / 2 - 1
-        self.codec = codec
-        self.nodes = dict()
-        self.metadata = dict()
-        self.refcounts = dict()
-
-    def max_index_pairs(self):
-        return 4
-
-    def get_metadata_keys(self):
-        return self.metadata.keys()
-
-    def get_metadata(self, key):
-        return self.metadata[key]
-        
-    def set_metadata(self, key, value):
-        self.metadata[key] = value
-
-    def save_metadata(self):
-        pass
-    
-    def put_node(self, node):
-        node.frozen = True
-        self.nodes[node.id] = node
-        
-    def get_node(self, node_id):
-        if node_id in self.nodes:
-            return self.nodes[node_id]
-        else:
-            raise btree.NodeMissing(node_id)
-        
     def find_nodes(self):
         return self.nodes.keys()
-
-    def remove_node(self, node_id):
-        del self.nodes[node_id]
-        self.set_refcount(node_id, 0)
-
-    def get_refcount(self, node_id):
-        return self.refcounts.get(node_id, 0)
-
-    def set_refcount(self, node_id, refcount):
-        self.refcounts[node_id] = refcount
 
 
 class KeySizeMismatchTests(unittest.TestCase):
@@ -122,6 +79,27 @@ class BTreeTests(unittest.TestCase):
         self.ns.set_refcount(index.id, 2)
         clone = self.tree._shadow(index)
         self.assertEqual(self.ns.get_refcount(leaf.id), 2)
+
+    def test_shadow_returns_new_leaf_if_cannot_be_modified(self):
+        node = self.tree.new_leaf(['foo'], ['bar'])
+        self.tree.put_node(node)
+        self.ns.set_refcount(node.id, 2)
+        node2 = self.tree._shadow(node)
+        self.assertNotEqual(node2.id, node.id)
+
+    def test_shadow_returns_new_index_if_cannot_be_modified(self):
+        node = self.tree.new_index(['foo'], [1])
+        self.tree.put_node(node)
+        self.ns.set_refcount(node.id, 2)
+        node2 = self.tree._shadow(node)
+        self.assertNotEqual(node2.id, node.id)
+
+    def test_shadow_returns_same_node_that_can_be_modified(self):
+        node = self.tree.new_index(['foo'], [1])
+        self.tree.put_node(node)
+        self.ns.set_refcount(node.id, 1)
+        node2 = self.tree._shadow(node)
+        self.assertEqual(node2.id, node.id)
 
     def test_new_leaf_does_not_put_node_into_store(self):
         leaf = self.tree.new_leaf([], [])

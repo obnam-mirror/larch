@@ -99,7 +99,7 @@ class BTree(object):
     def set_root(self, new_root):
         '''Replace existing root node.'''
         tracing.trace('new_root.id=%s' % new_root.id)
-        if self.root is not None:
+        if self.root is not None and self.root.id != new_root.id:
             tracing.trace('decrement old root %s' % self.root.id)
             self.decrement(self.root.id)
         self.put_node(new_root)
@@ -198,9 +198,10 @@ class BTree(object):
     def _shadow(self, node):
         '''Shadow a node: make it possible to modify it in-place.'''
 
-        # We cannot ever modify nodes that are in the node store already,
-        # so we always make a new copy.
-        if isinstance(node, btree.IndexNode):
+        if self.node_store.can_be_modified(node):
+            self.node_store.start_modification(node)
+            new = node
+        elif isinstance(node, btree.IndexNode):
             new = self.new_index(node.keys(), node.values())
         else:
             new = self.new_leaf(node.keys(), node.values())
@@ -322,28 +323,29 @@ class BTree(object):
             values = new.values()
 
             n = len(keys) / 2
-            a = self.new_leaf(keys[:n], values[:n])
-            b = self.new_leaf(keys[n:], values[n:])
-            assert size(a) > 0
-            assert size(b) > 0
-            if size(b) > max_size: # pragma: no cover
-                assert size(a) < max_size
-                while size(b) > max_size:
-                    key = b.keys()[0]
-                    a.add(key, b[key])
-                    b.remove(key)
-            elif size(a) > max_size: # pragma: no cover
-                assert size(b) < max_size
-                while size(a) > max_size:
-                    key = a.keys()[-1]
-                    b.add(key, a[key])
-                    a.remove(key)
-            assert size(a) > 0
-            assert size(b) > 0
-            assert size(a) <= max_size
-            assert size(b) <= max_size
+            new2 = self.new_leaf(keys[n:], values[n:])
+            for key in new2:
+                new.remove(key)
+            assert size(new) > 0
+            assert size(new2) > 0
+            if size(new2) > max_size: # pragma: no cover
+                assert size(new) < max_size
+                while size(new2) > max_size:
+                    key = new2.keys()[0]
+                    new.add(key, new2[key])
+                    new2.remove(key)
+            elif size(new) > max_size: # pragma: no cover
+                assert size(new2) < max_size
+                while size(new) > max_size:
+                    key = new.keys()[-1]
+                    new2.add(key, new[key])
+                    new.remove(key)
+            assert size(new) > 0
+            assert size(new2) > 0
+            assert size(new) <= max_size
+            assert size(new2) <= max_size
 
-            leaves = [a, b]
+            leaves = [new, new2]
 
         for x in leaves:
             self.put_node(x)
@@ -379,22 +381,26 @@ class BTree(object):
             if len(new_kid) > 0:
                 self._add_or_merge_index(new_index, new_kid)
             else:
-                tracing.trace('new_kid is empty, forgetting it')
+                if new_kid.id != child.id: # pragma: no cover
+                    self.decrement(new_kid.id)
+            self.decrement(child.id)
         else:
             assert isinstance(child, btree.LeafNode)
             leaf = self._shadow(child)
             leaf.remove(key)
+            self.put_node(leaf)
             new_index.remove(child_key)
+            if leaf.id != child.id:
+                self.decrement(child.id)
             if len(leaf) > 0:
-                self.put_node(leaf)
                 self._add_or_merge_leaf(new_index, leaf)
             else:
                 tracing.trace('new leaf is empty, forgetting it')
+                self.decrement(leaf.id)
 
-        self.decrement(child.id)
         self.put_node(new_index)
         return new_index
-
+        
     def _add_or_merge_index(self, parent, index):
         self._add_or_merge(parent, index, self._merge_index)
 
@@ -422,7 +428,7 @@ class BTree(object):
         self.put_node(new_node)
         parent.add(new_node.first_key(), new_node.id)
         self.increment(new_node.id)
-        if new_node != node:
+        if new_node != node: # pragma: no cover
             # We made a new node, so get rid of the old one.
             tracing.trace('decrementing unused node id=%s' % node.id)
             self.decrement(node.id)
