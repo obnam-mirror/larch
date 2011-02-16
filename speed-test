@@ -28,6 +28,7 @@
 
 import cliapp
 import cProfile
+import logging
 import os
 import random
 import shutil
@@ -146,6 +147,8 @@ class SpeedTest(cliapp.Application):
         def helper():
             for item in items:
                 func(item)
+            if self['log-memory-use']:
+                logging.debug('VmRSS: %s KiB' % self.vmrss())
             finalize()
 
         print 'measuring', profname
@@ -161,6 +164,15 @@ class SpeedTest(cliapp.Application):
         end = time.clock()
         end_time = time.time()
         return end - start, end_time - start_time
+
+    def vmrss(self):
+        f = open('/proc/self/status')
+        rss = 0
+        for line in f:
+            if line.startswith('VmRSS'):
+                rss = line.split()[1]
+        f.close()
+        return rss
 
 
 if __name__ == '__main__':
