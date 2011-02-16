@@ -34,6 +34,7 @@ import random
 import shutil
 import sys
 import time
+import tracing
 
 import btree
 
@@ -43,12 +44,17 @@ class SpeedTest(cliapp.Application):
     def add_settings(self):
         self.add_boolean_setting(['profile'], 'profile with cProfile?')
         self.add_boolean_setting(['log-memory-use'], 'log VmRSS?')
+        self.add_string_setting(['trace'], 
+                                'code module in which to do trace logging')
         self.add_integer_setting(['keys'], 'how many keys to test with')
         self.add_string_setting(['location'], 
                                 'where to store B-tree on disk '
                                     '(in-memory test if not set)')
 
     def process_args(self, args):
+        if self['trace']:
+            tracing.trace_add_pattern(self['trace'])
+    
         key_size = 19
         value_size = 128
         node_size = 64*1024
@@ -148,7 +154,7 @@ class SpeedTest(cliapp.Application):
             for item in items:
                 func(item)
             if self['log-memory-use']:
-                logging.debug('VmRSS: %s KiB' % self.vmrss())
+                logging.debug('%s VmRSS: %s KiB' % (profname, self.vmrss()))
             finalize()
 
         print 'measuring', profname
