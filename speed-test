@@ -26,6 +26,7 @@
 # the lookups.
 
 
+import cliapp
 import cProfile
 import os
 import random
@@ -36,120 +37,131 @@ import time
 import btree
 
 
-def measure(items, func, finalize, do_profile, profname):
-    def helper():
-        for item in items:
-            func(item)
-        finalize()
+class SpeedTest(cliapp.Application):
 
-    print 'measuring', profname
-    start_time = time.time()
-    start = time.clock()
-    if do_profile:
-        globaldict = globals().copy()
-        localdict = locals().copy()
-        cProfile.runctx('helper()', globaldict, localdict, 
-                        '%s.prof' % profname)
-    else:
-        helper()
-    end = time.clock()
-    end_time = time.time()
-    return end - start, end_time - start_time
+    def add_settings(self):
+        self.add_boolean_setting(['profile'], 'profile with cProfile?')
+        self.add_boolean_setting(['log-memory-use'], 'log VmRSS?')
+        self.add_integer_setting(['keys'], 'how many keys to test with')
+        self.add_string_setting(['location'], 
+                                'where to store B-tree on disk '
+                                    '(in-memory test if not set)')
+
+    def process_args(self, args):
+        key_size = 19
+        value_size = 128
+        node_size = 64*1024
+
+        codec = btree.NodeCodec(key_size)
+
+        n = self['keys']
+        location = self['location']
         
-
-def main():
-    if True:
-        import logging
-        logging.basicConfig(filename='btree.log', level=logging.DEBUG)
-
-    location = sys.argv[1]
-    n = int(sys.argv[2])
-    do_profile = True if sys.argv[3] == 'yes' else False
-
-    key_size = 19
-    value_size = 128
-    node_size = 64*1024
-
-    codec = btree.NodeCodec(key_size)
-
-    if location == '':
-        ns = btree.NodeStoreMemory(node_size, codec)
-    else:
-        if os.path.exists(location):
-            raise Exception('%s exists already' % location)
-        os.mkdir(location)
-        ns = btree.NodeStoreDisk(location, node_size, codec)
-
-    forest = btree.Forest(ns)
-    tree = forest.new_tree()
-    
-    # Create list of keys.
-    keys = ['%0*d' % (key_size, i) for i in xrange(n)]
-    ranges = []
-    range_len = 10
-    for i in range(0, len(keys) - range_len):
-        ranges.append((keys[i], keys[i+range_len-1]))
-    
-    # Helper functions.
-    nop = lambda *args: None
-    
-    # Calibrate.
-    looptime = measure(keys, nop, nop, do_profile, 'calibrate')
-
-    # Measure inserts.
-    random.shuffle(keys)
-    value = 'x' * value_size
-    insert = measure(keys, lambda key: tree.insert(key, value), 
-                     forest.commit, do_profile, 'insert')
+        if n is None:
+            raise Exception('You must set number of keys with --keys')
         
-    # Measure lookups.
-    random.shuffle(keys)
-    lookup = measure(keys, tree.lookup, nop, do_profile, 'lookup')
+        if not location:
+            ns = btree.NodeStoreMemory(node_size, codec)
+        else:
+            if os.path.exists(location):
+                raise Exception('%s exists already' % location)
+            os.mkdir(location)
+            ns = btree.NodeStoreDisk(location, node_size, codec)
+
+        forest = btree.Forest(ns)
+        tree = forest.new_tree()
         
-    # Measure range lookups.
-    random.shuffle(ranges)
-    lookup_range = measure(ranges, 
-                           lambda x: list(tree.lookup_range(x[0], x[1])),
-                           nop, do_profile, 'lookup_range')
+        # Create list of keys.
+        keys = ['%0*d' % (key_size, i) for i in xrange(n)]
+        ranges = []
+        range_len = 10
+        for i in range(0, len(keys) - range_len):
+            ranges.append((keys[i], keys[i+range_len-1]))
+        
+        # Helper functions.
+        nop = lambda *args: None
+        
+        # Calibrate.
+        looptime = self.measure(keys, nop, nop, 'calibrate')
 
-    # Measure inserts into existing tree.
-    random.shuffle(keys)
-    insert2 = measure(keys, lambda key: tree.insert(key, value),
-                      forest.commit, do_profile, 'insert2')
+        # Measure inserts.
+        random.shuffle(keys)
+        value = 'x' * value_size
+        insert = self.measure(keys, lambda key: tree.insert(key, value), 
+                              forest.commit, 'insert')
+            
+        # Measure lookups.
+        random.shuffle(keys)
+        lookup = self.measure(keys, tree.lookup, nop, 'lookup')
+            
+        # Measure range lookups.
+        random.shuffle(ranges)
+        lookup_range = self.measure(ranges, 
+                                    lambda x: 
+                                        list(tree.lookup_range(x[0], x[1])),
+                                    nop, 'lookup_range')
 
-    # Measure removes from tree.
-    random.shuffle(keys)
-    remove = measure(keys, tree.remove, forest.commit, do_profile, 'remove')
+        # Measure inserts into existing tree.
+        random.shuffle(keys)
+        insert2 = self.measure(keys, lambda key: tree.insert(key, value),
+                               forest.commit, 'insert2')
 
-    # Measure remove_range. This requires building a new tree.
-    keys.sort()
-    for key in keys:
-        tree.insert(key, value)
-    random.shuffle(ranges)
-    remove_range = measure(ranges, lambda x: tree.remove_range(x[0], x[1]),
-                           forest.commit, do_profile, 'remove_range')
+        # Measure removes from tree.
+        random.shuffle(keys)
+        remove = self.measure(keys, tree.remove, forest.commit, 'remove')
 
-    # Report
-    def speed(result, i):
-        return n / (result[i] - looptime[i])
-    def report(label, result):
-        cpu, wall = result
-        print '%-12s: %5.3f s (%8.1f/s) CPU; %5.3f s (%8.1f/s) wall clock' % \
-            (label, cpu, speed(result, 0), wall, speed(result, 1))
+        # Measure remove_range. This requires building a new tree.
+        keys.sort()
+        for key in keys:
+            tree.insert(key, value)
+        random.shuffle(ranges)
+        remove_range = self.measure(ranges, 
+                                    lambda x: tree.remove_range(x[0], x[1]),
+                                    forest.commit, 'remove_range')
 
-    print 'num_operations: %d' % n
-    report('insert', insert)
-    report('lookup', lookup)
-    report('lookup_range', lookup_range)
-    report('insert2', insert2)
-    report('remove', remove)
-    report('remove_range', remove_range)
-    if do_profile:
-        print 'View *.prof with ./viewprof for profiling results.'
+        # Report
+        def speed(result, i):
+            return n / (result[i] - looptime[i])
+        def report(label, result):
+            cpu, wall = result
+            print '%-12s: %5.3f s (%8.1f/s) CPU; %5.3f s (%8.1f/s) wall' % \
+                (label, cpu, speed(result, 0), wall, speed(result, 1))
 
-    # Clean up
-    if location:
-        shutil.rmtree(location)
+        print 'location:', location if location else 'memory'
+        print 'num_operations: %d' % n
+        report('insert', insert)
+        report('lookup', lookup)
+        report('lookup_range', lookup_range)
+        report('insert2', insert2)
+        report('remove', remove)
+        report('remove_range', remove_range)
+        if self['profile']:
+            print 'View *.prof with ./viewprof for profiling results.'
+
+        # Clean up
+        if location:
+            shutil.rmtree(location)
+
+    def measure(self, items, func, finalize, profname):
+        def helper():
+            for item in items:
+                func(item)
+            finalize()
+
+        print 'measuring', profname
+        start_time = time.time()
+        start = time.clock()
+        if self['profile']:
+            globaldict = globals().copy()
+            localdict = locals().copy()
+            cProfile.runctx('helper()', globaldict, localdict, 
+                            '%s.prof' % profname)
+        else:
+            helper()
+        end = time.clock()
+        end_time = time.time()
+        return end - start, end_time - start_time
+
 
 if __name__ == '__main__':
-    main()
+    SpeedTest().run()
