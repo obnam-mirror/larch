@@ -154,10 +154,12 @@ class SpeedTest(cliapp.Application):
             for item in items:
                 func(item)
             if self['log-memory-use']:
-                logging.debug('%s VmRSS: %s KiB' % (profname, self.vmrss()))
+                logging.debug('VmRSS %s pre-finalize: %s KiB' % 
+                              (profname, self.vmrss()))
             finalize()
 
         print 'measuring', profname
+        logging.debug('VmRSS %s at start: %s KiB' % (profname, self.vmrss()))
         start_time = time.time()
         start = time.clock()
         if self['profile']:
@@ -169,6 +171,7 @@ class SpeedTest(cliapp.Application):
             helper()
         end = time.clock()
         end_time = time.time()
+        logging.debug('VmRSS %s at end: %s KiB' % (profname, self.vmrss()))
         return end - start, end_time - start_time
 
     def vmrss(self):
