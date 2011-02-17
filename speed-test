@@ -28,6 +28,7 @@
 
 import cliapp
 import cProfile
+import gc
 import logging
 import os
 import random
@@ -150,16 +151,23 @@ class SpeedTest(cliapp.Application):
             shutil.rmtree(location)
 
     def measure(self, items, func, finalize, profname):
+
+        def log_memory_use(stage):
+            if self['log-memory-use']:
+                logging.info('%s memory use: %s' % (profname, stage))
+                logging.info('  VmRSS: %s KiB' %  self.vmrss())
+                logging.info('  # objects: %d' % len(gc.get_objects()))
+                logging.info('  # garbage: %d' % len(gc.garbage))
+
         def helper():
+            log_memory_use('at start')
             for item in items:
                 func(item)
-            if self['log-memory-use']:
-                logging.debug('VmRSS %s pre-finalize: %s KiB' % 
-                              (profname, self.vmrss()))
+            log_memory_use('after calls')
             finalize()
+            log_memory_use('after finalize')
 
         print 'measuring', profname
-        logging.debug('VmRSS %s at start: %s KiB' % (profname, self.vmrss()))
         start_time = time.time()
         start = time.clock()
         if self['profile']:
@@ -171,7 +179,6 @@ class SpeedTest(cliapp.Application):
             helper()
         end = time.clock()
         end_time = time.time()
-        logging.debug('VmRSS %s at end: %s KiB' % (profname, self.vmrss()))
         return end - start, end_time - start_time
 
     def vmrss(self):
