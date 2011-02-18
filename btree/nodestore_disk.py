@@ -25,37 +25,15 @@ import tempfile
 import btree
 
 
-class NodeStoreDisk(btree.NodeStore):
+class LocalFS(object):
 
-    '''An implementation of btree.NodeStore API for on-disk storage.
+    '''Access to local filesystem.
     
-    The caller will specify a directory in which the nodes will be stored.
-    Each node is stored in its own file, named after the node identifier.
-
-    This class can be subclassed to allow filesystem operations be
-    overridden. The subclass needs to override the following methods:
-
-    * read_file
-    * write_file
-    * file_exists
-    * rename_file
-    * remove_file
+    The NodeStoreDisk class will use a class with this interface
+    to do disk operations. This class implements access to the local
+    filesystem.
     
     '''
-
-    nodedir = 'nodes'
-
-    def __init__(self, dirname, node_size, codec, upload_max=1024, 
-                 lru_size=100):
-        btree.NodeStore.__init__(self, node_size, codec)
-        self.dirname = dirname
-        self.metadata_name = os.path.join(dirname, 'metadata')
-        self.metadata = None
-        self.rs = btree.RefcountStore(self)
-        self.cache = lru.LRUCache(lru_size)
-        self.upload_max = upload_max
-        self.upload_queue = btree.UploadQueue(self._really_put_node, 
-                                              self.upload_max)
 
     def mkdir(self, dirname):
         if not os.path.exists(dirname):
@@ -71,21 +49,50 @@ class NodeStoreDisk(btree.NodeStore):
         os.close(fd)
         os.rename(tempname, filename)
 
-    def file_exists(self, filename):
+    def exists(self, filename):
         return os.path.exists(filename)
 
-    def rename_file(self, old, new):
+    def rename(self, old, new):
         os.rename(old, new)
 
-    def remove_file(self, filename):
+    def remove(self, filename):
         os.remove(filename)
+
+
+class NodeStoreDisk(btree.NodeStore):
+
+    '''An implementation of btree.NodeStore API for on-disk storage.
+    
+    The caller will specify a directory in which the nodes will be stored.
+    Each node is stored in its own file, named after the node identifier.
+
+    The 'vfs' optional argument to the initializer can be used to
+    override filesystem access. By default, the local filesystem is
+    used, but any class can be substituted.
+    
+    '''
+
+    nodedir = 'nodes'
+
+    def __init__(self, dirname, node_size, codec, upload_max=1024, 
+                 lru_size=100, vfs=None):
+        btree.NodeStore.__init__(self, node_size, codec)
+        self.dirname = dirname
+        self.metadata_name = os.path.join(dirname, 'metadata')
+        self.metadata = None
+        self.rs = btree.RefcountStore(self)
+        self.cache = lru.LRUCache(lru_size)
+        self.upload_max = upload_max
+        self.upload_queue = btree.UploadQueue(self._really_put_node, 
+                                              self.upload_max)
+        self.vfs = vfs if vfs != None else LocalFS()
 
     def _load_metadata(self):
         if self.metadata is None:
             self.metadata = ConfigParser.ConfigParser()
             self.metadata.add_section('metadata')
-            if self.file_exists(self.metadata_name):
-                data = self.read_file(self.metadata_name)
+            if self.vfs.exists(self.metadata_name):
+                data = self.vfs.read_file(self.metadata_name)
                 f = StringIO.StringIO(data)
                 self.metadata.readfp(f)
 
@@ -115,8 +122,8 @@ class NodeStoreDisk(btree.NodeStore):
         self._load_metadata()
         f = StringIO.StringIO()
         self.metadata.write(f)
-        self.write_file(self.metadata_name + '_new', f.getvalue())
-        self.rename_file(self.metadata_name + '_new', self.metadata_name)
+        self.vfs.write_file(self.metadata_name + '_new', f.getvalue())
+        self.vfs.rename(self.metadata_name + '_new', self.metadata_name)
 
     def pathname(self, node_id):
         basename = '%x' % node_id
@@ -136,10 +143,10 @@ class NodeStoreDisk(btree.NodeStore):
         if len(encoded_node) > self.node_size:
             raise btree.NodeTooBig(node, len(encoded_node))
         name = self.pathname(node.id)
-        if self.file_exists(name):
-            self.remove_file(name)
-        self.mkdir(os.path.dirname(name))
-        self.write_file(name, encoded_node)
+        if self.vfs.exists(name):
+            self.vfs.remove(name)
+        self.vfs.mkdir(os.path.dirname(name))
+        self.vfs.write_file(name, encoded_node)
         
     def get_node(self, node_id):
         node = self.cache.get(node_id)
@@ -151,8 +158,8 @@ class NodeStoreDisk(btree.NodeStore):
             return node
 
         name = self.pathname(node_id)
-        if self.file_exists(name):
-            encoded = self.read_file(name)
+        if self.vfs.exists(name):
+            encoded = self.vfs.read_file(name)
             node = self.codec.decode(encoded)
             node.frozen = True
             self.cache.add(node.id, node)
@@ -170,8 +177,8 @@ class NodeStoreDisk(btree.NodeStore):
         self.cache.remove(node_id)
         got_it = self.upload_queue.remove(node_id)
         name = self.pathname(node_id)
-        if self.file_exists(name):
-            self.remove_file(name)
+        if self.vfs.exists(name):
+            self.vfs.remove(name)
         elif not got_it:
             raise btree.NodeMissing(node_id)
         
@@ -180,7 +187,7 @@ class NodeStoreDisk(btree.NodeStore):
 
         nodedir = os.path.join(self.dirname, self.nodedir)
         uploaded = []
-        if self.file_exists(nodedir):
+        if self.vfs.exists(nodedir):
             for dirname, subdirs, basenames in os.walk(nodedir):
                 uploaded += [int(x, 16) for x in basenames]
         return queued + uploaded
