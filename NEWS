@@ -5,7 +5,12 @@ These are the release notes for btree, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
-Version 0.16.2, released 2011-01-07
+Version 0.18, released 2011-02-18
+---------------------------------
+
+* Fix memory leak.
+
+Version 0.17, released 2011-02-13
 ---------------------------------
 
 * Use the python-tracing library to add logging of node creation and

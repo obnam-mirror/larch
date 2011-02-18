@@ -1,3 +1,9 @@
+python-btree (0.18) squeeze; urgency=low
+
+  * New upstream version.
+
+ -- Lars Wirzenius <liw@liw.fi>  Fri, 18 Feb 2011 22:10:21 +0000
+
 python-btree (0.17) squeeze; urgency=low
 
   * New upstream version.
