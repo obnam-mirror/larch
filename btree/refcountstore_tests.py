@@ -28,24 +28,25 @@ class DummyNodeStore(object):
 
     def __init__(self, dirname):
         self.dirname = dirname
+        self.vfs = self
 
-    def mkdir(self, dirname):
+    def makedirs(self, dirname):
         if not os.path.exists(dirname):
-            os.mkdir(dirname)
+            os.makedirs(dirname)
 
-    def read_file(self, filename):
+    def cat(self, filename):
         return file(filename).read()
 
-    def write_file(self, filename, contents):
+    def overwrite_file(self, filename, contents):
         file(filename, 'w').write(contents)
 
-    def file_exists(self, filename):
+    def exists(self, filename):
         return os.path.exists(filename)
 
-    def rename_file(self, old, new):
+    def rename(self, old, new):
         os.rename(old, new)
 
-    def remove_file(self, filename):
+    def remove(self, filename):
         os.remove(filename)
 
 

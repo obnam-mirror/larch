@@ -24,31 +24,6 @@ import btree
 import nodestore_disk
 
 
-class DummyNodeStore(object):
-
-    def __init__(self, dirname):
-        self.dirname = dirname
-
-    def mkdir(self, dirname):
-        if not os.path.exists(dirname):
-            os.mkdir(dirname)
-
-    def read_file(self, filename):
-        return file(filename).read()
-
-    def write_file(self, filename, contents):
-        file(filename, 'w').write(contents)
-
-    def file_exists(self, filename):
-        return os.path.exists(filename)
-
-    def rename_file(self, old, new):
-        os.rename(old, new)
-
-    def remove_file(self, filename):
-        os.remove(filename)
-
-
 class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
 
     def setUp(self):
