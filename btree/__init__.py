@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = '0.17'
+version = '0.18'
 
 
 from nodes import FrozenNode, LeafNode, IndexNode
