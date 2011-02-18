@@ -35,14 +35,14 @@ class LocalFS(object):
     
     '''
 
-    def mkdir(self, dirname):
+    def makedirs(self, dirname):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-    def read_file(self, filename):
+    def cat(self, filename):
         return file(filename).read()
 
-    def write_file(self, filename, contents):
+    def overwrite_file(self, filename, contents):
         dirname = os.path.dirname(filename)
         fd, tempname = tempfile.mkstemp(dir=dirname)
         os.write(fd, contents)
@@ -92,7 +92,7 @@ class NodeStoreDisk(btree.NodeStore):
             self.metadata = ConfigParser.ConfigParser()
             self.metadata.add_section('metadata')
             if self.vfs.exists(self.metadata_name):
-                data = self.vfs.read_file(self.metadata_name)
+                data = self.vfs.cat(self.metadata_name)
                 f = StringIO.StringIO(data)
                 self.metadata.readfp(f)
 
@@ -122,7 +122,7 @@ class NodeStoreDisk(btree.NodeStore):
         self._load_metadata()
         f = StringIO.StringIO()
         self.metadata.write(f)
-        self.vfs.write_file(self.metadata_name + '_new', f.getvalue())
+        self.vfs.overwrite_file(self.metadata_name + '_new', f.getvalue())
         self.vfs.rename(self.metadata_name + '_new', self.metadata_name)
 
     def pathname(self, node_id):
@@ -145,8 +145,10 @@ class NodeStoreDisk(btree.NodeStore):
         name = self.pathname(node.id)
         if self.vfs.exists(name):
             self.vfs.remove(name)
-        self.vfs.mkdir(os.path.dirname(name))
-        self.vfs.write_file(name, encoded_node)
+        dirname = os.path.dirname(name)
+        if not self.vfs.exists(dirname):
+            self.vfs.makedirs(dirname)
+        self.vfs.overwrite_file(name, encoded_node)
         
     def get_node(self, node_id):
         node = self.cache.get(node_id)
@@ -159,7 +161,7 @@ class NodeStoreDisk(btree.NodeStore):
 
         name = self.pathname(node_id)
         if self.vfs.exists(name):
-            encoded = self.vfs.read_file(name)
+            encoded = self.vfs.cat(name)
             node = self.codec.decode(encoded)
             node.frozen = True
             self.cache.add(node.id, node)

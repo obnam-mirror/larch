@@ -30,14 +30,14 @@ class DummyNodeStore(object):
         self.dirname = dirname
         self.vfs = self
 
-    def mkdir(self, dirname):
+    def makedirs(self, dirname):
         if not os.path.exists(dirname):
-            os.mkdir(dirname)
+            os.makedirs(dirname)
 
-    def read_file(self, filename):
+    def cat(self, filename):
         return file(filename).read()
 
-    def write_file(self, filename, contents):
+    def overwrite_file(self, filename, contents):
         file(filename, 'w').write(contents)
 
     def exists(self, filename):

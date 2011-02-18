@@ -71,20 +71,21 @@ class RefcountStore(object):
         if self.dirty:
             level = logging.getLogger().getEffectiveLevel()
             dirname = os.path.join(self.node_store.dirname, self.refcountdir)
-            self.node_store.vfs.mkdir(dirname)
+            if not self.node_store.vfs.exists(dirname):
+                self.node_store.vfs.makedirs(dirname)
             ids = sorted(self.dirty)
             for start_id in range(self.start_id(ids[0]), 
                                   self.start_id(ids[-1]) + 1, 
                                   self.per_group):
                 encoded = self.encode_refcounts(start_id, self.per_group)
                 filename = self.group_filename(start_id)
-                self.node_store.vfs.write_file(filename, encoded)
+                self.node_store.vfs.overwrite_file(filename, encoded)
             self.dirty.clear()
 
     def load_refcount_group(self, start_id):
         filename = self.group_filename(start_id)
         if self.node_store.vfs.exists(filename):
-            encoded = self.node_store.vfs.read_file(filename)
+            encoded = self.node_store.vfs.cat(filename)
             return self.decode_refcounts(encoded)
 
     def group_filename(self, start_id):
