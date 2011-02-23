@@ -78,6 +78,9 @@ class Forest(object):
                             for t in self.trees 
                             if t.root is not None)
         self.node_store.set_metadata('root_ids', root_ids)
+        self.node_store.set_metadata('key_size', 
+                                     self.node_store.codec.key_bytes)
+        self.node_store.set_metadata('node_size', self.node_store.node_size)
         self.node_store.save_metadata()
         self.node_store.save_refcounts()
 

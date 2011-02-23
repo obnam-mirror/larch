@@ -112,6 +112,11 @@ class ForestTests(unittest.TestCase):
         f2 = btree.Forest(self.ns)
         self.assertEqual(f2.trees, [])
 
+    def test_commit_puts_key_and_node_sizes_in_metadata(self):
+        self.forest.commit()
+        self.assertEqual(self.ns.get_metadata('key_size'), 3)
+        self.assertEqual(self.ns.get_metadata('node_size'), 64)
+
 
 class ForestFactoryTests(unittest.TestCase):
 
