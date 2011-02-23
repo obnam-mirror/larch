@@ -38,7 +38,7 @@ def open_tree(dirname):
     node_size = 4096
     
     codec = btree.NodeCodec(key_size)
-    ns = btree.NodeStoreDisk(dirname, node_size, codec)
+    ns = btree.NodeStoreDisk(node_size, codec, dirname=dirname)
     forest = btree.Forest(ns)
     if forest.trees:
         tree = forest.trees[0]

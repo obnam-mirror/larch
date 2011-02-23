@@ -17,6 +17,26 @@
 import btree
 
 
+class BadKeySize(Exception):
+
+    def __init__(self, store_key_size, wanted_key_size):
+        self.msg = ('Node store has key size %s, program wanted %s' %
+                    (store_key_size, wanted_key_size))
+    
+    def __str__(self):
+        return self.msg
+
+
+class BadNodeSize(Exception):
+
+    def __init__(self, store_node_size, wanted_node_size):
+        self.msg = ('Node store has node size %s, program wanted %s' %
+                    (store_node_size, wanted_node_size))
+    
+    def __str__(self):
+        return self.msg
+
+
 class Forest(object):
 
     '''A collection of BTrees in the same node store.'''
@@ -85,20 +105,27 @@ class Forest(object):
         self.node_store.save_refcounts()
 
 
-
-class ForestFactory(object):
-
-    '''Create new Forest objects.'''
+def open_forest(key_size=None, node_size=None, codec=None, node_store=None, 
+                **kwargs):
+    '''Create a new Factory instance.
     
-    def __init__(self, codec=None, node_store=None):
-        assert codec != None
-        assert node_store != None
-        
-        self.codec = codec
-        self.node_store = node_store
-        
-    def new(self, key_size, node_size):
-        codec = self.codec(key_size)
-        ns = self.node_store(node_size, codec)
-        return Forest(ns)
+    key_size, node_size must be given with every call.
+    codec is the class to be used for the node codec, defaults to
+    btree.NodeCodec. Similarly, node_store is the node store class,
+    defaults to btree.NodeStoreDisk.
+    
+    All other keyword arguments are given the thoe node_store
+    class initializer.
+    
+    '''
+
+    assert key_size is not None
+    assert node_size is not None
+
+    codec = codec or btree.NodeCodec
+    node_store = node_store or btree.NodeStoreDisk
+
+    c = codec(key_size)
+    ns = node_store(node_size, c, **kwargs)
+    return Forest(ns)
 

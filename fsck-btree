@@ -32,7 +32,7 @@ class BtreeFsck(object):
         self.node_size = node_size
         self.key_size = key_size
         codec = btree.NodeCodec(key_size)
-        self.ns = btree.NodeStoreDisk(dirname, node_size, codec)
+        self.ns = btree.NodeStoreDisk(node_size, codec, dirname=dirname)
         self.minkey = '\x00' * key_size
         self.maxkey = '\xff' * key_size
 

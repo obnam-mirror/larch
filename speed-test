@@ -74,7 +74,7 @@ class SpeedTest(cliapp.Application):
             if os.path.exists(location):
                 raise Exception('%s exists already' % location)
             os.mkdir(location)
-            ns = btree.NodeStoreDisk(location, node_size, codec)
+            ns = btree.NodeStoreDisk(node_size, codec, dirname=location)
 
         forest = btree.Forest(ns)
         tree = forest.new_tree()
