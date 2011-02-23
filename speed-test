@@ -60,8 +60,6 @@ class SpeedTest(cliapp.Application):
         value_size = 128
         node_size = 64*1024
 
-        codec = btree.NodeCodec(key_size)
-
         n = self['keys']
         location = self['location']
         
@@ -69,14 +67,15 @@ class SpeedTest(cliapp.Application):
             raise Exception('You must set number of keys with --keys')
         
         if not location:
-            ns = btree.NodeStoreMemory(node_size, codec)
+            forest = btree.open_forest(key_size=key_size, node_size=node_size,
+                                       node_store=btree.NodeStoreMemory)
         else:
             if os.path.exists(location):
                 raise Exception('%s exists already' % location)
             os.mkdir(location)
-            ns = btree.NodeStoreDisk(location, node_size, codec)
+            forest = btree.open_forest(key_size=key_size, node_size=node_size,
+                                       dirname=location)
 
-        forest = btree.Forest(ns)
         tree = forest.new_tree()
         
         # Create list of keys.

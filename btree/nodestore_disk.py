@@ -74,8 +74,9 @@ class NodeStoreDisk(btree.NodeStore):
 
     nodedir = 'nodes'
 
-    def __init__(self, dirname, node_size, codec, upload_max=1024, 
+    def __init__(self, node_size, codec, dirname=None, upload_max=1024, 
                  lru_size=100, vfs=None):
+        assert dirname is not None
         btree.NodeStore.__init__(self, node_size, codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')

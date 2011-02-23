@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import shutil
+import tempfile
 import unittest
 
 import btree
@@ -111,4 +113,75 @@ class ForestTests(unittest.TestCase):
 
         f2 = btree.Forest(self.ns)
         self.assertEqual(f2.trees, [])
+
+    def test_commit_puts_key_and_node_sizes_in_metadata(self):
+        self.forest.commit()
+        self.assertEqual(self.ns.get_metadata('key_size'), 3)
+        self.assertEqual(self.ns.get_metadata('node_size'), 64)
+
+
+class OpenForestTests(unittest.TestCase):
+
+    def setUp(self):
+        self.key_size = 3
+        self.node_size = 64
+        self.tempdir = tempfile.mkdtemp()
+        
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+        
+    def test_creates_new_forest(self):
+        f = btree.open_forest(key_size=self.key_size, node_size=self.node_size,
+                              dirname=self.tempdir)
+        self.assertEqual(f.node_store.codec.key_bytes, self.key_size)
+        self.assertEqual(f.node_store.node_size, self.node_size)
+
+    def test_fail_if_existing_tree_has_incompatible_key_size(self):
+        f = btree.open_forest(key_size=self.key_size, node_size=self.node_size,
+                              dirname=self.tempdir)
+        f.commit()
+        
+        self.assertRaises(btree.BadKeySize, 
+                          btree.open_forest,
+                          key_size=self.key_size + 1, 
+                          node_size=self.node_size,
+                          dirname=self.tempdir)
+
+    def test_fail_if_existing_tree_has_incompatible_node_size(self):
+        f = btree.open_forest(key_size=self.key_size, node_size=self.node_size,
+                              dirname=self.tempdir)
+        f.commit()
+        
+        self.assertRaises(btree.BadNodeSize, 
+                          btree.open_forest,
+                          key_size=self.key_size, 
+                          node_size=self.node_size + 1,
+                          dirname=self.tempdir)
+
+    def test_opens_existing_tree_with_compatible_key_and_node_size(self):
+        f = btree.open_forest(key_size=self.key_size, node_size=self.node_size,
+                              dirname=self.tempdir)
+        f.commit()
+        
+        f2 = btree.open_forest(key_size=self.key_size, 
+                               node_size=self.node_size,
+                               dirname=self.tempdir)
+                               
+        self.assert_(True)
+
+
+class BadKeySizeTests(unittest.TestCase):
+
+    def test_both_sizes_in_error_message(self):
+        e = btree.BadKeySize(123, 456)
+        self.assert_('123' in str(e))
+        self.assert_('456' in str(e))
+
+
+class BadNodeSizeTests(unittest.TestCase):
+
+    def test_both_sizes_in_error_message(self):
+        e = btree.BadNodeSize(123, 456)
+        self.assert_('123' in str(e))
+        self.assert_('456' in str(e))
 

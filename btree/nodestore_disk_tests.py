@@ -36,8 +36,8 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
         shutil.rmtree(self.tempdir)
 
     def new_ns(self):
-        return nodestore_disk.NodeStoreDisk(self.tempdir, self.node_size,
-                                            self.codec)
+        return nodestore_disk.NodeStoreDisk(self.node_size, self.codec,
+                                            dirname=self.tempdir)
 
     def test_has_persistent_metadata(self):
         self.ns.set_metadata('foo', 'bar')
