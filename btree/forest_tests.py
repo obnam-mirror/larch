@@ -120,7 +120,7 @@ class ForestTests(unittest.TestCase):
         self.assertEqual(self.ns.get_metadata('node_size'), 64)
 
 
-class ForestFactoryTests(unittest.TestCase):
+class OpenForestTests(unittest.TestCase):
 
     def setUp(self):
         self.key_size = 3
@@ -141,7 +141,7 @@ class ForestFactoryTests(unittest.TestCase):
                               dirname=self.tempdir)
         f.commit()
         
-        self.assertRaises(btree.BadNodeSize, 
+        self.assertRaises(btree.BadKeySize, 
                           btree.open_forest,
                           key_size=self.key_size + 1, 
                           node_size=self.node_size,
@@ -157,4 +157,20 @@ class ForestFactoryTests(unittest.TestCase):
                           key_size=self.key_size, 
                           node_size=self.node_size + 1,
                           dirname=self.tempdir)
+
+
+class BadKeySizeTests(unittest.TestCase):
+
+    def test_both_sizes_in_error_message(self):
+        e = btree.BadKeySize(123, 456)
+        self.assert_('123' in str(e))
+        self.assert_('456' in str(e))
+
+
+class BadNodeSizeTests(unittest.TestCase):
+
+    def test_both_sizes_in_error_message(self):
+        e = btree.BadNodeSize(123, 456)
+        self.assert_('123' in str(e))
+        self.assert_('456' in str(e))
 

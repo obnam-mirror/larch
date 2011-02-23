@@ -127,5 +127,16 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
 
     c = codec(key_size)
     ns = node_store(node_size, c, **kwargs)
+    
+    def check_size(keyname, wanted, exception):
+        if keyname not in ns.get_metadata_keys():
+            return
+        value = int(ns.get_metadata(keyname))
+        if value != wanted:
+            raise exception(value, wanted)
+
+    check_size('key_size', key_size, BadKeySize)
+    check_size('node_size', node_size, BadNodeSize)
+
     return Forest(ns)
 
