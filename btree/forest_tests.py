@@ -112,3 +112,17 @@ class ForestTests(unittest.TestCase):
         f2 = btree.Forest(self.ns)
         self.assertEqual(f2.trees, [])
 
+
+class ForestFactoryTests(unittest.TestCase):
+
+    def setUp(self):
+        self.key_size = 3
+        self.node_size = 64
+        self.factory = btree.ForestFactory(codec=btree.NodeCodec,
+                                           node_store=btree.NodeStoreMemory)
+        
+    def test_creates_new_forest(self):
+        f = self.factory.new(self.key_size, self.node_size)
+        self.assertEqual(f.node_store.codec.key_bytes, self.key_size)
+        self.assertEqual(f.node_store.node_size, self.node_size)
+

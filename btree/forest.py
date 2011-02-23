@@ -81,3 +81,21 @@ class Forest(object):
         self.node_store.save_metadata()
         self.node_store.save_refcounts()
 
+
+
+class ForestFactory(object):
+
+    '''Create new Forest objects.'''
+    
+    def __init__(self, codec=None, node_store=None):
+        assert codec != None
+        assert node_store != None
+        
+        self.codec = codec
+        self.node_store = node_store
+        
+    def new(self, key_size, node_size):
+        codec = self.codec(key_size)
+        ns = self.node_store(node_size, codec)
+        return Forest(ns)
+

@@ -20,7 +20,7 @@ version = '0.18'
 from nodes import FrozenNode, LeafNode, IndexNode
 from codec import NodeCodec, CodecError
 from tree import BTree, KeySizeMismatch, ValueTooLarge
-from forest import Forest
+from forest import Forest, ForestFactory
 from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig, 
                        NodeExists, NodeCannotBeModified)
 from refcountstore import RefcountStore
