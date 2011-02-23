@@ -158,6 +158,17 @@ class OpenForestTests(unittest.TestCase):
                           node_size=self.node_size + 1,
                           dirname=self.tempdir)
 
+    def test_opens_existing_tree_with_compatible_key_and_node_size(self):
+        f = btree.open_forest(key_size=self.key_size, node_size=self.node_size,
+                              dirname=self.tempdir)
+        f.commit()
+        
+        f2 = btree.open_forest(key_size=self.key_size, 
+                               node_size=self.node_size,
+                               dirname=self.tempdir)
+                               
+        self.assert_(True)
+
 
 class BadKeySizeTests(unittest.TestCase):
 
