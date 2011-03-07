@@ -1,7 +1,7 @@
-NEWS for btree
+NEWS for larch
 ==============
 
-These are the release notes for btree, a Python implementation of a
+These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
