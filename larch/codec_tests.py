@@ -16,15 +16,15 @@
 
 import unittest
 
-import btree
+import larch
 
 
 class NodeCodecTests(unittest.TestCase):
 
     def setUp(self):
-        self.leaf = btree.LeafNode(1234, ['foo', 'yoo'], ['bar', 'yoyo'])
-        self.index = btree.IndexNode(5678, ['bar', 'foo'], [1234, 7890])
-        self.codec = btree.NodeCodec(3)
+        self.leaf = larch.LeafNode(1234, ['foo', 'yoo'], ['bar', 'yoyo'])
+        self.index = larch.IndexNode(5678, ['bar', 'foo'], [1234, 7890])
+        self.codec = larch.NodeCodec(3)
 
     def test_returns_reasonable_size_for_empty_leaf(self):
         self.assert_(self.codec.leaf_size([], []) > 10)
@@ -33,11 +33,11 @@ class NodeCodecTests(unittest.TestCase):
         self.assert_(self.codec.index_size([], []) > 10)
 
     def test_returns_reasonable_size_for_empty_leaf_generic(self):
-        leaf = btree.LeafNode(0, [], [])
+        leaf = larch.LeafNode(0, [], [])
         self.assert_(self.codec.size(leaf) > 10)
 
     def test_returns_reasonable_size_for_empty_index_generic(self):
-        index = btree.IndexNode(0, [], [])
+        index = larch.IndexNode(0, [], [])
         self.assert_(self.codec.size(index) > 10)
 
     def test_leaf_round_trip_ok(self):
@@ -61,13 +61,13 @@ class NodeCodecTests(unittest.TestCase):
         self.assertEqual(self.codec.decode(encoded), self.index)
 
     def test_decode_leaf_raises_error_for_garbage(self):
-        self.assertRaises(btree.CodecError, self.codec.decode_leaf, 'x'*1000)
+        self.assertRaises(larch.CodecError, self.codec.decode_leaf, 'x'*1000)
 
     def test_decode_index_raises_error_for_garbage(self):
-        self.assertRaises(btree.CodecError, self.codec.decode_index, 'x'*1000)
+        self.assertRaises(larch.CodecError, self.codec.decode_index, 'x'*1000)
 
     def test_decode_raises_error_for_garbage(self):
-        self.assertRaises(btree.CodecError, self.codec.decode, 'x'*1000)
+        self.assertRaises(larch.CodecError, self.codec.decode, 'x'*1000)
     
     def test_returns_resonable_max_number_of_index_pairs(self):
         # Header is 16 bytes. A pair is key_bytes + 8 = 11.

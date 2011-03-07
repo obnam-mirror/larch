@@ -16,14 +16,14 @@
 
 from distutils.core import setup
 
-import btree
+import larch
 
 setup(
-    name='btree',
-    version=btree.version,
+    name='larch',
+    version=larch.version,
     description='B-tree data structure',
     author='Lars Wirzenius',
     author_email='liw@liw.fi',
-    url='http://liw.fi/btree/',
-    packages=['btree'],
+    url='http://liw.fi/larch/',
+    packages=['larch'],
 )

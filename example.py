@@ -18,7 +18,7 @@ import hashlib
 import os
 import sys
 
-import btree
+import larch
 
 
 def compute(filename):
@@ -37,7 +37,7 @@ def open_tree(dirname):
     key_size = len(compute('/dev/null'))
     node_size = 4096
     
-    forest = btree.open_forest(key_size=key_size, node_size=node_size,
+    forest = larch.open_forest(key_size=key_size, node_size=node_size,
                                dirname=dirname)
     if forest.trees:
         tree = forest.trees[0]

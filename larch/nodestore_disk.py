@@ -22,7 +22,7 @@ import StringIO
 import struct
 import tempfile
 
-import btree
+import larch
 
 
 class LocalFS(object):
@@ -59,9 +59,9 @@ class LocalFS(object):
         os.remove(filename)
 
 
-class NodeStoreDisk(btree.NodeStore):
+class NodeStoreDisk(larch.NodeStore):
 
-    '''An implementation of btree.NodeStore API for on-disk storage.
+    '''An implementation of larch.NodeStore API for on-disk storage.
     
     The caller will specify a directory in which the nodes will be stored.
     Each node is stored in its own file, named after the node identifier.
@@ -77,14 +77,14 @@ class NodeStoreDisk(btree.NodeStore):
     def __init__(self, node_size, codec, dirname=None, upload_max=1024, 
                  lru_size=100, vfs=None):
         assert dirname is not None
-        btree.NodeStore.__init__(self, node_size, codec)
+        larch.NodeStore.__init__(self, node_size, codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
         self.metadata = None
-        self.rs = btree.RefcountStore(self)
+        self.rs = larch.RefcountStore(self)
         self.cache = lru.LRUCache(lru_size)
         self.upload_max = upload_max
-        self.upload_queue = btree.UploadQueue(self._really_put_node, 
+        self.upload_queue = larch.UploadQueue(self._really_put_node, 
                                               self.upload_max)
         self.vfs = vfs if vfs != None else LocalFS()
 
@@ -142,7 +142,7 @@ class NodeStoreDisk(btree.NodeStore):
     def _really_put_node(self, node):
         encoded_node = self.codec.encode(node)
         if len(encoded_node) > self.node_size:
-            raise btree.NodeTooBig(node, len(encoded_node))
+            raise larch.NodeTooBig(node, len(encoded_node))
         name = self.pathname(node.id)
         if self.vfs.exists(name):
             self.vfs.remove(name)
@@ -168,11 +168,11 @@ class NodeStoreDisk(btree.NodeStore):
             self.cache.add(node.id, node)
             return node
         else:
-            raise btree.NodeMissing(node_id)
+            raise larch.NodeMissing(node_id)
 
     def start_modification(self, node):
         if not self.can_be_modified(node):
-            raise btree.NodeCannotBeModified(node.id)
+            raise larch.NodeCannotBeModified(node.id)
         self.upload_queue.remove(node.id)
         node.frozen = False
     
@@ -183,7 +183,7 @@ class NodeStoreDisk(btree.NodeStore):
         if self.vfs.exists(name):
             self.vfs.remove(name)
         elif not got_it:
-            raise btree.NodeMissing(node_id)
+            raise larch.NodeMissing(node_id)
         
     def list_nodes(self):
         queued = self.upload_queue.list_ids()

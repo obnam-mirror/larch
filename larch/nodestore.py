@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import btree
+import larch
 
 
 class NodeMissing(Exception): # pragma: no cover
@@ -263,60 +263,60 @@ class NodeStoreTests(object): # pragma: no cover
         self.assertEqual(self.ns.list_nodes(), [])
         
     def test_puts_and_gets_same(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         self.assertEqualNodes(self.ns.get_node(0), node)
 
     def test_put_freezes_node(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.assert_(node.frozen)
 
     def test_get_freezes_node(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         node2 = self.ns.get_node(0)
         self.assert_(node2.frozen)
 
     def test_node_not_in_store_can_not_be_modified(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.assertFalse(self.ns.can_be_modified(node))
 
     def test_node_with_refcount_0_can_not_be_modified(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.set_refcount(node.id, 0)
         self.assertFalse(self.ns.can_be_modified(node))
 
     def test_node_with_refcount_1_can_be_modified(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.set_refcount(node.id, 1)
         self.assertTrue(self.ns.can_be_modified(node))
 
     def test_node_with_refcount_2_can_not_be_modified(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.set_refcount(node.id, 2)
         self.assertFalse(self.ns.can_be_modified(node))
 
     def test_unfreezes_node_when_modification_starts(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.set_refcount(node.id, 1)
         self.ns.start_modification(node)
         self.assertFalse(node.frozen)
 
     def test_start_modification_on_unmodifiable_node_fails(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.set_refcount(node.id, 2)
         self.assertRaises(NodeCannotBeModified, 
                           self.ns.start_modification, node)
 
     def test_removes_node(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         self.ns.remove_node(0)
@@ -324,33 +324,33 @@ class NodeStoreTests(object): # pragma: no cover
         self.assertEqual(self.ns.list_nodes(), [])
 
     def test_removes_node_from_upload_queue_if_one_exists(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.remove_node(0)
         self.assertRaises(NodeMissing, self.ns.get_node, 0)
         self.assertEqual(self.ns.list_nodes(), [])
 
     def test_lists_node_zero(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         node_ids = self.ns.list_nodes()
         self.assertEqual(node_ids, [node.id])
 
     def test_put_allows_to_overwrite_a_node(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
-        node = btree.LeafNode(0, ['foo'], ['bar'])
+        node = larch.LeafNode(0, ['foo'], ['bar'])
         self.ns.put_node(node)
         new = self.ns.get_node(0)
         self.assertEqual(new.keys(), ['foo'])
         self.assertEqual(new.values(), ['bar'])
 
     def test_put_allows_to_overwrite_a_node_after_upload_queue_push(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
-        node = btree.LeafNode(0, ['foo'], ['bar'])
+        node = larch.LeafNode(0, ['foo'], ['bar'])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         new = self.ns.get_node(0)

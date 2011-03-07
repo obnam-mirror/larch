@@ -16,14 +16,14 @@
 
 import unittest
 
-import btree
+import larch
 
 
 class FrozenNodeTests(unittest.TestCase):
 
     def test_node_id_is_in_error_message(self):
-        node = btree.nodes.Node(123, [], [])
-        e = btree.FrozenNode(node)
+        node = larch.nodes.Node(123, [], [])
+        e = larch.FrozenNode(node)
         self.assert_('123' in str(e))
 
 
@@ -35,7 +35,7 @@ class NodeTests(unittest.TestCase):
         self.pairs.sort()
         self.keys = [k for k, v in self.pairs]
         self.values = [v for k, v in self.pairs]
-        self.node = btree.nodes.Node(self.node_id, self.keys, self.values)
+        self.node = larch.nodes.Node(self.node_id, self.keys, self.values)
 
     def test_has_id(self):
         self.assertEqual(self.node.id, self.node_id)
@@ -85,48 +85,48 @@ class NodeTests(unittest.TestCase):
         self.assertEqual(self.node.values(), self.values)
 
     def test_adds_key_value_pair_to_empty_node(self):
-        node = btree.nodes.Node(0, [], [])
+        node = larch.nodes.Node(0, [], [])
         node.add('foo', 'bar')
         self.assertEqual(node.keys(), ['foo'])
         self.assertEqual(node.values(), ['bar'])
         self.assertEqual(node['foo'], 'bar')
 
     def test_adds_key_value_pair_to_end_of_node_of_one_element(self):
-        node = btree.nodes.Node(0, ['foo'], ['bar'])
+        node = larch.nodes.Node(0, ['foo'], ['bar'])
         node.add('foo2', 'bar2')
         self.assertEqual(node.keys(), ['foo', 'foo2'])
         self.assertEqual(node.values(), ['bar', 'bar2'])
         self.assertEqual(node['foo2'], 'bar2')
 
     def test_adds_key_value_pair_to_beginning_of_node_of_one_element(self):
-        node = btree.nodes.Node(0, ['foo'], ['bar'])
+        node = larch.nodes.Node(0, ['foo'], ['bar'])
         node.add('bar', 'bar')
         self.assertEqual(node.keys(), ['bar', 'foo'])
         self.assertEqual(node.values(), ['bar', 'bar'])
         self.assertEqual(node['bar'], 'bar')
 
     def test_adds_key_value_pair_to_middle_of_node_of_two_elements(self):
-        node = btree.nodes.Node(0, ['bar', 'foo'], ['bar', 'bar'])
+        node = larch.nodes.Node(0, ['bar', 'foo'], ['bar', 'bar'])
         node.add('duh', 'bar')
         self.assertEqual(node.keys(), ['bar', 'duh', 'foo'])
         self.assertEqual(node.values(), ['bar', 'bar', 'bar'])
         self.assertEqual(node['duh'], 'bar')
 
     def test_add_replaces_value_for_existing_key(self):
-        node = btree.nodes.Node(0, ['bar', 'foo'], ['bar', 'bar'])
+        node = larch.nodes.Node(0, ['bar', 'foo'], ['bar', 'bar'])
         node.add('bar', 'xxx')
         self.assertEqual(node.keys(), ['bar', 'foo'])
         self.assertEqual(node.values(), ['xxx', 'bar'])
         self.assertEqual(node['bar'], 'xxx')
 
     def test_add_resets_cached_size(self):
-        node = btree.nodes.Node(0, [], [])
+        node = larch.nodes.Node(0, [], [])
         node.size = 1234
         node.add('foo', 'bar')
         self.assertEqual(node.size, None)
 
     def test_removes_first_key(self):
-        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+        node = larch.nodes.Node(0, ['bar', 'duh', 'foo'], 
                                    ['bar', 'bar', 'bar'])
         node.remove('bar')
         self.assertEqual(node.keys(), ['duh', 'foo'])
@@ -134,7 +134,7 @@ class NodeTests(unittest.TestCase):
         self.assertRaises(KeyError, node.__getitem__, 'bar')
 
     def test_removes_last_key(self):
-        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+        node = larch.nodes.Node(0, ['bar', 'duh', 'foo'], 
                                    ['bar', 'bar', 'bar'])
         node.remove('foo')
         self.assertEqual(node.keys(), ['bar', 'duh'])
@@ -142,7 +142,7 @@ class NodeTests(unittest.TestCase):
         self.assertRaises(KeyError, node.__getitem__, 'foo')
 
     def test_removes_middle_key(self):
-        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+        node = larch.nodes.Node(0, ['bar', 'duh', 'foo'], 
                                    ['bar', 'bar', 'bar'])
         node.remove('duh')
         self.assertEqual(node.keys(), ['bar', 'foo'])
@@ -150,18 +150,18 @@ class NodeTests(unittest.TestCase):
         self.assertRaises(KeyError, node.__getitem__, 'duh')
 
     def test_raises_exception_when_removing_unknown_key(self):
-        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+        node = larch.nodes.Node(0, ['bar', 'duh', 'foo'], 
                                    ['bar', 'bar', 'bar'])
         self.assertRaises(KeyError, node.remove, 'yo')
 
     def test_remove_resets_cached_size(self):
-        node = btree.nodes.Node(0, ['foo'], ['bar'])
+        node = larch.nodes.Node(0, ['foo'], ['bar'])
         node.size = 1234
         node.remove('foo')
         self.assertEqual(node.size, None)
 
     def test_removes_index_range(self):
-        node = btree.nodes.Node(0, ['bar', 'duh', 'foo'], 
+        node = larch.nodes.Node(0, ['bar', 'duh', 'foo'], 
                                    ['bar', 'bar', 'bar'])
         node.size = 12375654
         node.remove_index_range(1, 5)
@@ -174,7 +174,7 @@ class NodeTests(unittest.TestCase):
         # every combination of minkey and maxkey being less than, equal,
         # or greater than either child key (as long as minkey <= maxkey).
         
-        node = btree.LeafNode(0, ['bar', 'foo'], ['bar', 'foo']) 
+        node = larch.LeafNode(0, ['bar', 'foo'], ['bar', 'foo']) 
         find = node.find_keys_in_range
 
         self.assertEqual(find('aaa', 'aaa'), [])
@@ -198,7 +198,7 @@ class NodeTests(unittest.TestCase):
         self.assertEqual(find('ggg', 'ggg'), [])
 
     def test_finds_no_potential_range_in_empty_node(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.assertEqual(node.find_potential_range('aaa', 'bbb'), (None, None))
 
     def test_finds_potential_ranges(self):
@@ -206,7 +206,7 @@ class NodeTests(unittest.TestCase):
         # every combination of minkey and maxkey being less than, equal,
         # or greater than either child key (as long as minkey <= maxkey).
         
-        node = btree.LeafNode(0, ['bar', 'foo'], ['bar', 'foo'])
+        node = larch.LeafNode(0, ['bar', 'foo'], ['bar', 'foo'])
         find = node.find_potential_range
 
         self.assertEqual(find('aaa', 'aaa'), (None, None))
@@ -237,24 +237,24 @@ class NodeTests(unittest.TestCase):
 
     def test_freezing_makes_add_raise_error(self):
         self.node.frozen = True
-        self.assertRaises(btree.FrozenNode, self.node.add, 'foo', 'bar')
+        self.assertRaises(larch.FrozenNode, self.node.add, 'foo', 'bar')
 
     def test_freezing_makes_remove_raise_error(self):
         self.node.frozen = True
-        self.assertRaises(btree.FrozenNode, self.node.remove, 'foo')
+        self.assertRaises(larch.FrozenNode, self.node.remove, 'foo')
 
     def test_freezing_makes_remove_index_range_raise_error(self):
         self.node.frozen = True
-        self.assertRaises(btree.FrozenNode, self.node.remove_index_range, 0, 1)
+        self.assertRaises(larch.FrozenNode, self.node.remove_index_range, 0, 1)
 
 
 class IndexNodeTests(unittest.TestCase):
 
     def setUp(self):
-        self.leaf1 = btree.LeafNode(0, ['bar'], ['bar'])
-        self.leaf2 = btree.LeafNode(1, ['foo'], ['foo'])
+        self.leaf1 = larch.LeafNode(0, ['bar'], ['bar'])
+        self.leaf2 = larch.LeafNode(1, ['foo'], ['foo'])
         self.index_id = 1234
-        self.index = btree.IndexNode(self.index_id, ['bar', 'foo'],
+        self.index = larch.IndexNode(self.index_id, ['bar', 'foo'],
                                      [self.leaf1.id, self.leaf2.id])
 
 
@@ -271,11 +271,11 @@ class IndexNodeTests(unittest.TestCase):
         self.assertEqual(self.index.find_key_for_child_containing('a'), None)
 
     def test_finds_no_key_when_node_is_empty(self):
-        empty = btree.IndexNode(0, [], [])
+        empty = larch.IndexNode(0, [], [])
         self.assertEqual(empty.find_key_for_child_containing('f00'), None)
 
     def test_finds_no_children_in_range_when_empty(self):
-        empty = btree.IndexNode(0, [], [])
+        empty = larch.IndexNode(0, [], [])
         self.assertEqual(empty.find_children_in_range('bar', 'foo'), [])
 
     def test_finds_children_in_ranges(self):

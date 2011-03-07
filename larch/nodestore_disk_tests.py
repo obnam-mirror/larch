@@ -20,15 +20,15 @@ import shutil
 import tempfile
 import unittest
 
-import btree
+import larch
 import nodestore_disk
 
 
-class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
+class NodeStoreDiskTests(unittest.TestCase, larch.NodeStoreTests):
 
     def setUp(self):
         self.node_size = 4096
-        self.codec = btree.NodeCodec(self.key_bytes)
+        self.codec = larch.NodeCodec(self.key_bytes)
         self.tempdir = tempfile.mkdtemp()
         self.ns = self.new_ns()
 
@@ -59,14 +59,14 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
         self.assertEqual(ns2.get_refcount(0), 1234)
 
     def test_put_refuses_too_large_a_node(self):
-        node = btree.LeafNode(0, ['000'], ['x' * (self.node_size + 1)])
+        node = larch.LeafNode(0, ['000'], ['x' * (self.node_size + 1)])
         def helper(node):
             self.ns.put_node(node)
             self.ns.push_upload_queue()
-        self.assertRaises(btree.NodeTooBig, helper, node)
+        self.assertRaises(larch.NodeTooBig, helper, node)
         
     def test_puts_and_gets_same_with_cache_emptied(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.cache = lru.LRUCache(100)
         self.assertEqualNodes(self.ns.get_node(0), node)
@@ -76,7 +76,7 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
         self.ns.upload_queue.max = self.ns.upload_max
         ids = range(self.ns.upload_max + 1)
         for i in ids:
-            node = btree.LeafNode(i, [], [])
+            node = larch.LeafNode(i, [], [])
             self.ns.put_node(node)
         self.assertEqual(sorted(self.ns.list_nodes()), ids)
         for node_id in ids:
@@ -84,7 +84,7 @@ class NodeStoreDiskTests(unittest.TestCase, btree.NodeStoreTests):
             self.assertEqual(self.ns.get_node(node_id).id, node_id)
             
     def test_gets_node_from_disk(self):
-        node = btree.LeafNode(0, [], [])
+        node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
         self.ns.push_upload_queue()
         ns2 = self.new_ns()

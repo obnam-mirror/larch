@@ -17,7 +17,7 @@
 import bisect
 import tracing
 
-import btree
+import larch
 
 
 '''A simple B-tree implementation.'''
@@ -84,13 +84,13 @@ class BTree(object):
     
     def new_leaf(self, keys, values):
         '''Create a new leaf node.'''
-        node = btree.LeafNode(self.new_id(), keys, values)
+        node = larch.LeafNode(self.new_id(), keys, values)
         tracing.trace('id=%s' % node.id)
         return node
         
     def new_index(self, keys, values):
         '''Create a new index node.'''
-        index = btree.IndexNode(self.new_id(), keys, values)
+        index = larch.IndexNode(self.new_id(), keys, values)
         for child_id in values:
             self.increment(child_id)
         tracing.trace('id=%s' % index.id)
@@ -133,14 +133,14 @@ class BTree(object):
         self.check_key_size(key)
 
         node = self.root
-        while isinstance(node, btree.IndexNode):
+        while isinstance(node, larch.IndexNode):
             k = node.find_key_for_child_containing(key)
             # If k is None, then the indexing of node will cause KeyError
             # to be returned, just like we want to. This saves us from
             # having to test for it separately.
             node = self.get_node(node[k])
             
-        if isinstance(node, btree.LeafNode):
+        if isinstance(node, larch.LeafNode):
             return node[key]
 
         raise KeyError(key)
@@ -160,11 +160,11 @@ class BTree(object):
 
     def _lookup_range(self, node_id, minkey, maxkey):
         node = self.get_node(node_id)
-        if isinstance(node, btree.LeafNode):
+        if isinstance(node, larch.LeafNode):
             for key in node.find_keys_in_range(minkey, maxkey):
                 yield key, node[key]
         else:
-            assert isinstance(node, btree.IndexNode)
+            assert isinstance(node, larch.IndexNode)
             result = []
             for child_id in node.find_children_in_range(minkey, maxkey):
                 for pair in self._lookup_range(child_id, minkey, maxkey):
@@ -186,10 +186,10 @@ class BTree(object):
 
     def _range_is_empty(self, node_id, minkey, maxkey):
         node = self.get_node(node_id)
-        if isinstance(node, btree.LeafNode):
+        if isinstance(node, larch.LeafNode):
             return node.find_keys_in_range(minkey, maxkey) == []
         else:
-            assert isinstance(node, btree.IndexNode)
+            assert isinstance(node, larch.IndexNode)
             for child_id in node.find_children_in_range(minkey, maxkey):
                 if not self._range_is_empty(child_id, minkey, maxkey):
                     return False
@@ -201,7 +201,7 @@ class BTree(object):
         if self.node_store.can_be_modified(node):
             self.node_store.start_modification(node)
             new = node
-        elif isinstance(node, btree.IndexNode):
+        elif isinstance(node, larch.IndexNode):
             new = self.new_index(node.keys(), node.values())
         else:
             new = self.new_leaf(node.keys(), node.values())
@@ -241,7 +241,7 @@ class BTree(object):
             # making the tree higher because we must.
             assert len(kids) > 0
             for kid in kids:
-                assert type(kid) == btree.IndexNode
+                assert type(kid) == larch.IndexNode
             if len(kids) == 1:
                 new_root = kids[0]
                 tracing.trace('only one kid: id=%s' % new_root.id)
@@ -272,7 +272,7 @@ class BTree(object):
             child_key = new_index.first_key()
 
         child = self.get_node(new_index[child_key])
-        if isinstance(child, btree.IndexNode):
+        if isinstance(child, larch.IndexNode):
             new_kids = self._insert_into_index(child, key, value)
         else:
             new_kids = self._insert_into_leaf(child, key, value)
@@ -288,7 +288,7 @@ class BTree(object):
             n = len(new_index) / 2
             keys = new_index.keys()[n:]
             values = new_index.values()[n:]
-            new = btree.IndexNode(self.new_id(), keys, values)
+            new = larch.IndexNode(self.new_id(), keys, values)
             tracing.trace('new index node id=%s' % new.id)
             for k in keys:
                 new_index.remove(k)
@@ -375,7 +375,7 @@ class BTree(object):
         new_index = self._shadow(old_index)
         child = self.get_node(new_index[child_key])
         
-        if isinstance(child, btree.IndexNode):
+        if isinstance(child, larch.IndexNode):
             new_kid = self._remove_from_index(child, key)
             new_index.remove(child_key)
             if len(new_kid) > 0:
@@ -385,7 +385,7 @@ class BTree(object):
                     self.decrement(new_kid.id)
             self.decrement(child.id)
         else:
-            assert isinstance(child, btree.LeafNode)
+            assert isinstance(child, larch.LeafNode)
             leaf = self._shadow(child)
             leaf.remove(key)
             self.put_node(leaf)
@@ -506,12 +506,12 @@ class BTree(object):
                 break
 
             child = self.get_node(child_id)
-            if isinstance(child, btree.LeafNode):
+            if isinstance(child, larch.LeafNode):
                 tracing.trace('only child is a leaf node')
                 break
 
             # We can just make the child be the new root node.
-            assert type(child) == btree.IndexNode
+            assert type(child) == larch.IndexNode
             # Prevent child from getting removed when parent's refcount
             # gets decremented. set_root will set the refcount to be 1.
             tracing.trace('setting node %s refcount to 2' % child.id)
@@ -538,7 +538,7 @@ class BTree(object):
             tracing.trace('node %s refcount %s, removing node' % 
                          (node_id, refcount))
             node = self.node_store.get_node(node_id)
-            if isinstance(node, btree.IndexNode):
+            if isinstance(node, larch.IndexNode):
                 tracing.trace('reducing refcounts for children')
                 for child_id in node.values():
                     self.decrement(child_id)
@@ -550,13 +550,13 @@ class BTree(object):
         
         def dumper(node, indent):
             refs = self.node_store.get_refcount(node.id)
-            if isinstance(node, btree.IndexNode):
+            if isinstance(node, larch.IndexNode):
                 f.write('%*sindex (id=%d, refs=%d)\n' % (indent*2, '', node.id, refs))
                 for key in node:
                     child = self.get_node(node[key])
                     dumper(child, indent + 1)
             else:
-                assert isinstance(node, btree.LeafNode)
+                assert isinstance(node, larch.LeafNode)
                 f.write('%*sleaf (id=%d, refs=%d, len=%d):' % 
                         (indent*2, '', node.id, refs, len(node)))
                 for key in node:

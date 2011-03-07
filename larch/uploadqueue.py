@@ -22,7 +22,7 @@ import StringIO
 import struct
 import tempfile
 
-import btree
+import larch
 
 
 class UploadQueue(object):
