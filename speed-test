@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Excercise my btree implementation, for simple benchmarking purposes.
+# Excercise my B-tree implementation, for simple benchmarking purposes.
 # The benchmark gets a location and an operation count as command line
 # arguments.
 #
@@ -37,7 +37,7 @@ import sys
 import time
 import tracing
 
-import btree
+import larch
 
 
 class SpeedTest(cliapp.Application):
@@ -67,13 +67,13 @@ class SpeedTest(cliapp.Application):
             raise Exception('You must set number of keys with --keys')
         
         if not location:
-            forest = btree.open_forest(key_size=key_size, node_size=node_size,
-                                       node_store=btree.NodeStoreMemory)
+            forest = larch.open_forest(key_size=key_size, node_size=node_size,
+                                       node_store=larch.NodeStoreMemory)
         else:
             if os.path.exists(location):
                 raise Exception('%s exists already' % location)
             os.mkdir(location)
-            forest = btree.open_forest(key_size=key_size, node_size=node_size,
+            forest = larch.open_forest(key_size=key_size, node_size=node_size,
                                        dirname=location)
 
         tree = forest.new_tree()

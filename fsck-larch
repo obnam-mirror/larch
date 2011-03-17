@@ -19,7 +19,7 @@ import logging
 import sys
 import ttystatus
 
-import btree
+import larch
 
 
 class BtreeFsck(object):
@@ -31,8 +31,8 @@ class BtreeFsck(object):
         self.dirname = dirname
         self.node_size = node_size
         self.key_size = key_size
-        codec = btree.NodeCodec(key_size)
-        self.ns = btree.NodeStoreDisk(node_size, codec, dirname=dirname)
+        codec = larch.NodeCodec(key_size)
+        self.ns = larch.NodeStoreDisk(node_size, codec, dirname=dirname)
         self.minkey = '\x00' * key_size
         self.maxkey = '\xff' * key_size
 
@@ -87,7 +87,7 @@ class BtreeFsck(object):
         child0_id = node[keys[0]]
         try:
             child0 = self.ns.get_node(child0_id)
-        except btree.NodeMissing:
+        except larch.NodeMissing:
             self.error('child missing: %d' % child0_id)
             self.error('index node not checked: %d' % node.id)
             return
@@ -96,7 +96,7 @@ class BtreeFsck(object):
         for key in keys:
             child = self.ns.get_node(node[key])
             
-            self.assert_in(type(child), [btree.IndexNode, btree.LeafNode],
+            self.assert_in(type(child), [larch.IndexNode, larch.LeafNode],
                            'type must be index or leaf')
             self.assert_equal(type(child), child_type,
                               'all children must have same type')
@@ -104,21 +104,21 @@ class BtreeFsck(object):
     def check_root_node(self, root):
         self.assert_equal(self.ns.get_refcount(root.id), 1, 
                           'root refcount should be 1')
-        self.assert_equal(type(root), btree.IndexNode, 'root must be an index')
+        self.assert_equal(type(root), larch.IndexNode, 'root must be an index')
         
     def walk(self, node, minkey, maxkey):
         if node.id in self.checked:
             return
         self.checked.add(node.id)
         yield node, minkey, maxkey
-        if type(node) is btree.IndexNode:
+        if type(node) is larch.IndexNode:
             keys = node.keys()
             next_keys = keys[1:] + [maxkey]
             for i in range(len(keys)):
                 child_id = node[keys[i]]
                 try:
                     child = self.ns.get_node(child_id)
-                except btree.NodeMissing:
+                except larch.NodeMissing:
                     self.error('node missing: %d' % child_id)
                 else:
                     for t in self.walk(child, keys[i], next_keys[i]):
@@ -127,7 +127,7 @@ class BtreeFsck(object):
     def check_tree(self, root_id):
         try:
             root = self.ns.get_node(root_id)
-        except btree.NodeMissing:
+        except larch.NodeMissing:
             self.error('root node missing: %d' % root_id)
         else:
             self.check_root_node(root)
@@ -135,7 +135,7 @@ class BtreeFsck(object):
                 self.status['node_id'] = str(node.id)
                 self.status['nodes_done'] += 1
                 self.check_node(node, min2, max2)
-                if type(node) is btree.IndexNode:
+                if type(node) is larch.IndexNode:
                     self.check_index_node(node, min2, max2)
                 else:
                     self.check_leaf_node(node, min2, max2)
@@ -145,7 +145,7 @@ class BtreeFsck(object):
         return [int(x) for x in string.split(',')]
 
     def check_forest(self):
-        self.info('btree fsck')
+        self.info('larch fsck')
         self.info('forest: %s' % self.dirname)
         self.info('node size: %d' % self.node_size)
         self.info('key size: %d' % self.key_size)
@@ -169,7 +169,7 @@ def main():
     node_size = 65535 # doesn't matter for reading
     key_size = int(sys.argv[2])
     
-    logging.basicConfig(filename='fsck-btree.log', level=logging.DEBUG)
+    logging.basicConfig(filename='fsck-larch.log', level=logging.DEBUG)
     
     ts = ttystatus.TerminalStatus(period=0.1)
     ts.add(ttystatus.Literal('checking nodes '))

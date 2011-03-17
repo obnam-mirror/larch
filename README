@@ -11,7 +11,7 @@ The distinctive feature of this B-tree implementation is that a node is
 never modified. Instead, all updates are done by copy-on-write. Among other 
 things, this makes it easy to clone a tree, and modify only the clone, while 
 other processes access the original tree. This is utterly wonderful for my 
-backup application, and that's the reason I wrote btree in the first place.
+backup application, and that's the reason I wrote larch in the first place.
 
 I have tried to keep the implementation generic and flexibile, so that you 
 may use it in a variety of situations. For example, the tree itself does not 
@@ -24,9 +24,9 @@ Documentation is sparse. Docstrings and reading the code are your best hope.
 
 See the file example.py for an example.
 
-* Homepage: <http://liw.fi/btree/>
-* Version control: `bzr get http://code.liw.fi/btree/bzr/trunk/`
-* Rodeh paper: <http://www.cs.tau.ac.il/~ohadrode/papers/btree_TOS.pdf>
+* Homepage: <http://liw.fi/larch/>
+* Version control: `bzr get http://code.liw.fi/larch/bzr/trunk/`
+* Rodeh paper: <http://liw.fi/larch/ohad-btrees-shadowing-clones.pdf>
 
 
 Build and install
@@ -42,7 +42,7 @@ You can also use the Debian packaging, if on Debian or a derivative.
 Hacking
 -------
 
-The actual tree code is in the btree directory, laid out as a normal
+The actual tree code is in the larch directory, laid out as a normal
 Python package.
 
 * `tree.py` is the actual tree implementation
@@ -88,13 +88,13 @@ branch of your own and send me a URL, and I'll merge from that.
 Bugs and other things to hack
 -----------------------------
 
-There is an [SD](http://syncwith.us/sd/) bug repository for btree.
+There is an [SD](http://syncwith.us/sd/) bug repository for larch.
 I try to keep it up to date with regards to bugs and wishlist items,
 etc.
 
-* Bugs in SD: <http://code.liw.fi/btree/bugs/>
+* Bugs in SD: <http://code.liw.fi/larch/bugs/>
 
-If you're interested in hacking the btree code, speed improvements
+If you're interested in hacking the larch code, speed improvements
 are always interesting. See the bug tracker for things known to be
 slow, or run `speed-test` on large numbers of keys, and use profiling 
 to see where time is wasted.

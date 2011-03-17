@@ -21,8 +21,8 @@ check: all
 	python -m CoverageTestRunner --ignore-missing-from=without-tests
 	rm .coverage
 	./insert-remove-test tempdir 100
-	rm -r tempdir btree.log
+	rm -r tempdir larch.log
 	
 clean:
-	rm -f .coverage *.py[co] btree/*.py[co] insert.prof lookup.prof
-	rm -rf build tempdir btree.log example.tree
+	rm -f .coverage *.py[co] larch/*.py[co] insert.prof lookup.prof
+	rm -rf build tempdir larch.log example.tree

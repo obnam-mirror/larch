@@ -20,7 +20,7 @@ import shutil
 import tempfile
 import unittest
 
-import btree
+import larch
 import nodestore_disk
 
 
@@ -60,7 +60,7 @@ class RefcountStoreTests(unittest.TestCase):
         shutil.rmtree(self.dirname)
 
     def new_rs(self):
-        return btree.RefcountStore(DummyNodeStore(self.dirname))
+        return larch.RefcountStore(DummyNodeStore(self.dirname))
 
     def test_returns_zero_for_unset_refcount(self):
         self.assertEqual(self.rs.get_refcount(123), 0)

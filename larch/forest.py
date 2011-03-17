@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import btree
+import larch
 
 
 class BadKeySize(Exception):
@@ -55,7 +55,7 @@ class Forest(object):
             s = self.node_store.get_metadata('root_ids')
             if s.strip():
                 root_ids = [int(x) for x in s.split(',')]
-                self.trees = [btree.BTree(self, self.node_store, root_id)
+                self.trees = [larch.BTree(self, self.node_store, root_id)
                               for root_id in root_ids]
             else:
                 self.trees = []
@@ -80,7 +80,7 @@ class Forest(object):
         else:
             keys = []
             values = []
-        t = btree.BTree(self, self.node_store, None)
+        t = larch.BTree(self, self.node_store, None)
         t.set_root(t.new_index(keys, values))
         self.trees.append(t)
         return t
@@ -111,8 +111,8 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
     
     key_size, node_size must be given with every call.
     codec is the class to be used for the node codec, defaults to
-    btree.NodeCodec. Similarly, node_store is the node store class,
-    defaults to btree.NodeStoreDisk.
+    larch.NodeCodec. Similarly, node_store is the node store class,
+    defaults to larch.NodeStoreDisk.
     
     All other keyword arguments are given the thoe node_store
     class initializer.
@@ -122,8 +122,8 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
     assert key_size is not None
     assert node_size is not None
 
-    codec = codec or btree.NodeCodec
-    node_store = node_store or btree.NodeStoreDisk
+    codec = codec or larch.NodeCodec
+    node_store = node_store or larch.NodeStoreDisk
 
     c = codec(key_size)
     ns = node_store(node_size, c, **kwargs)

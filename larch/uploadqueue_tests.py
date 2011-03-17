@@ -20,7 +20,7 @@ import shutil
 import tempfile
 import unittest
 
-import btree
+import larch
 import nodestore_disk
 
 
@@ -29,8 +29,8 @@ class UploadQueueTests(unittest.TestCase):
     def setUp(self):
         self.max_queue = 2
         self.nodes = []
-        self.uq = btree.UploadQueue(self.really_put, self.max_queue)
-        self.node = btree.LeafNode(1, [], [])
+        self.uq = larch.UploadQueue(self.really_put, self.max_queue)
+        self.node = larch.LeafNode(1, [], [])
 
     def really_put(self, node):
         self.nodes.append(node)
@@ -47,7 +47,7 @@ class UploadQueueTests(unittest.TestCase):
         self.assertEqual(self.uq.get(self.node.id), self.node)
         
     def test_put_replaces_existing_node(self):
-        node2 = btree.LeafNode(1, ['foo'], ['bar'])
+        node2 = larch.LeafNode(1, ['foo'], ['bar'])
         self.uq.put(self.node)
         self.uq.put(node2)
         self.assertEqual(self.uq.get(self.node.id), node2)
@@ -67,20 +67,20 @@ class UploadQueueTests(unittest.TestCase):
 
     def test_does_not_push_second_node(self):
         self.uq.put(self.node)
-        self.uq.put(btree.LeafNode(2, [], []))
+        self.uq.put(larch.LeafNode(2, [], []))
         self.assertEqual(self.nodes, [])
 
     def test_pushes_first_node_after_third_is_pushed(self):
         self.uq.put(self.node)
-        self.uq.put(btree.LeafNode(2, [], []))
-        self.uq.put(btree.LeafNode(3, [], []))
+        self.uq.put(larch.LeafNode(2, [], []))
+        self.uq.put(larch.LeafNode(3, [], []))
         self.assertEqual(self.nodes, [self.node])
 
     def test_pushes_oldest_even_if_recently_used(self):
         self.uq.put(self.node)
-        self.uq.put(btree.LeafNode(2, [], []))
+        self.uq.put(larch.LeafNode(2, [], []))
         self.uq.get(self.node.id)
-        self.uq.put(btree.LeafNode(3, [], []))
+        self.uq.put(larch.LeafNode(3, [], []))
         self.assertEqual(self.nodes, [self.node])
 
     def test_pushes_out_only_node_when_requested(self):

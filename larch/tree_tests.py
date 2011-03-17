@@ -18,7 +18,7 @@ import random
 import sys
 import unittest
 
-import btree
+import larch
 
 
 class DummyForest(object):
@@ -31,7 +31,7 @@ class DummyForest(object):
         return self.last_id
 
 
-class DummyNodeStore(btree.NodeStoreMemory):
+class DummyNodeStore(larch.NodeStoreMemory):
 
     def find_nodes(self):
         return self.nodes.keys()
@@ -40,7 +40,7 @@ class DummyNodeStore(btree.NodeStoreMemory):
 class KeySizeMismatchTests(unittest.TestCase):
 
     def setUp(self):
-        self.err = btree.KeySizeMismatch('foo', 4)
+        self.err = larch.KeySizeMismatch('foo', 4)
         
     def test_error_message_contains_key(self):
         self.assert_('foo' in str(self.err))
@@ -52,7 +52,7 @@ class KeySizeMismatchTests(unittest.TestCase):
 class ValueTooLargeTests(unittest.TestCase):
 
     def setUp(self):
-        self.err = btree.ValueTooLarge('foobar', 3)
+        self.err = larch.ValueTooLarge('foobar', 3)
         
     def test_error_message_contains_value(self):
         self.assert_('foobar' in str(self.err))
@@ -66,10 +66,10 @@ class BTreeTests(unittest.TestCase):
     def setUp(self):
         # We use a small node size so that all code paths are traversed
         # during testing. Use coverage.py to make sure they do.
-        self.codec = btree.NodeCodec(3)
+        self.codec = larch.NodeCodec(3)
         self.ns = DummyNodeStore(64, self.codec)
         self.forest = DummyForest()
-        self.tree = btree.BTree(self.forest, self.ns, None)
+        self.tree = larch.BTree(self.forest, self.ns, None)
         self.dump = False
 
     def test_shadow_increments_childrens_refcounts(self):
@@ -103,11 +103,11 @@ class BTreeTests(unittest.TestCase):
 
     def test_new_leaf_does_not_put_node_into_store(self):
         leaf = self.tree.new_leaf([], [])
-        self.assertRaises(btree.NodeMissing, self.tree.get_node, leaf.id)
+        self.assertRaises(larch.NodeMissing, self.tree.get_node, leaf.id)
 
     def test_new_index_does_not_put_node_into_store(self):
         index = self.tree.new_index([], [])
-        self.assertRaises(btree.NodeMissing, self.tree.get_node, index.id)
+        self.assertRaises(larch.NodeMissing, self.tree.get_node, index.id)
 
     def test_new_index_increments_childrens_refcounts(self):
         leaf = self.tree.new_leaf([], [])
@@ -127,7 +127,7 @@ class BTreeTests(unittest.TestCase):
         self.assertRaises(KeyError, self.tree.lookup, 'foo')
 
     def test_lookup_with_wrong_size_key_raises_error(self):
-        self.assertRaises(btree.KeySizeMismatch, self.tree.lookup, '')
+        self.assertRaises(larch.KeySizeMismatch, self.tree.lookup, '')
 
     def test_insert_inserts_key(self):
         self.tree.insert('foo', 'bar')
@@ -143,10 +143,10 @@ class BTreeTests(unittest.TestCase):
         self.assertEqual(self.tree.lookup('foo'), 'bar')
 
     def test_insert_with_wrong_size_key_raises_error(self):
-        self.assertRaises(btree.KeySizeMismatch, self.tree.insert, '', '')
+        self.assertRaises(larch.KeySizeMismatch, self.tree.insert, '', '')
 
     def test_insert_with_too_large_value_raises_error(self):
-        self.assertRaises(btree.ValueTooLarge, self.tree.insert, 'xxx', 
+        self.assertRaises(larch.ValueTooLarge, self.tree.insert, 'xxx', 
                           'x' * (self.ns.max_value_size + 1))
 
     def test_remove_from_empty_tree_raises_keyerror(self):
@@ -167,11 +167,11 @@ class BTreeTests(unittest.TestCase):
         return self.ns.get_node(child_id)
         
     def test_remove_with_wrong_size_key_raises_error(self):
-        self.assertRaises(btree.KeySizeMismatch, self.tree.remove, '')
+        self.assertRaises(larch.KeySizeMismatch, self.tree.remove, '')
 
     def keys_are_in_range(self, node, lower, upper, level=0):
         indent = 2
-        if isinstance(node, btree.LeafNode):
+        if isinstance(node, larch.LeafNode):
             if self.dump:
                 print '%*sleaf keys %s' % (level*indent, '', node.keys())
             for key in node.keys():
@@ -195,7 +195,7 @@ class BTreeTests(unittest.TestCase):
         return True
 
     def find_largest_key(self, node):
-        if isinstance(node, btree.LeafNode):
+        if isinstance(node, larch.LeafNode):
             return max(node.keys())
         else:
             return max(node.keys() + 
@@ -276,13 +276,13 @@ class BTreeTests(unittest.TestCase):
         if not self.dump:
             return
         indent = 4
-        if isinstance(node, btree.LeafNode):
+        if isinstance(node, larch.LeafNode):
             f.write('%*sLeaf:' % (level*indent, ''))
             for key in node.keys():
                 f.write(' %s=%s' % (key, node[key]))
             f.write('\n')
         else:
-            assert isinstance(node, btree.IndexNode)
+            assert isinstance(node, larch.IndexNode)
             f.write('%*sIndex:\n' % (level*indent, ''))
             for key in node.keys():
                 f.write('%*s%s:\n' % ((level+1)*indent, '', key))
@@ -326,13 +326,13 @@ class BTreeTests(unittest.TestCase):
         
     def test_persists(self):
         self.tree.insert('foo', 'bar')
-        tree2 = btree.BTree(self.forest, self.ns, self.tree.root.id)
+        tree2 = larch.BTree(self.forest, self.ns, self.tree.root.id)
         self.assertEqual(tree2.lookup('foo'), 'bar')
 
     def test_last_node_id_persists(self):
         self.tree.insert('foo', 'bar') # make tree has root
         node1 = self.tree.new_leaf([], [])
-        tree2 = btree.BTree(self.forest, self.ns, self.tree.root.id)
+        tree2 = larch.BTree(self.forest, self.ns, self.tree.root.id)
         node2 = tree2.new_leaf([], [])
         self.assertEqual(node1.id + 1, node2.id)
 
@@ -519,10 +519,10 @@ class BTreeDecrementTests(unittest.TestCase):
     def setUp(self):
         # We use a small node size so that all code paths are traversed
         # during testing. Use coverage.py to make sure they do.
-        self.codec = btree.NodeCodec(3)
+        self.codec = larch.NodeCodec(3)
         self.ns = DummyNodeStore(64, self.codec)
         self.forest = DummyForest()
-        self.tree = btree.BTree(self.forest, self.ns, None)
+        self.tree = larch.BTree(self.forest, self.ns, None)
         self.tree.insert('foo', 'bar')
         
     def test_store_has_two_nodes(self):
@@ -545,19 +545,19 @@ class BTreeDecrementTests(unittest.TestCase):
 class BTreeBalanceTests(unittest.TestCase):
 
     def setUp(self):
-        ns = DummyNodeStore(4096, btree.NodeCodec(2))
+        ns = DummyNodeStore(4096, larch.NodeCodec(2))
         forest = DummyForest()
-        self.tree = btree.BTree(forest, ns, None)
+        self.tree = larch.BTree(forest, ns, None)
         self.keys = ['%02d' % i for i in range(10)]
         self.depth = None
 
     def leaves_at_same_depth(self, node, depth=0):
-        if isinstance(node, btree.LeafNode):
+        if isinstance(node, larch.LeafNode):
             if self.depth is None:
                 self.depth = depth
             return self.depth == depth
         else:
-            assert isinstance(node, btree.IndexNode)
+            assert isinstance(node, larch.IndexNode)
             for key in node:
                 child = self.tree.get_node(node[key])
                 if not self.leaves_at_same_depth(child, depth + 1):
@@ -565,7 +565,7 @@ class BTreeBalanceTests(unittest.TestCase):
             return True
             
     def indexes_filled_right_amount(self, node, isroot=True):
-        if isinstance(node, btree.IndexNode):
+        if isinstance(node, larch.IndexNode):
             if not isroot:
                 if len(node) < self.fanout or len(node) > 2 * self.fanout + 1:
                     return False

@@ -14,12 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import btree
+import larch
 
 
-class NodeStoreMemory(btree.NodeStore):
+class NodeStoreMemory(larch.NodeStore):
 
-    '''An implementation of btree.NodeStore API for in-memory storage.
+    '''An implementation of larch.NodeStore API for in-memory storage.
     
     All nodes are kept in memory. This is for demonstration and testing
     purposes only.
@@ -27,7 +27,7 @@ class NodeStoreMemory(btree.NodeStore):
     '''
     
     def __init__(self, node_size, codec):
-        btree.NodeStore.__init__(self, node_size, codec)
+        larch.NodeStore.__init__(self, node_size, codec)
         self.nodes = dict()
         self.refcounts = dict()
         self.metadata = dict()
@@ -52,18 +52,18 @@ class NodeStoreMemory(btree.NodeStore):
         if node_id in self.nodes:
             return self.nodes[node_id]
         else:
-            raise btree.NodeMissing(node_id)
+            raise larch.NodeMissing(node_id)
 
     def start_modification(self, node):
         if not self.can_be_modified(node):
-            raise btree.NodeCannotBeModified(node.id)
+            raise larch.NodeCannotBeModified(node.id)
         node.frozen = False
     
     def remove_node(self, node_id):
         if node_id in self.nodes:
             del self.nodes[node_id]
         else:
-            raise btree.NodeMissing(node_id)
+            raise larch.NodeMissing(node_id)
         
     def list_nodes(self):
         return self.nodes.keys()

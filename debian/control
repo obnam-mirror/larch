@@ -1,4 +1,4 @@
-Source: python-btree
+Source: python-larch
 Maintainer: Lars Wirzenius <liw@liw.fi>
 Section: python
 Priority: optional
@@ -8,11 +8,11 @@ Build-Depends: debhelper (>= 7.3.8), python-support (>= 1.0.3),
     python-coverage-test-runner, python-tracing
 XS-Python-Version: >= 2.5
 
-Package: python-btree
+Package: python-larch
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, python (>= 2.5), 
     python-lru (>= 0.4), python-tracing
 XB-Python-Version: ${python:Versions}
 Description: B-tree library for Python
- The btree Python library implements the copy-on-write B-trees designed by
+ The larch Python library implements the copy-on-write B-trees designed by
  Odah Rodeh.

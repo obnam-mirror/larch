@@ -1,4 +1,4 @@
-./btree/__init__.py
-./btree/nodestore.py
+./larch/__init__.py
+./larch/nodestore.py
 ./setup.py
 ./example.py

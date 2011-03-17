@@ -18,15 +18,15 @@ import shutil
 import tempfile
 import unittest
 
-import btree
+import larch
 
 
 class ForestTests(unittest.TestCase):
 
     def setUp(self):
-        self.codec = btree.NodeCodec(3)
-        self.ns = btree.NodeStoreMemory(64, self.codec)
-        self.forest = btree.Forest(self.ns)
+        self.codec = larch.NodeCodec(3)
+        self.ns = larch.NodeStoreMemory(64, self.codec)
+        self.forest = larch.Forest(self.ns)
 
     def test_new_node_ids_grow(self):
         id1 = self.forest.new_id()
@@ -38,7 +38,7 @@ class ForestTests(unittest.TestCase):
 
     def test_creates_a_tree(self):
         t = self.forest.new_tree()
-        self.assert_(isinstance(t, btree.BTree))
+        self.assert_(isinstance(t, larch.BTree))
         self.assertEqual(self.forest.trees, [t])
 
     def test_clones_a_tree(self):
@@ -64,7 +64,7 @@ class ForestTests(unittest.TestCase):
         t1.insert('foo', 'bar')
         self.forest.commit()
 
-        f2 = btree.Forest(self.ns)
+        f2 = larch.Forest(self.ns)
         self.assertEqual([t.root.id for t in f2.trees], [t1.root.id])
 
     def test_removes_trees(self):
@@ -89,7 +89,7 @@ class ForestTests(unittest.TestCase):
         t2.remove('000')
         self.forest.commit()
 
-        f2 = btree.Forest(self.ns)
+        f2 = larch.Forest(self.ns)
         t1a, t2a = f2.trees
         self.assertEqual(t1.root.id, t1a.root.id)
         self.assertEqual(t2.root.id, t2a.root.id)
@@ -111,7 +111,7 @@ class ForestTests(unittest.TestCase):
         self.forest.remove_tree(t1)
         self.forest.commit()
 
-        f2 = btree.Forest(self.ns)
+        f2 = larch.Forest(self.ns)
         self.assertEqual(f2.trees, [])
 
     def test_commit_puts_key_and_node_sizes_in_metadata(self):
@@ -131,39 +131,39 @@ class OpenForestTests(unittest.TestCase):
         shutil.rmtree(self.tempdir)
         
     def test_creates_new_forest(self):
-        f = btree.open_forest(key_size=self.key_size, node_size=self.node_size,
+        f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
                               dirname=self.tempdir)
         self.assertEqual(f.node_store.codec.key_bytes, self.key_size)
         self.assertEqual(f.node_store.node_size, self.node_size)
 
     def test_fail_if_existing_tree_has_incompatible_key_size(self):
-        f = btree.open_forest(key_size=self.key_size, node_size=self.node_size,
+        f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
                               dirname=self.tempdir)
         f.commit()
         
-        self.assertRaises(btree.BadKeySize, 
-                          btree.open_forest,
+        self.assertRaises(larch.BadKeySize, 
+                          larch.open_forest,
                           key_size=self.key_size + 1, 
                           node_size=self.node_size,
                           dirname=self.tempdir)
 
     def test_fail_if_existing_tree_has_incompatible_node_size(self):
-        f = btree.open_forest(key_size=self.key_size, node_size=self.node_size,
+        f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
                               dirname=self.tempdir)
         f.commit()
         
-        self.assertRaises(btree.BadNodeSize, 
-                          btree.open_forest,
+        self.assertRaises(larch.BadNodeSize, 
+                          larch.open_forest,
                           key_size=self.key_size, 
                           node_size=self.node_size + 1,
                           dirname=self.tempdir)
 
     def test_opens_existing_tree_with_compatible_key_and_node_size(self):
-        f = btree.open_forest(key_size=self.key_size, node_size=self.node_size,
+        f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
                               dirname=self.tempdir)
         f.commit()
         
-        f2 = btree.open_forest(key_size=self.key_size, 
+        f2 = larch.open_forest(key_size=self.key_size, 
                                node_size=self.node_size,
                                dirname=self.tempdir)
                                
@@ -173,7 +173,7 @@ class OpenForestTests(unittest.TestCase):
 class BadKeySizeTests(unittest.TestCase):
 
     def test_both_sizes_in_error_message(self):
-        e = btree.BadKeySize(123, 456)
+        e = larch.BadKeySize(123, 456)
         self.assert_('123' in str(e))
         self.assert_('456' in str(e))
 
@@ -181,7 +181,7 @@ class BadKeySizeTests(unittest.TestCase):
 class BadNodeSizeTests(unittest.TestCase):
 
     def test_both_sizes_in_error_message(self):
-        e = btree.BadNodeSize(123, 456)
+        e = larch.BadNodeSize(123, 456)
         self.assert_('123' in str(e))
         self.assert_('456' in str(e))
 

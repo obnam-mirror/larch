@@ -19,7 +19,7 @@ import cProfile
 import sys
 import time
 
-import btree
+import larch
 
 
 def measure(n, unit_size, func, do_profile, profname):
@@ -58,7 +58,7 @@ def main():
     value_size = 128
     node_size = 64*1024
 
-    codec = btree.NodeCodec(key_size)
+    codec = larch.NodeCodec(key_size)
 
     key_fmt = '%%0%dd' % key_size
     keys = [key_fmt % i for i in range(n)]
@@ -67,10 +67,10 @@ def main():
     leaf_values = [value_fmt % i for i in range(n)]
     index_values = range(n)
 
-    leaf = btree.LeafNode(42, keys, leaf_values)
+    leaf = larch.LeafNode(42, keys, leaf_values)
     encoded_leaf = codec.encode_leaf(leaf)
 
-    index = btree.IndexNode(42, keys, index_values)
+    index = larch.IndexNode(42, keys, index_values)
     encoded_index = codec.encode_index(index)
 
     # Measure and report.

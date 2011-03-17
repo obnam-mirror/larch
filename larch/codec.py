@@ -16,7 +16,7 @@
 
 import struct
 
-import btree
+import larch
 
 
 class CodecError(Exception):
@@ -82,7 +82,7 @@ class NodeCodec(object):
         for length in lengths:
             append(encoded[offset:offset + length])
             offset += length
-        return btree.LeafNode(node_id, keys, values)
+        return larch.LeafNode(node_id, keys, values)
 
     def max_index_pairs(self, node_size):
         '''Return number of index pairs that fit in a node of a given size.'''
@@ -116,10 +116,10 @@ class NodeCodec(object):
         assert len(keys) == len(child_ids)
         for x in child_ids:
             assert type(x) == int
-        return btree.IndexNode(node_id, keys, child_ids)
+        return larch.IndexNode(node_id, keys, child_ids)
 
     def encode(self, node):
-        if isinstance(node, btree.LeafNode):
+        if isinstance(node, larch.LeafNode):
             return self.encode_leaf(node)
         else:
             return self.encode_index(node)
@@ -136,7 +136,7 @@ class NodeCodec(object):
     def size(self, node):
         keys = node.keys()
         values = node.values()
-        if isinstance(node, btree.LeafNode):
+        if isinstance(node, larch.LeafNode):
             return self.leaf_size(keys, values)
         else:
             return self.index_size(keys, values)
