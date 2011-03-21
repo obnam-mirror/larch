@@ -1,6 +1,7 @@
-python-btree (0.19) squeeze; urgency=low
+python-larch (0.19) squeeze; urgency=low
 
   * New upstream version.
+  * New source package name, due to new upstream name.
 
  -- Lars Wirzenius <liw@liw.fi>  Mon, 21 Mar 2011 06:29:39 +0000
 
