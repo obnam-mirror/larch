@@ -1,5 +1,5 @@
-A Python B-tree library
-=======================
+Larch, a Python B-tree library
+==============================
 
 This is an implementation of particular kind of B-tree, based on research by 
 Ohad Rodeh. See "B-trees, Shadowing, and Clones" (link below) for details on 
@@ -20,7 +20,8 @@ I have two implementations of the NodeStore class, one for in-memory and one
 for on-disk storage.
 
 Documentation is sparse. Docstrings and reading the code are your best hope.
-(Help and feedback welcome!)
+There is also an example program. The speed-test benchmark program may
+also be useful. (Help and feedback and prodding welcome!)
 
 See the file example.py for an example.
 
@@ -36,7 +37,8 @@ setup.py should work as usual for distutils. But it might not: I have
 only used enough to make the Debian package build.
 
 You can also use the Debian packaging, if on Debian or a derivative.
-(Just run "debuild -us -uc" to build the package.)
+Just run "debuild -us -uc" to build the package. Or you can get packages
+from my site (see <http://liw.fi/code/> for details).
 
 
 Hacking
@@ -66,16 +68,13 @@ The unit test modules are paired with their corresponding code modules:
 for code module `foo.py` there exists a unit test module `foo_tests.py`.
 CoverageTestRunner makes sure each code module's unit test achieve
 100% test coverage for that module, not counting explicitly excluded
-parts of the code.
+parts of the code. You can also use `nosetests` to run the tests.
 
-I have three scripts to run simplistic benchmarks:
+I have two scripts to run simplistic benchmarks:
 
 * `codec-speed 1000 no` tests speed of the NodeCodec class, 
   for encoding tree nodes for on-disk storage.
 * `speed-test` tests insert and lookup speeds in trees.
-* `bsearch-speed` compares my binary search routine with the one in the
-  Python standard library module `bisect` (mine is slower, but more
-  versatile)
 
 You may want to run either or both before and after making any changes,
 to see if you're making things better or worse.

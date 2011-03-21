@@ -5,6 +5,18 @@ These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
+Version 0.19, released 2011-03-21
+---------------------------------
+
+* The `NodeStoreDisk` class now uses a separate VFS class for I/O, rather
+  than methods in `NodeStoreDisk` itself, and requiring subclassing with
+  method overrides. A separate VFS class is clearer and simpler to use.
+  As a bonus, the API is now compatible with the Obnam VFS API.
+* Forest metadata now includes key and node sizes, and there's a factory
+  function that checks that the sizes given to it match the existing ones.
+  This should reduce potential errors.
+* Renamed from btree to larch, to avoid name clashes with other projects.
+
 Version 0.18, released 2011-02-18
 ---------------------------------
 
