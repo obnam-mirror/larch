@@ -74,7 +74,8 @@ I have two scripts to run simplistic benchmarks:
 
 * `codec-speed 1000 no` tests speed of the NodeCodec class, 
   for encoding tree nodes for on-disk storage.
-* `speed-test` tests insert and lookup speeds in trees.
+* `speed-test` tests insert and lookup speeds in trees. Use a `--keys`
+  settings that is reasonably large, e.g., a million or ten.
 
 You may want to run either or both before and after making any changes,
 to see if you're making things better or worse.
