@@ -43,25 +43,27 @@ import larch
 class SpeedTest(cliapp.Application):
 
     def add_settings(self):
-        self.add_boolean_setting(['profile'], 'profile with cProfile?')
-        self.add_boolean_setting(['log-memory-use'], 'log VmRSS?')
-        self.add_string_setting(['trace'], 
-                                'code module in which to do trace logging')
-        self.add_integer_setting(['keys'], 'how many keys to test with')
-        self.add_string_setting(['location'], 
-                                'where to store B-tree on disk '
-                                    '(in-memory test if not set)')
+        self.settings.add_boolean_setting(['profile'], 
+                'profile with cProfile?')
+        self.settings.add_boolean_setting(['log-memory-use'], 'log VmRSS?')
+        self.settings.add_string_setting(['trace'], 
+                'code module in which to do trace logging')
+        self.settings.add_integer_setting(['keys'], 
+                'how many keys to test with (default is %default)',
+                default=1000)
+        self.settings.add_string_setting(['location'], 
+                'where to store B-tree on disk (in-memory test if not set)')
 
     def process_args(self, args):
-        if self['trace']:
-            tracing.trace_add_pattern(self['trace'])
+        if self.settings['trace']:
+            tracing.trace_add_pattern(self.settings['trace'])
     
         key_size = 19
         value_size = 128
         node_size = 64*1024
 
-        n = self['keys']
-        location = self['location']
+        n = self.settings['keys']
+        location = self.settings['location']
         
         if n is None:
             raise Exception('You must set number of keys with --keys')
@@ -142,7 +144,7 @@ class SpeedTest(cliapp.Application):
         report('insert2', insert2)
         report('remove', remove)
         report('remove_range', remove_range)
-        if self['profile']:
+        if self.settings['profile']:
             print 'View *.prof with ./viewprof for profiling results.'
 
         # Clean up
@@ -152,7 +154,7 @@ class SpeedTest(cliapp.Application):
     def measure(self, items, func, finalize, profname):
 
         def log_memory_use(stage):
-            if self['log-memory-use']:
+            if self.settings['log-memory-use']:
                 logging.info('%s memory use: %s' % (profname, stage))
                 logging.info('  VmRSS: %s KiB' %  self.vmrss())
                 logging.info('  # objects: %d' % len(gc.get_objects()))
@@ -169,7 +171,7 @@ class SpeedTest(cliapp.Application):
         print 'measuring', profname
         start_time = time.time()
         start = time.clock()
-        if self['profile']:
+        if self.settings['profile']:
             globaldict = globals().copy()
             localdict = locals().copy()
             cProfile.runctx('helper()', globaldict, localdict, 
