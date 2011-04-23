@@ -21,7 +21,7 @@ import tempfile
 import unittest
 
 import larch
-import nodestore_disk
+import larch.nodestore_disk
 
 
 class DummyNodeStore(object):
