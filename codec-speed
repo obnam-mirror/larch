@@ -17,6 +17,9 @@
 
 import cliapp
 import cProfile
+import csv
+import os
+import subprocess
 import sys
 import time
 
@@ -62,23 +65,31 @@ class CodecBenchmark(cliapp.Application):
         index = larch.IndexNode(42, keys, index_values)
         encoded_index = codec.encode_index(index)
 
+
         # Measure and report.
         print 'num_operations: %d' % n
-        self.measure(n, len(encoded_leaf), 
-                     lambda: codec.leaf_size(keys, leaf_values), 
-                     do_profile, 'leaf_size')
-        self.measure(n, len(encoded_leaf), lambda: codec.encode_leaf(leaf), 
-                     do_profile, 'encode_leaf')
-        self.measure(n, len(encoded_leaf), lambda: codec.decode(encoded_leaf), 
-                     do_profile, 'decode_leaf')
-        self.measure(n, len(encoded_index), lambda: codec.encode_index(index), 
-                     do_profile, 'encode_index')
-        self.measure(n, len(encoded_index), 
-                     lambda: codec.decode_index(encoded_index), 
-                     do_profile, 'decode_index')
+        leaf_size = self.measure(n, len(encoded_leaf), 
+                                 lambda: codec.leaf_size(keys, leaf_values), 
+                                 do_profile, 'leaf_size')
+        encode_leaf = self.measure(n, len(encoded_leaf), 
+                                   lambda: codec.encode_leaf(leaf), 
+                                   do_profile, 'encode_leaf')
+        decode_leaf = self.measure(n, len(encoded_leaf), 
+                                   lambda: codec.decode(encoded_leaf), 
+                                   do_profile, 'decode_leaf')
+        encode_index = self.measure(n, len(encoded_index), 
+                                    lambda: codec.encode_index(index), 
+                                    do_profile, 'encode_index')
+        decode_index = self.measure(n, len(encoded_index), 
+                                    lambda: codec.decode_index(encoded_index), 
+                                    do_profile, 'decode_index')
 
         if do_profile:
             print 'View *.prof with ./viewprof for profiling results.'
+
+        if self.settings['csv']:
+            self.append_csv(n, leaf_size, encode_leaf, decode_leaf,
+                            encode_index, decode_index)
 
     def measure(self, n, unit_size, func, do_profile, profname):
         def helper():
@@ -105,6 +116,43 @@ class CodecBenchmark(cliapp.Application):
             
         fmt = '%12s    %6.0f MiB/s (CPU)   %6.0f MiBs (wall)'
         print fmt % (profname, cpu_speed, wall_speed)
+
+        return cpu_speed
+
+    def append_csv(self, keys, leaf_size, encode_leaf, decode_leaf,
+                    encode_index, decode_index):
+        write_title = not os.path.exists(self.settings['csv'])
+        f = open(self.settings['csv'], 'a')
+        self.writer = csv.writer(f, lineterminator='\n')
+        if write_title:
+            self.writer.writerow(('revno',
+                                  'keys',
+                                  'leaf_size (MiB/s)',
+                                  'encode_leaf (MiB/s)',
+                                  'decode_leaf (MiB/s)',
+                                  'encode_index (MiB/s)',
+                                  'decode_index (MiB/s)'))
+
+        if os.path.exists('.bzr'):
+            p = subprocess.Popen(['bzr', 'revno'], stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            if p.returncode != 0:
+                raise cliapp.AppException('bzr failed')
+            revno = out.strip()
+        else:
+            revno = '?'
+
+        self.writer.writerow((revno,
+                              keys,
+                              self.format(leaf_size),
+                              self.format(encode_leaf),
+                              self.format(decode_leaf),
+                              self.format(encode_index),
+                              self.format(decode_index)))
+        f.close()
+
+    def format(self, value):
+        return '%.1f' % value
 
 
 if __name__ == '__main__':
