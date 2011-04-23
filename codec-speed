@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import cliapp
 import cProfile
 import sys
 import time
@@ -22,73 +23,89 @@ import time
 import larch
 
 
-def measure(n, unit_size, func, do_profile, profname):
-    def helper():
-        for i in range(n):
-            func()
+class CodecBenchmark(cliapp.Application):
 
-    start_time = time.time()
-    start = time.clock()
-    if do_profile:
-        globaldict = globals().copy()
-        localdict = locals().copy()
-        cProfile.runctx('helper()', globaldict, localdict, 
-                        '%s.prof' % profname)
-    else:
-        helper()
-    end = time.clock()
-    end_time = time.time()
-    
-    def speed(secs):
-        MiB = 1024**2
-        return float(n * unit_size) / float(secs) / MiB
-    cpu_speed = speed(end - start)
-    wall_speed = speed(end_time - start_time)
+    def add_settings(self):
+        self.settings.add_string_setting(['csv'],
+                                         'append a CSV row to FILE',
+                                         metavar='FILE')
+        self.settings.add_boolean_setting(['profile'],
+                                          'run benchmark under profiling?')
+        self.settings.add_integer_setting(['keys', 'n'],
+                                          'run benchmark with N keys '
+                                            '(default: %default)',
+                                          metavar='N',
+                                          default=10000)
+
+    def process_args(self, args):
+        n = self.settings['keys']
+        do_profile = self.settings['profile']
+
+        # Prepare data for tests.
+
+        key_size = 19
+        value_size = 128
+        node_size = 64*1024
+
+        codec = larch.NodeCodec(key_size)
+
+        key_fmt = '%%0%dd' % key_size
+        keys = [key_fmt % i for i in range(n)]
         
-    fmt = '%12s    %6.0f MiB/s (CPU)   %6.0f MiBs (wall)'
-    print fmt % (profname, cpu_speed, wall_speed)
+        value_fmt = '%%0%dd' % value_size
+        leaf_values = [value_fmt % i for i in range(n)]
+        index_values = range(n)
 
-def main():
-    n = int(sys.argv[1])
-    do_profile = True if sys.argv[2] == 'yes' else False
+        leaf = larch.LeafNode(42, keys, leaf_values)
+        encoded_leaf = codec.encode_leaf(leaf)
 
-    # Prepare data for tests.
+        index = larch.IndexNode(42, keys, index_values)
+        encoded_index = codec.encode_index(index)
 
-    key_size = 19
-    value_size = 128
-    node_size = 64*1024
+        # Measure and report.
+        print 'num_operations: %d' % n
+        self.measure(n, len(encoded_leaf), 
+                     lambda: codec.leaf_size(keys, leaf_values), 
+                     do_profile, 'leaf_size')
+        self.measure(n, len(encoded_leaf), lambda: codec.encode_leaf(leaf), 
+                     do_profile, 'encode_leaf')
+        self.measure(n, len(encoded_leaf), lambda: codec.decode(encoded_leaf), 
+                     do_profile, 'decode_leaf')
+        self.measure(n, len(encoded_index), lambda: codec.encode_index(index), 
+                     do_profile, 'encode_index')
+        self.measure(n, len(encoded_index), 
+                     lambda: codec.decode_index(encoded_index), 
+                     do_profile, 'decode_index')
 
-    codec = larch.NodeCodec(key_size)
+        if do_profile:
+            print 'View *.prof with ./viewprof for profiling results.'
 
-    key_fmt = '%%0%dd' % key_size
-    keys = [key_fmt % i for i in range(n)]
-    
-    value_fmt = '%%0%dd' % value_size
-    leaf_values = [value_fmt % i for i in range(n)]
-    index_values = range(n)
+    def measure(self, n, unit_size, func, do_profile, profname):
+        def helper():
+            for i in range(n):
+                func()
 
-    leaf = larch.LeafNode(42, keys, leaf_values)
-    encoded_leaf = codec.encode_leaf(leaf)
-
-    index = larch.IndexNode(42, keys, index_values)
-    encoded_index = codec.encode_index(index)
-
-    # Measure and report.
-    print 'num_operations: %d' % n
-    measure(n, len(encoded_leaf), lambda: codec.leaf_size(keys, leaf_values), 
-            do_profile, 'leaf_size')
-    measure(n, len(encoded_leaf), lambda: codec.encode_leaf(leaf), 
-            do_profile, 'encode_leaf')
-    measure(n, len(encoded_leaf), lambda: codec.decode(encoded_leaf), 
-            do_profile, 'decode_leaf')
-    measure(n, len(encoded_index), lambda: codec.encode_index(index), 
-            do_profile, 'encode_index')
-    measure(n, len(encoded_index), lambda: codec.decode_index(encoded_index), 
-            do_profile, 'decode_index')
-
-    if do_profile:
-        print 'View *.prof with ./viewprof for profiling results.'
+        start_time = time.time()
+        start = time.clock()
+        if do_profile:
+            globaldict = globals().copy()
+            localdict = locals().copy()
+            cProfile.runctx('helper()', globaldict, localdict, 
+                            '%s.prof' % profname)
+        else:
+            helper()
+        end = time.clock()
+        end_time = time.time()
+        
+        def speed(secs):
+            MiB = 1024**2
+            return float(n * unit_size) / float(secs) / MiB
+        cpu_speed = speed(end - start)
+        wall_speed = speed(end_time - start_time)
+            
+        fmt = '%12s    %6.0f MiB/s (CPU)   %6.0f MiBs (wall)'
+        print fmt % (profname, cpu_speed, wall_speed)
 
 
 if __name__ == '__main__':
-    main()
+    CodecBenchmark().run()
