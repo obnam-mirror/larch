@@ -28,11 +28,13 @@
 
 import cliapp
 import cProfile
+import csv
 import gc
 import logging
 import os
 import random
 import shutil
+import subprocess
 import sys
 import time
 import tracing
@@ -53,6 +55,9 @@ class SpeedTest(cliapp.Application):
                 default=1000)
         self.settings.add_string_setting(['location'], 
                 'where to store B-tree on disk (in-memory test if not set)')
+        self.settings.add_string_setting(['csv'],
+                                         'append a CSV row to FILE',
+                                         metavar='FILE')
 
     def process_args(self, args):
         if self.settings['trace']:
@@ -146,6 +151,15 @@ class SpeedTest(cliapp.Application):
         report('remove_range', remove_range)
         if self.settings['profile']:
             print 'View *.prof with ./viewprof for profiling results.'
+            
+        if self.settings['csv']:
+            self.append_csv(n, 
+                            speed(insert, 0), 
+                            speed(insert2, 0), 
+                            speed(lookup, 0),
+                            speed(lookup_range, 0), 
+                            speed(remove, 0), 
+                            speed(remove_range, 0))
 
         # Clean up
         if location:
@@ -190,6 +204,43 @@ class SpeedTest(cliapp.Application):
                 rss = line.split()[1]
         f.close()
         return rss
+
+    def append_csv(self, keys, insert, insert2, lookup, lookup_range,
+                    remove, remove_range):
+        write_title = not os.path.exists(self.settings['csv'])
+        f = open(self.settings['csv'], 'a')
+        self.writer = csv.writer(f, lineterminator='\n')
+        if write_title:
+            self.writer.writerow(('revno',
+                                  'keys',
+                                  'insert (random)',
+                                  'insert (seq)',
+                                  'lookup',
+                                  'lookup_range',
+                                  'remove',
+                                  'remove_range'))
+
+        if os.path.exists('.bzr'):
+            p = subprocess.Popen(['bzr', 'revno'], stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            if p.returncode != 0:
+                raise cliapp.AppException('bzr failed')
+            revno = out.strip()
+        else:
+            revno = '?'
+
+        self.writer.writerow((revno,
+                              keys,
+                              self.format(insert),
+                              self.format(insert2),
+                              self.format(lookup),
+                              self.format(lookup_range),
+                              self.format(remove),
+                              self.format(remove_range)))
+        f.close()
+
+    def format(self, value):
+        return '%.0f' % value
 
 
 if __name__ == '__main__':

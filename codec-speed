@@ -15,80 +15,145 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import cliapp
 import cProfile
+import csv
+import os
+import subprocess
 import sys
 import time
 
 import larch
 
 
-def measure(n, unit_size, func, do_profile, profname):
-    def helper():
-        for i in range(n):
-            func()
+class CodecBenchmark(cliapp.Application):
 
-    start_time = time.time()
-    start = time.clock()
-    if do_profile:
-        globaldict = globals().copy()
-        localdict = locals().copy()
-        cProfile.runctx('helper()', globaldict, localdict, 
-                        '%s.prof' % profname)
-    else:
-        helper()
-    end = time.clock()
-    end_time = time.time()
-    
-    def speed(secs):
-        MiB = 1024**2
-        return float(n * unit_size) / float(secs) / MiB
-    cpu_speed = speed(end - start)
-    wall_speed = speed(end_time - start_time)
+    def add_settings(self):
+        self.settings.add_string_setting(['csv'],
+                                         'append a CSV row to FILE',
+                                         metavar='FILE')
+        self.settings.add_boolean_setting(['profile'],
+                                          'run benchmark under profiling?')
+        self.settings.add_integer_setting(['keys', 'n'],
+                                          'run benchmark with N keys '
+                                            '(default: %default)',
+                                          metavar='N',
+                                          default=10000)
+
+    def process_args(self, args):
+        n = self.settings['keys']
+        do_profile = self.settings['profile']
+
+        # Prepare data for tests.
+
+        key_size = 19
+        value_size = 128
+        node_size = 64*1024
+
+        codec = larch.NodeCodec(key_size)
+
+        key_fmt = '%%0%dd' % key_size
+        keys = [key_fmt % i for i in range(n)]
         
-    fmt = '%12s    %6.0f MiB/s (CPU)   %6.0f MiBs (wall)'
-    print fmt % (profname, cpu_speed, wall_speed)
+        value_fmt = '%%0%dd' % value_size
+        leaf_values = [value_fmt % i for i in range(n)]
+        index_values = range(n)
 
-def main():
-    n = int(sys.argv[1])
-    do_profile = True if sys.argv[2] == 'yes' else False
+        leaf = larch.LeafNode(42, keys, leaf_values)
+        encoded_leaf = codec.encode_leaf(leaf)
 
-    # Prepare data for tests.
+        index = larch.IndexNode(42, keys, index_values)
+        encoded_index = codec.encode_index(index)
 
-    key_size = 19
-    value_size = 128
-    node_size = 64*1024
 
-    codec = larch.NodeCodec(key_size)
+        # Measure and report.
+        print 'num_operations: %d' % n
+        leaf_size = self.measure(n, len(encoded_leaf), 
+                                 lambda: codec.leaf_size(keys, leaf_values), 
+                                 do_profile, 'leaf_size')
+        encode_leaf = self.measure(n, len(encoded_leaf), 
+                                   lambda: codec.encode_leaf(leaf), 
+                                   do_profile, 'encode_leaf')
+        decode_leaf = self.measure(n, len(encoded_leaf), 
+                                   lambda: codec.decode(encoded_leaf), 
+                                   do_profile, 'decode_leaf')
+        encode_index = self.measure(n, len(encoded_index), 
+                                    lambda: codec.encode_index(index), 
+                                    do_profile, 'encode_index')
+        decode_index = self.measure(n, len(encoded_index), 
+                                    lambda: codec.decode_index(encoded_index), 
+                                    do_profile, 'decode_index')
 
-    key_fmt = '%%0%dd' % key_size
-    keys = [key_fmt % i for i in range(n)]
-    
-    value_fmt = '%%0%dd' % value_size
-    leaf_values = [value_fmt % i for i in range(n)]
-    index_values = range(n)
+        if do_profile:
+            print 'View *.prof with ./viewprof for profiling results.'
 
-    leaf = larch.LeafNode(42, keys, leaf_values)
-    encoded_leaf = codec.encode_leaf(leaf)
+        if self.settings['csv']:
+            self.append_csv(n, leaf_size, encode_leaf, decode_leaf,
+                            encode_index, decode_index)
 
-    index = larch.IndexNode(42, keys, index_values)
-    encoded_index = codec.encode_index(index)
+    def measure(self, n, unit_size, func, do_profile, profname):
+        def helper():
+            for i in range(n):
+                func()
 
-    # Measure and report.
-    print 'num_operations: %d' % n
-    measure(n, len(encoded_leaf), lambda: codec.leaf_size(keys, leaf_values), 
-            do_profile, 'leaf_size')
-    measure(n, len(encoded_leaf), lambda: codec.encode_leaf(leaf), 
-            do_profile, 'encode_leaf')
-    measure(n, len(encoded_leaf), lambda: codec.decode(encoded_leaf), 
-            do_profile, 'decode_leaf')
-    measure(n, len(encoded_index), lambda: codec.encode_index(index), 
-            do_profile, 'encode_index')
-    measure(n, len(encoded_index), lambda: codec.decode_index(encoded_index), 
-            do_profile, 'decode_index')
+        start_time = time.time()
+        start = time.clock()
+        if do_profile:
+            globaldict = globals().copy()
+            localdict = locals().copy()
+            cProfile.runctx('helper()', globaldict, localdict, 
+                            '%s.prof' % profname)
+        else:
+            helper()
+        end = time.clock()
+        end_time = time.time()
+        
+        def speed(secs):
+            MiB = 1024**2
+            return float(n * unit_size) / float(secs) / MiB
+        cpu_speed = speed(end - start)
+        wall_speed = speed(end_time - start_time)
+            
+        fmt = '%12s    %6.0f MiB/s (CPU)   %6.0f MiBs (wall)'
+        print fmt % (profname, cpu_speed, wall_speed)
 
-    if do_profile:
-        print 'View *.prof with ./viewprof for profiling results.'
+        return cpu_speed
+
+    def append_csv(self, keys, leaf_size, encode_leaf, decode_leaf,
+                    encode_index, decode_index):
+        write_title = not os.path.exists(self.settings['csv'])
+        f = open(self.settings['csv'], 'a')
+        self.writer = csv.writer(f, lineterminator='\n')
+        if write_title:
+            self.writer.writerow(('revno',
+                                  'keys',
+                                  'leaf_size (MiB/s)',
+                                  'encode_leaf (MiB/s)',
+                                  'decode_leaf (MiB/s)',
+                                  'encode_index (MiB/s)',
+                                  'decode_index (MiB/s)'))
+
+        if os.path.exists('.bzr'):
+            p = subprocess.Popen(['bzr', 'revno'], stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            if p.returncode != 0:
+                raise cliapp.AppException('bzr failed')
+            revno = out.strip()
+        else:
+            revno = '?'
+
+        self.writer.writerow((revno,
+                              keys,
+                              self.format(leaf_size),
+                              self.format(encode_leaf),
+                              self.format(decode_leaf),
+                              self.format(encode_index),
+                              self.format(decode_index)))
+        f.close()
+
+    def format(self, value):
+        return '%.1f' % value
 
 
 if __name__ == '__main__':
-    main()
+    CodecBenchmark().run()
