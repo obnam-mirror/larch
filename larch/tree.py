@@ -38,6 +38,8 @@ class KeySizeMismatch(Exception):
 
 class ValueTooLarge(Exception):
 
+    '''User tried ot use a vlaue htat is too large for a node.'''
+
     def __init__(self, value, max_size):
         self.value = value
         self.max_size = max_size
