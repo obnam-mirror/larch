@@ -169,6 +169,14 @@ class OpenForestTests(unittest.TestCase):
                                
         self.assert_(True)
 
+    def test_opens_existing_tree_without_node_and_key_sizes_given(self):
+        f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
+                              dirname=self.tempdir)
+        f.commit()
+        f2 = larch.open_forest(dirname=self.tempdir)
+        self.assertEqual(f2.node_store.node_size, self.node_size)
+        self.assertEqual(f2.node_store.codec.key_bytes, self.key_size)
+
 
 class BadKeySizeTests(unittest.TestCase):
 
