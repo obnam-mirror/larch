@@ -109,7 +109,8 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
                 **kwargs):
     '''Create a new Factory instance.
     
-    key_size, node_size must be given with every call.
+    key_size and node_size are retrieved from the forest, unless
+    given. If given, they must match exactly.
     codec is the class to be used for the node codec, defaults to
     larch.NodeCodec. Similarly, node_store is the node store class,
     defaults to larch.NodeStoreDisk.
@@ -119,12 +120,24 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
     
     '''
 
-    assert key_size is not None
-    assert node_size is not None
-
     codec = codec or larch.NodeCodec
     node_store = node_store or larch.NodeStoreDisk
 
+    if key_size is None or node_size is None:
+        # Open a temporary node store for reading metadata.
+        # For this, we can use any values for node and key sizes,
+        # since we won't be accessing nodes or keys.
+        c_temp = codec(42)
+        ns_temp = node_store(42, c_temp, **kwargs)
+        
+        assert 'key_size' in ns_temp.get_metadata_keys()
+        assert 'node_size' in ns_temp.get_metadata_keys()
+        
+        if key_size is None:
+            key_size = int(ns_temp.get_metadata('key_size'))
+        if node_size is None:
+            node_size = int(ns_temp.get_metadata('node_size'))
+    
     c = codec(key_size)
     ns = node_store(node_size, c, **kwargs)
     

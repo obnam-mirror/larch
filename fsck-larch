@@ -27,15 +27,12 @@ class BtreeFsck(object):
 
     '''Verify that a B-tree is logically correct.'''
     
-    def __init__(self, status, dirname, node_size, key_size):
+    def __init__(self, status, forest):
         self.status = status
-        self.dirname = dirname
-        self.node_size = node_size
-        self.key_size = key_size
-        codec = larch.NodeCodec(key_size)
-        self.ns = larch.NodeStoreDisk(node_size, codec, dirname=dirname)
-        self.minkey = '\x00' * key_size
-        self.maxkey = '\xff' * key_size
+        self.forest = forest
+        self.ns = self.forest.node_store
+        self.minkey = '\x00' * self.ns.codec.key_bytes
+        self.maxkey = '\xff' * self.ns.codec.key_bytes
 
     def error(self, msg):
         self.status.notify('ERROR: %s' % msg)
@@ -147,9 +144,6 @@ class BtreeFsck(object):
 
     def check_forest(self):
         self.info('larch fsck')
-        self.info('forest: %s' % self.dirname)
-        self.info('node size: %d' % self.node_size)
-        self.info('key size: %d' % self.key_size)
 
         nodes = self.ns.list_nodes()
         self.info('nodes: %d' % len(nodes))
@@ -167,11 +161,6 @@ class BtreeFsck(object):
 
 class Fsck(cliapp.Application):
 
-    def add_settings(self):
-        self.settings.bytesize(['node-size'], 'size of a node',
-                               default=2**16)
-        self.settings.bytesize(['key-size'], 'size of a key')
-
     def process_args(self, args):
         ts = ttystatus.TerminalStatus(period=0.1)
         ts.add(ttystatus.Literal('checking nodes '))
@@ -180,11 +169,9 @@ class Fsck(cliapp.Application):
         ts.add(ttystatus.RemainingTime('nodes_done', 'nodes_total'))
         ts.add(ttystatus.Literal(' remaining'))
 
-        node_size = self.settings['node-size']
-        key_size = self.settings['key-size']
-
         for dirname in args:
-            fsck = BtreeFsck(ts, dirname, node_size, key_size)
+            forest = larch.open_forest(dirname=dirname)
+            fsck = BtreeFsck(ts, forest)
             fsck.check_forest()
             
 
