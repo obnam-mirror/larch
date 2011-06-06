@@ -21,7 +21,7 @@ import larch
 
 class CodecError(Exception):
 
-    pass
+    '''Exception for decoding errors for nodes.'''
 
 
 class NodeCodec(object):
