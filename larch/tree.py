@@ -155,7 +155,7 @@ class BTree(object):
     def lookup_range(self, minkey, maxkey):
         '''Return list of (key, value) pairs for all keys in a range.
 
-        minkey and maxkey are included in range.
+        ``minkey`` and ``maxkey`` are included in range.
 
         '''
 
