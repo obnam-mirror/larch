@@ -25,6 +25,8 @@ import larch
 
 class KeySizeMismatch(Exception):
 
+    '''User tried to use key of wrong size.'''
+
     def __init__(self, key, wanted_size):
         self.key = key
         self.wanted_size = wanted_size
