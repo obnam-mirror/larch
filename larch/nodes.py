@@ -21,6 +21,8 @@ import larch
 
 class FrozenNode(Exception):
 
+    '''User tried to modify node that is frozen.'''
+
     def __init__(self, node):
         self.node = node
         
