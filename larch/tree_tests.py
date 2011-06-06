@@ -73,7 +73,7 @@ class BTreeTests(unittest.TestCase):
         self.dump = False
 
     def test_shadow_increments_childrens_refcounts(self):
-        leaf = self.tree.new_leaf(['foo'], ['bar'])
+        leaf = self.tree._new_leaf(['foo'], ['bar'])
         index = self.tree.new_index([leaf.first_key()], [leaf.id])
         self.assertEqual(self.ns.get_refcount(leaf.id), 1)
         self.ns.set_refcount(index.id, 2)
@@ -81,7 +81,7 @@ class BTreeTests(unittest.TestCase):
         self.assertEqual(self.ns.get_refcount(leaf.id), 2)
 
     def test_shadow_returns_new_leaf_if_cannot_be_modified(self):
-        node = self.tree.new_leaf(['foo'], ['bar'])
+        node = self.tree._new_leaf(['foo'], ['bar'])
         self.tree.put_node(node)
         self.ns.set_refcount(node.id, 2)
         node2 = self.tree._shadow(node)
@@ -102,7 +102,7 @@ class BTreeTests(unittest.TestCase):
         self.assertEqual(node2.id, node.id)
 
     def test_new_leaf_does_not_put_node_into_store(self):
-        leaf = self.tree.new_leaf([], [])
+        leaf = self.tree._new_leaf([], [])
         self.assertRaises(larch.NodeMissing, self.tree.get_node, leaf.id)
 
     def test_new_index_does_not_put_node_into_store(self):
@@ -110,7 +110,7 @@ class BTreeTests(unittest.TestCase):
         self.assertRaises(larch.NodeMissing, self.tree.get_node, index.id)
 
     def test_new_index_increments_childrens_refcounts(self):
-        leaf = self.tree.new_leaf([], [])
+        leaf = self.tree._new_leaf([], [])
         self.tree.put_node(leaf)
         self.assertEqual(self.ns.get_refcount(leaf.id), 0)
         self.tree.new_index(['foo'], [leaf.id])
@@ -331,9 +331,9 @@ class BTreeTests(unittest.TestCase):
 
     def test_last_node_id_persists(self):
         self.tree.insert('foo', 'bar') # make tree has root
-        node1 = self.tree.new_leaf([], [])
+        node1 = self.tree._new_leaf([], [])
         tree2 = larch.BTree(self.forest, self.ns, self.tree.root.id)
-        node2 = tree2.new_leaf([], [])
+        node2 = tree2._new_leaf([], [])
         self.assertEqual(node1.id + 1, node2.id)
 
     def test_lookup_range_returns_empty_list_if_nothing_found(self):

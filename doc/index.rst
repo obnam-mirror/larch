@@ -29,7 +29,7 @@ only possible within a forest. Thus, also, only trees in the same
 forest can share nodes. All **keys** in a all trees in a forest
 must be string of the same size. **Values** are strings and
 are stored in **nodes**, and
-can be of any size, almost up to the size of a node.
+can be of any size, almost up to half the size of a node.
 
 When creating a forest, you must specify the sizes of keys and
 nodes, and the directory in which everything gets stored::

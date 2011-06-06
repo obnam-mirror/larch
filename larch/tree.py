@@ -51,12 +51,15 @@ class ValueTooLarge(Exception):
 
 class BTree(object):
 
-    '''B-tree.
+    '''A balanced search tree (copy-on-write B-tree).
     
-    The nodes are stored in an external node store; see the NodeStore
-    class. Key sizes are fixed, and given in bytes. Values may be of
-    any size up to slightly less than half the maximum size of a node.
-    See NodeStore.max_value_size for the exact value.
+    The tree belongs to a forest. The tree nodes are stored in an 
+    external node store; see the ``NodeStore`` class.
+    
+    ``root_id`` gives the id of the root node of the tree. The
+    root node must be unique to this tree, as it is modified in
+    place. ``root_id`` may also be ``None``, in which case a
+    new node is created automatically to serve as the root node.
     
     '''
 
@@ -74,27 +77,27 @@ class BTree(object):
             
         tracing.trace('init BTree %s with root_id %s' % (self, root_id))
 
-    def check_key_size(self, key):
+    def _check_key_size(self, key):
         if len(key) != self.node_store.codec.key_bytes:
             raise KeySizeMismatch(key, self.node_store.codec.key_bytes)
 
-    def check_value_size(self, value):
+    def _check_value_size(self, value):
         if len(value) > self.node_store.max_value_size:
             raise ValueTooLarge(value, self.node_store.max_value_size)
 
-    def new_id(self):
+    def _new_id(self):
         '''Generate a new node identifier.'''
         return self.forest._new_id()
     
-    def new_leaf(self, keys, values):
+    def _new_leaf(self, keys, values):
         '''Create a new leaf node.'''
-        node = larch.LeafNode(self.new_id(), keys, values)
+        node = larch.LeafNode(self._new_id(), keys, values)
         tracing.trace('id=%s' % node.id)
         return node
         
     def new_index(self, keys, values):
         '''Create a new index node.'''
-        index = larch.IndexNode(self.new_id(), keys, values)
+        index = larch.IndexNode(self._new_id(), keys, values)
         for child_id in values:
             self.increment(child_id)
         tracing.trace('id=%s' % index.id)
@@ -134,7 +137,7 @@ class BTree(object):
         
         '''
 
-        self.check_key_size(key)
+        self._check_key_size(key)
 
         node = self.root
         while isinstance(node, larch.IndexNode):
@@ -156,8 +159,8 @@ class BTree(object):
 
         '''
 
-        self.check_key_size(minkey)
-        self.check_key_size(maxkey)
+        self._check_key_size(minkey)
+        self._check_key_size(maxkey)
         if self.root is not None:
             for pair in self._lookup_range(self.root.id, minkey, maxkey):
                 yield pair
@@ -182,8 +185,8 @@ class BTree(object):
         
         '''
         
-        self.check_key_size(minkey)
-        self.check_key_size(maxkey)
+        self._check_key_size(minkey)
+        self._check_key_size(maxkey)
         if self.root is None:
             return True
         return self._range_is_empty(self.root.id, minkey, maxkey)
@@ -208,7 +211,7 @@ class BTree(object):
         elif isinstance(node, larch.IndexNode):
             new = self.new_index(node.keys(), node.values())
         else:
-            new = self.new_leaf(node.keys(), node.values())
+            new = self._new_leaf(node.keys(), node.values())
             new.size = node.size
         return new
         
@@ -222,14 +225,14 @@ class BTree(object):
 
         tracing.trace('key=%s' % repr(key))
         tracing.trace('value=%s' % repr(value))
-        self.check_key_size(key)
-        self.check_value_size(value)
+        self._check_key_size(key)
+        self._check_value_size(value)
 
         # Is the tree empty? This needs special casing to keep
         # _insert_into_index simpler.
         if self.root is None or len(self.root) == 0:
             tracing.trace('tree is empty')
-            leaf = self.new_leaf([key], [value])
+            leaf = self._new_leaf([key], [value])
             self.put_node(leaf)
             if self.root is None:
                 new_root = self.new_index([key], [leaf.id])
@@ -292,7 +295,7 @@ class BTree(object):
             n = len(new_index) / 2
             keys = new_index.keys()[n:]
             values = new_index.values()[n:]
-            new = larch.IndexNode(self.new_id(), keys, values)
+            new = larch.IndexNode(self._new_id(), keys, values)
             tracing.trace('new index node id=%s' % new.id)
             for k in keys:
                 new_index.remove(k)
@@ -327,7 +330,7 @@ class BTree(object):
             values = new.values()
 
             n = len(keys) / 2
-            new2 = self.new_leaf(keys[n:], values[n:])
+            new2 = self._new_leaf(keys[n:], values[n:])
             for key in new2:
                 new.remove(key)
             assert size(new) > 0
@@ -363,7 +366,7 @@ class BTree(object):
         '''
 
         tracing.trace('key=%s' % repr(key))    
-        self.check_key_size(key)
+        self._check_key_size(key)
 
         if self.root is None:
             tracing.trace('no root')
@@ -486,8 +489,8 @@ class BTree(object):
 
         '''
 
-        self.check_key_size(minkey)
-        self.check_key_size(maxkey)
+        self._check_key_size(minkey)
+        self._check_key_size(maxkey)
         keys = [k for k, v in self.lookup_range(minkey, maxkey)]
         for key in keys:
             self.remove(key)
