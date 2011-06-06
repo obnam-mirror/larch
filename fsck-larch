@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright 2010  Lars Wirzenius
+# Copyright 2010, 2011  Lars Wirzenius
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import cliapp
 import logging
 import sys
 import ttystatus
@@ -164,22 +165,28 @@ class BtreeFsck(object):
         self.status.finish()
 
 
-def main():
-    dirname = sys.argv[1]
-    node_size = 65535 # doesn't matter for reading
-    key_size = int(sys.argv[2])
-    
-    logging.basicConfig(filename='fsck-larch.log', level=logging.DEBUG)
-    
-    ts = ttystatus.TerminalStatus(period=0.1)
-    ts.add(ttystatus.Literal('checking nodes '))
-    ts.add(ttystatus.PercentDone('nodes_done', 'nodes_total', decimals=2))
-    ts.add(ttystatus.Literal(' '))
-    ts.add(ttystatus.RemainingTime('nodes_done', 'nodes_total'))
-    ts.add(ttystatus.Literal(' remaining'))
-    fsck = BtreeFsck(ts, dirname, node_size, key_size)
-    fsck.check_forest()
+class Fsck(cliapp.Application):
 
+    def add_settings(self):
+        self.settings.bytesize(['node-size'], 'size of a node',
+                               default=2**16)
+        self.settings.bytesize(['key-size'], 'size of a key')
+
+    def process_args(self, args):
+        ts = ttystatus.TerminalStatus(period=0.1)
+        ts.add(ttystatus.Literal('checking nodes '))
+        ts.add(ttystatus.PercentDone('nodes_done', 'nodes_total', decimals=2))
+        ts.add(ttystatus.Literal(' '))
+        ts.add(ttystatus.RemainingTime('nodes_done', 'nodes_total'))
+        ts.add(ttystatus.Literal(' remaining'))
+
+        node_size = self.settings['node-size']
+        key_size = self.settings['key-size']
+
+        for dirname in args:
+            fsck = BtreeFsck(ts, dirname, node_size, key_size)
+            fsck.check_forest()
+            
 
 if __name__ == '__main__':
-    main()
+    Fsck().run()
