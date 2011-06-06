@@ -552,26 +552,3 @@ class BTree(object):
             self.node_store.remove_node(node_id)
             self.node_store.set_refcount(node_id, 0)
 
-    def dump(self, f, msg=None, keymangler=str, valuemangler=str): # pragma: no cover
-        '''Dump tree structure to open file f.'''
-        
-        def dumper(node, indent):
-            refs = self.node_store.get_refcount(node.id)
-            if isinstance(node, larch.IndexNode):
-                f.write('%*sindex (id=%d, refs=%d)\n' % (indent*2, '', node.id, refs))
-                for key in node:
-                    child = self._get_node(node[key])
-                    dumper(child, indent + 1)
-            else:
-                assert isinstance(node, larch.LeafNode)
-                f.write('%*sleaf (id=%d, refs=%d, len=%d):' % 
-                        (indent*2, '', node.id, refs, len(node)))
-                for key in node:
-                    value = node[key]
-                    f.write(' %s=%s' % (keymangler(key), valuemangler(value)))
-                f.write('\n')
-        
-        if msg is not None:
-            f.write('%s\n' % msg)
-        f.write('Dumping tree %s\n' % self)
-        dumper(self.root, 1)
