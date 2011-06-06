@@ -19,6 +19,8 @@ import larch
 
 class BadKeySize(Exception):
 
+    '''Exception for a bad key size.'''
+
     def __init__(self, store_key_size, wanted_key_size):
         self.msg = ('Node store has key size %s, program wanted %s' %
                     (store_key_size, wanted_key_size))
@@ -28,6 +30,8 @@ class BadKeySize(Exception):
 
 
 class BadNodeSize(Exception):
+
+    '''Exception for a bad node size.'''
 
     def __init__(self, store_node_size, wanted_node_size):
         self.msg = ('Node store has node size %s, program wanted %s' %
