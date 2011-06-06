@@ -5,7 +5,7 @@ Priority: optional
 Standards-Version: 3.9.0
 Build-Depends: debhelper (>= 7.3.8), python-support (>= 1.0.3), 
     python (>= 2.5), extrautils (>= 1.6), python-lru (>= 0.4),
-    python-coverage-test-runner, python-tracing
+    python-coverage-test-runner, python-tracing, python-sphinx
 XS-Python-Version: >= 2.5
 
 Package: python-larch

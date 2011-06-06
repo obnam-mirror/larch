@@ -16,6 +16,7 @@
 
 
 all:
+	$(MAKE) -C doc html
 
 check: all
 	python -m CoverageTestRunner --ignore-missing-from=without-tests
@@ -26,3 +27,4 @@ check: all
 clean:
 	rm -f .coverage *.py[co] larch/*.py[co] insert.prof lookup.prof
 	rm -rf build tempdir larch.log example.tree
+	$(MAKE) -C doc clean

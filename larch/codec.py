@@ -21,7 +21,7 @@ import larch
 
 class CodecError(Exception):
 
-    pass
+    '''Exception for decoding errors for nodes.'''
 
 
 class NodeCodec(object):
@@ -30,7 +30,7 @@ class NodeCodec(object):
     
     Node identifiers are assumed to fit into 64 bits.
     
-    Leaf node values are assumed to fit into 65535 bytes.
+    Leaf node values are assumed to fit into 4 gibibytes.
     
     '''
 
@@ -119,12 +119,14 @@ class NodeCodec(object):
         return larch.IndexNode(node_id, keys, child_ids)
 
     def encode(self, node):
+        '''Encode a node of any type.'''
         if isinstance(node, larch.LeafNode):
             return self.encode_leaf(node)
         else:
             return self.encode_index(node)
 
     def decode(self, encoded):
+        '''Decode node of any type.'''
         if encoded.startswith('ORBL'):
             return self.decode_leaf(encoded)
         elif encoded.startswith('ORBI'):
@@ -134,6 +136,7 @@ class NodeCodec(object):
                              repr(encoded[:4]))
 
     def size(self, node):
+        '''Return encoded size of a node, regardless of type.'''
         keys = node.keys()
         values = node.values()
         if isinstance(node, larch.LeafNode):

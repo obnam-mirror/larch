@@ -49,7 +49,7 @@ def do_it(keys, func, final):
 def assert_refcounts_are_one(tree):
     def helper(node_id):
         refcount = tree.node_store.rs.get_refcount(node_id)
-        node = tree.get_node(node_id)
+        node = tree._get_node(node_id)
         assert refcount == 1, 'type=%s id=%d refcount=%d' % (repr(node), 
                                                              node_id, refcount)
         if isinstance(node, larch.IndexNode):

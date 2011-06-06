@@ -14,10 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = '0.19'
+__version__ = '0.20'
 
 
-from nodes import FrozenNode, LeafNode, IndexNode
+from nodes import FrozenNode, Node, LeafNode, IndexNode
 from codec import NodeCodec, CodecError
 from tree import BTree, KeySizeMismatch, ValueTooLarge
 from forest import Forest, open_forest, BadKeySize, BadNodeSize
@@ -25,7 +25,7 @@ from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig,
                        NodeExists, NodeCannotBeModified)
 from refcountstore import RefcountStore
 from uploadqueue import UploadQueue
-from nodestore_disk import NodeStoreDisk
+from nodestore_disk import NodeStoreDisk, LocalFS
 from nodestore_memory import NodeStoreMemory
 
 __all__ = locals()

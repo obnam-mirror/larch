@@ -2,3 +2,4 @@
 ./larch/nodestore.py
 ./setup.py
 ./example.py
+./doc/conf.py

@@ -68,33 +68,36 @@ class NodeStore(object): # pragma: no cover
 
     '''Abstract base class for storing nodes externally.
     
-    The BTree class itself does not handle external storage of nodes.
+    The ``BTree`` class itself does not handle external storage of nodes.
     Instead, it is given an object that implements the API in this
     class. An actual implementation might keep nodes in memory, or
     store them on disk using a filesystem, or a database.
     
-    Node stores deal with nodes as byte strings: the BTree class
+    Node stores deal with nodes as byte strings: the ``codec``
     encodes them before handing them to the store, and decodes them
     when it gets them from the store.
     
-    Each node has an identifier that is unique within the tree.
-    The identifier is an integer, and the BTree makes the following
+    Each node has an identifier that is unique within the store.
+    The identifier is an integer, and the caller makes the following
     guarantees about it:
     
     * it is a non-negative integer
     * new nodes are assigned the next consecutive one
     * it is never re-used
     
-    Further, the BTree makes the following guarantees about the encoded
+    Further, the caller makes the following guarantees about the encoded
     nodes:
     
     * they have a strict upper size limit
     * the tree attempts to fill nodes as close to the limit as possible
     
     The size limit is given to the node store at initialization time.
-    It is accessible via the node_size property. Implementations of
+    It is accessible via the ``node_size`` property. Implementations of
     this API must handle that in some suitable way, preferably by 
     inheriting from this class and calling its initializer.
+    
+    ``self.max_value_size`` gives the maximum size of a value stored
+    in a node.
 
     A node store additionally stores some metadata, as key/value
     pairs, where both key and value is a shortish string. The whole
@@ -109,6 +112,7 @@ class NodeStore(object): # pragma: no cover
         self.max_value_size = (node_size / 2) - codec.leaf_header.size
 
     def max_index_pairs(self):
+        '''Max number of index pairs in an index node.'''
         return self.codec.max_index_pairs(self.node_size)
         
     def set_metadata(self, key, value):
@@ -139,7 +143,7 @@ class NodeStore(object): # pragma: no cover
     def get_node(self, node_id):
         '''Return a node from the store.
         
-        Raise the NodeMissing exception if the node is not in the
+        Raise the ``NodeMissing`` exception if the node is not in the
         store (has never been, or has been removed). Raise other
         errors as suitable.
         
@@ -154,7 +158,7 @@ class NodeStore(object): # pragma: no cover
         
         User must call this before modifying a node in place.
         
-        If a node cannot be modified, NodeCannotBeModified exception
+        If a node cannot be modified, ``NodeCannotBeModified`` exception
         will be raised.
         
         '''
@@ -184,20 +188,22 @@ class NodeStore(object): # pragma: no cover
 
 class NodeStoreTests(object): # pragma: no cover
 
-    '''Re-useable tests for NodeStore implementations.
+    '''Re-useable tests for ``NodeStore`` implementations.
     
-    The NodeStore base class can't be usefully instantiated itself.
+    The ``NodeStore`` base class can't be usefully instantiated itself.
     Instead you are supposed to sub-class it and implement the API in
     a suitable way for yourself.
     
     This class implements a number of tests that the API implementation
     must pass. The implementation's own test class should inherit from
-    this class, and unittest.TestCase.
+    this class, and ``unittest.TestCase``.
     
     The test sub-class should define a setUp method that sets the following:
     
-    * self.ns to an instance of the API implementation sub-class
-    * self.node_size to the node size
+    * ``self.ns`` to an instance of the API implementation sub-class
+    * ``self.node_size`` to the node size
+    
+    Key size (``self.key_bytes``) is always 3.
     
     '''
     

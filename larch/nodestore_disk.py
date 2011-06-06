@@ -29,20 +29,23 @@ class LocalFS(object):
 
     '''Access to local filesystem.
     
-    The NodeStoreDisk class will use a class with this interface
+    The ``NodeStoreDisk`` class will use a class with this interface
     to do disk operations. This class implements access to the local
     filesystem.
     
     '''
 
     def makedirs(self, dirname):
+        '''Create directories, simliar to os.makedirs.'''
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
     def cat(self, filename):
+        '''Return contents of a file.'''
         return file(filename).read()
 
     def overwrite_file(self, filename, contents):
+        '''Write data to disk. File may exist already.'''
         dirname = os.path.dirname(filename)
         fd, tempname = tempfile.mkstemp(dir=dirname)
         os.write(fd, contents)
@@ -50,12 +53,15 @@ class LocalFS(object):
         os.rename(tempname, filename)
 
     def exists(self, filename):
+        '''Does a file exist already?'''
         return os.path.exists(filename)
 
     def rename(self, old, new):
+        '''Rename a file.'''
         os.rename(old, new)
 
     def remove(self, filename):
+        '''Remove a file.'''
         os.remove(filename)
 
 
@@ -66,7 +72,7 @@ class NodeStoreDisk(larch.NodeStore):
     The caller will specify a directory in which the nodes will be stored.
     Each node is stored in its own file, named after the node identifier.
 
-    The 'vfs' optional argument to the initializer can be used to
+    The ``vfs`` optional argument to the initializer can be used to
     override filesystem access. By default, the local filesystem is
     used, but any class can be substituted.
     
