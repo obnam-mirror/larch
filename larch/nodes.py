@@ -38,6 +38,18 @@ class Node(object):
     leaf nodes, the values are the actual values. For index nodes, they
     are references to other nodes.
     
+    A node can be indexed using keys, and give the corresponding value.
+    Setting key/value pairs cannot be done using indexing. However,
+    ``key in node`` does work, as does iteration over a key's values.
+    ``len(node)`` returns the number if keys.
+    
+    Two nodes compare equal if they have the same key/value pairs.
+    The node ids do not need to match.
+    
+    Nodes can be modified, bt only if the ``frozen`` property is false.
+    If it is set to true, any attempt at modifying the node causes
+    the ``FrozenNode`` exception to be raised.
+    
     '''
 
     def __init__(self, node_id, keys, values):
@@ -71,7 +83,7 @@ class Node(object):
         return self._keys
 
     def values(self):
-        '''Return value sin the key, in same order as keys.'''
+        '''Return value in the node, in same order as keys.'''
         return self._values
 
     def first_key(self):
@@ -81,7 +93,7 @@ class Node(object):
     def find_potential_range(self, minkey, maxkey):
         '''Find pairs whose key is in desired range.
 
-        minkey and maxkey are inclusive.
+        ``minkey`` and ``maxkey`` are inclusive.
 
         We take into account that for index nodes, a child's key
         really represents a range of keys, from the key up to (but
@@ -89,8 +101,8 @@ class Node(object):
         represents a range up to infinity.
 
         Thus we return the first child, if its key lies between
-        minkey and maxkey, and the last child, if its key is at most
-        maxkey.
+        ``minkey`` and ``maxkey``, and the last child, if its key is at most
+        ``maxkey``.
 
         '''
         
@@ -171,14 +183,14 @@ class LeafNode(Node):
 
     '''Leaf node in the tree.
     
-    A leaf node contains key/value pairs, and has no children.
+    A leaf node contains key/value pairs (both strings), and has no children.
     
     '''
 
     def find_keys_in_range(self, minkey, maxkey):
         '''Find pairs whose key is in desired range.
         
-        minkey and maxkey are inclusive.
+        ``minkey`` and ``maxkey`` are inclusive.
         
         '''
         
@@ -193,7 +205,8 @@ class IndexNode(Node):
 
     '''Index node in the tree.
     
-    An index node contains pairs of keys and references to other nodes.
+    An index node contains pairs of keys and references to other nodes
+    (node ids, which are integers).
     The other nodes may be either index nodes or leaf nodes.
     
     '''
@@ -217,7 +230,7 @@ class IndexNode(Node):
     def find_children_in_range(self, minkey, maxkey):
         '''Find all children whose key is in the range.
         
-        minkey and maxkey are inclusive. Note that a child might
+        ``minkey`` and ``maxkey`` are inclusive. Note that a child might
         be returned even if not all of its keys are in the range,
         just some of them. Also, we consider potential keys here,
         not actual keys. We have no way to retrieve the children

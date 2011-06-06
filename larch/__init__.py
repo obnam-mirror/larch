@@ -17,7 +17,7 @@
 __version__ = '0.20'
 
 
-from nodes import FrozenNode, LeafNode, IndexNode
+from nodes import FrozenNode, Node, LeafNode, IndexNode
 from codec import NodeCodec, CodecError
 from tree import BTree, KeySizeMismatch, ValueTooLarge
 from forest import Forest, open_forest, BadKeySize, BadNodeSize
