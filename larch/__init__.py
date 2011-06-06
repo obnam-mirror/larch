@@ -25,7 +25,7 @@ from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig,
                        NodeExists, NodeCannotBeModified)
 from refcountstore import RefcountStore
 from uploadqueue import UploadQueue
-from nodestore_disk import NodeStoreDisk
+from nodestore_disk import NodeStoreDisk, LocalFS
 from nodestore_memory import NodeStoreMemory
 
 __all__ = locals()
