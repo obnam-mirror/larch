@@ -107,7 +107,7 @@ class Forest(object):
             keys = []
             values = []
         t = larch.BTree(self, self.node_store, None)
-        t.set_root(t.new_index(keys, values))
+        t.set_root(t._new_index(keys, values))
         self.trees.append(t)
         return t
 

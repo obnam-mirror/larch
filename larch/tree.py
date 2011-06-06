@@ -95,7 +95,7 @@ class BTree(object):
         tracing.trace('id=%s' % node.id)
         return node
         
-    def new_index(self, keys, values):
+    def _new_index(self, keys, values):
         '''Create a new index node.'''
         index = larch.IndexNode(self._new_id(), keys, values)
         for child_id in values:
@@ -209,7 +209,7 @@ class BTree(object):
             self.node_store.start_modification(node)
             new = node
         elif isinstance(node, larch.IndexNode):
-            new = self.new_index(node.keys(), node.values())
+            new = self._new_index(node.keys(), node.values())
         else:
             new = self._new_leaf(node.keys(), node.values())
             new.size = node.size
@@ -235,7 +235,7 @@ class BTree(object):
             leaf = self._new_leaf([key], [value])
             self.put_node(leaf)
             if self.root is None:
-                new_root = self.new_index([key], [leaf.id])
+                new_root = self._new_index([key], [leaf.id])
             else:
                 new_root = self._shadow(self.root)
                 new_root.add(key, leaf.id)
@@ -255,7 +255,7 @@ class BTree(object):
             else:
                 keys = [kid.first_key() for kid in kids]
                 values = [kid.id for kid in kids]
-                new_root = self.new_index(keys, values)
+                new_root = self._new_index(keys, values)
                 tracing.trace('create new root: id=%s' % new_root.id)
 
         self.set_root(new_root)

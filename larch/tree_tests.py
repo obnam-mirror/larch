@@ -74,7 +74,7 @@ class BTreeTests(unittest.TestCase):
 
     def test_shadow_increments_childrens_refcounts(self):
         leaf = self.tree._new_leaf(['foo'], ['bar'])
-        index = self.tree.new_index([leaf.first_key()], [leaf.id])
+        index = self.tree._new_index([leaf.first_key()], [leaf.id])
         self.assertEqual(self.ns.get_refcount(leaf.id), 1)
         self.ns.set_refcount(index.id, 2)
         clone = self.tree._shadow(index)
@@ -88,14 +88,14 @@ class BTreeTests(unittest.TestCase):
         self.assertNotEqual(node2.id, node.id)
 
     def test_shadow_returns_new_index_if_cannot_be_modified(self):
-        node = self.tree.new_index(['foo'], [1])
+        node = self.tree._new_index(['foo'], [1])
         self.tree.put_node(node)
         self.ns.set_refcount(node.id, 2)
         node2 = self.tree._shadow(node)
         self.assertNotEqual(node2.id, node.id)
 
     def test_shadow_returns_same_node_that_can_be_modified(self):
-        node = self.tree.new_index(['foo'], [1])
+        node = self.tree._new_index(['foo'], [1])
         self.tree.put_node(node)
         self.ns.set_refcount(node.id, 1)
         node2 = self.tree._shadow(node)
@@ -106,14 +106,14 @@ class BTreeTests(unittest.TestCase):
         self.assertRaises(larch.NodeMissing, self.tree.get_node, leaf.id)
 
     def test_new_index_does_not_put_node_into_store(self):
-        index = self.tree.new_index([], [])
+        index = self.tree._new_index([], [])
         self.assertRaises(larch.NodeMissing, self.tree.get_node, index.id)
 
     def test_new_index_increments_childrens_refcounts(self):
         leaf = self.tree._new_leaf([], [])
         self.tree.put_node(leaf)
         self.assertEqual(self.ns.get_refcount(leaf.id), 0)
-        self.tree.new_index(['foo'], [leaf.id])
+        self.tree._new_index(['foo'], [leaf.id])
         self.assertEqual(self.ns.get_refcount(leaf.id), 1)
 
     def test_insert_changes_root_id(self):
@@ -248,7 +248,8 @@ class BTreeTests(unittest.TestCase):
         self.tree.insert('foo', 'bar')
 
         old_root = self.tree.root
-        extra_root = self.tree.new_index([old_root.first_key()], [old_root.id])
+        extra_root = self.tree._new_index([old_root.first_key()], 
+                                          [old_root.id])
         self.tree.set_root(extra_root)
         # Fix old root's refcount, since it got incremented to 2.
         self.ns.set_refcount(old_root.id, 1)
@@ -261,7 +262,8 @@ class BTreeTests(unittest.TestCase):
         self.tree.insert('foo', 'bar')
 
         old_root = self.tree.root
-        extra_root = self.tree.new_index([old_root.first_key()], [old_root.id])
+        extra_root = self.tree._new_index([old_root.first_key()], 
+                                          [old_root.id])
         self.tree.set_root(extra_root)
         
         # Make old root's refcount be 2, so it looks like it is shared
