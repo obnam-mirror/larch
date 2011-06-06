@@ -535,12 +535,12 @@ class BTreeDecrementTests(unittest.TestCase):
             self.assertEqual(self.ns.get_refcount(node_id), 1)
 
     def test_decrement_removes_everything(self):
-        self.tree.decrement(self.tree.root.id)
+        self.tree._decrement(self.tree.root.id)
         self.assertEqual(len(self.ns.find_nodes()), 0)
 
     def test_decrement_does_not_remove_anything(self):
         self.ns.set_refcount(self.tree.root.id, 2)
-        self.tree.decrement(self.tree.root.id)
+        self.tree._decrement(self.tree.root.id)
         self.assertEqual(len(self.ns.find_nodes()), 2)
 
 

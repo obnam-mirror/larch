@@ -99,7 +99,7 @@ class BTree(object):
         '''Create a new index node.'''
         index = larch.IndexNode(self._new_id(), keys, values)
         for child_id in values:
-            self.increment(child_id)
+            self._increment(child_id)
         tracing.trace('id=%s' % index.id)
         return index
 
@@ -108,7 +108,7 @@ class BTree(object):
         tracing.trace('new_root.id=%s' % new_root.id)
         if self.root is not None and self.root.id != new_root.id:
             tracing.trace('decrement old root %s' % self.root.id)
-            self.decrement(self.root.id)
+            self._decrement(self.root.id)
         self._put_node(new_root)
         self.root = new_root
         tracing.trace('setting node %s refcount to 1' % self.root.id)
@@ -239,7 +239,7 @@ class BTree(object):
             else:
                 new_root = self._shadow(self.root)
                 new_root.add(key, leaf.id)
-                self.increment(leaf.id)
+                self._increment(leaf.id)
         else:
             tracing.trace('tree is not empty')
             kids = self._insert_into_index(self.root, key, value)
@@ -287,8 +287,8 @@ class BTree(object):
         new_index.remove(child_key)
         for kid in new_kids:
             new_index.add(kid.first_key(), kid.id)
-            self.increment(kid.id)
-        self.decrement(child.id)
+            self._increment(kid.id)
+        self._decrement(child.id)
 
         if len(new_index) > self.max_index_length:
             tracing.trace('need to split index node id=%s' % new_index.id)
@@ -389,8 +389,8 @@ class BTree(object):
                 self._add_or_merge_index(new_index, new_kid)
             else:
                 if new_kid.id != child.id: # pragma: no cover
-                    self.decrement(new_kid.id)
-            self.decrement(child.id)
+                    self._decrement(new_kid.id)
+            self._decrement(child.id)
         else:
             assert isinstance(child, larch.LeafNode)
             leaf = self._shadow(child)
@@ -402,8 +402,8 @@ class BTree(object):
             else:
                 tracing.trace('new leaf is empty, forgetting it')
                 if leaf.id != child.id: # pragma: no cover
-                    self.decrement(leaf.id)
-            self.decrement(child.id)
+                    self._decrement(leaf.id)
+            self._decrement(child.id)
 
         self._put_node(new_index)
         return new_index
@@ -434,11 +434,11 @@ class BTree(object):
         assert new_node is not None
         self._put_node(new_node)
         parent.add(new_node.first_key(), new_node.id)
-        self.increment(new_node.id)
+        self._increment(new_node.id)
         if new_node != node: # pragma: no cover
             # We made a new node, so get rid of the old one.
             tracing.trace('decrementing unused node id=%s' % node.id)
-            self.decrement(node.id)
+            self._decrement(node.id)
 
     def _merge_index(self, parent, node, sibling_index):
 
@@ -447,7 +447,7 @@ class BTree(object):
 
         def add_to_index(n, k, v):
             n.add(k, v)
-            self.increment(v)
+            self._increment(v)
 
         return self._merge_nodes(parent, node, sibling_index,
                                  merge_indexes_p, add_to_index)
@@ -477,7 +477,7 @@ class BTree(object):
             self._put_node(new_node)
             parent.remove(sibling_key)
             tracing.trace('decrementing now-unused sibling %s' % sibling.id)
-            self.decrement(sibling.id)
+            self._decrement(sibling.id)
             return new_node
         else:
             return None
@@ -526,14 +526,14 @@ class BTree(object):
             self._set_root(child)
         tracing.trace('done reducing height')
 
-    def increment(self, node_id):
+    def _increment(self, node_id):
         '''Non-recursively increment refcount for a node.'''
         refcount = self.node_store.get_refcount(node_id)
         refcount += 1
         self.node_store.set_refcount(node_id, refcount)
         tracing.trace('node %s refcount grew to %s' % (node_id, refcount))
 
-    def decrement(self, node_id):
+    def _decrement(self, node_id):
         '''Recursively, lazily decrement refcounts for a node and children.'''
         tracing.trace('decrementing node %s refcount' % node_id)
         refcount = self.node_store.get_refcount(node_id)
@@ -548,7 +548,7 @@ class BTree(object):
             if isinstance(node, larch.IndexNode):
                 tracing.trace('reducing refcounts for children')
                 for child_id in node.values():
-                    self.decrement(child_id)
+                    self._decrement(child_id)
             self.node_store.remove_node(node_id)
             self.node_store.set_refcount(node_id, 0)
 

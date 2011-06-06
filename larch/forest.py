@@ -113,7 +113,7 @@ class Forest(object):
 
     def remove_tree(self, tree):
         '''Remove a tree from the forest.'''
-        tree.decrement(tree.root.id)
+        tree._decrement(tree.root.id)
         self.trees.remove(tree)
 
     def commit(self):
