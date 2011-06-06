@@ -107,15 +107,17 @@ class Forest(object):
 
 def open_forest(key_size=None, node_size=None, codec=None, node_store=None, 
                 **kwargs):
-    '''Create a new Factory instance.
+    '''Create or open a forest.
     
-    key_size and node_size are retrieved from the forest, unless
-    given. If given, they must match exactly.
-    codec is the class to be used for the node codec, defaults to
-    larch.NodeCodec. Similarly, node_store is the node store class,
-    defaults to larch.NodeStoreDisk.
+    ``key_size`` and ``node_size`` are retrieved from the forest, unless
+    given. If given, they must match exactly. If the forest does not
+    yet exist, the sizes **must** be given.
+
+    ``codec`` is the class to be used for the node codec, defaults to
+    ``larch.NodeCodec``. Similarly, ``node_store`` is the node store class,
+    defaults to ``larch.NodeStoreDisk``.
     
-    All other keyword arguments are given the thoe node_store
+    All other keyword arguments are given the the ``node_store``
     class initializer.
     
     '''
