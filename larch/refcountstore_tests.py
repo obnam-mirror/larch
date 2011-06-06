@@ -103,21 +103,21 @@ class RefcountStoreTests(unittest.TestCase):
         refs = range(2048)
         for ref in refs:
             self.rs.set_refcount(ref, ref)
-        encoded = self.rs.encode_refcounts(0, 1024)
-        decoded = self.rs.decode_refcounts(encoded)
+        encoded = self.rs._encode_refcounts(0, 1024)
+        decoded = self.rs._decode_refcounts(encoded)
         self.assertEqual(decoded, [(x, x) for x in refs[:1024]])
 
     def test_group_returns_correct_start_id_for_node_zero(self):
-        self.assertEqual(self.rs.start_id(0), 0)
+        self.assertEqual(self.rs._start_id(0), 0)
 
     def test_group_returns_correct_start_id_for_last_id_in_group(self):
-        self.assertEqual(self.rs.start_id(self.rs.per_group - 1), 0)
+        self.assertEqual(self.rs._start_id(self.rs.per_group - 1), 0)
 
     def test_group_returns_correct_start_id_for_first_in_second_group(self):
-        self.assertEqual(self.rs.start_id(self.rs.per_group),
+        self.assertEqual(self.rs._start_id(self.rs.per_group),
                          self.rs.per_group)
 
     def test_group_returns_correct_start_id_for_second_in_second_group(self):
-        self.assertEqual(self.rs.start_id(self.rs.per_group + 1),
+        self.assertEqual(self.rs._start_id(self.rs.per_group + 1),
                          self.rs.per_group)
 
