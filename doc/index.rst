@@ -62,10 +62,26 @@ To insert some data into the tree::
     for key in ['abc', 'foo', bar']:
         tree.insert(key, key.upper())
 
-To retrieve data::
+To look up value for one key::
+
+    print tree.lookup('foo')
+
+To look up a range::
 
     for key, value in tree.lookup_range('aaa', 'zzz'):
         print key, value
+
+To remove a key::
+
+    tree.remove('abc')
+    
+To remove a range:
+
+    tree.remove_range('aaa', 'zzz')
+
+You probably don't need to worry about anything else than the
+``Forest`` and ``BTree`` classes, unless you want to provide your
+own ``NodeStore`` instance.
 
 Reference manual
 ================
