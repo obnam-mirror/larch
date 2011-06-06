@@ -39,7 +39,18 @@ class BadNodeSize(Exception):
 
 class Forest(object):
 
-    '''A collection of BTrees in the same node store.'''
+    '''A collection of related B-trees.
+    
+    Trees in the same forest can share nodes. Cloned trees are always
+    created in the same forest as the original.
+    
+    Cloning trees is very fast: only the root node is modified.
+    Trees can be modified in place. Modifying a tree is done
+    using copy-on-write, so modifying a clone does not modify
+    the original (and vice versa). You can have up to 65535 
+    clones of a tree.
+    
+    '''
 
     def __init__(self, node_store):
         self.node_store = node_store
