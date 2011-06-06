@@ -184,20 +184,22 @@ class NodeStore(object): # pragma: no cover
 
 class NodeStoreTests(object): # pragma: no cover
 
-    '''Re-useable tests for NodeStore implementations.
+    '''Re-useable tests for ``NodeStore`` implementations.
     
-    The NodeStore base class can't be usefully instantiated itself.
+    The ``NodeStore`` base class can't be usefully instantiated itself.
     Instead you are supposed to sub-class it and implement the API in
     a suitable way for yourself.
     
     This class implements a number of tests that the API implementation
     must pass. The implementation's own test class should inherit from
-    this class, and unittest.TestCase.
+    this class, and ``unittest.TestCase``.
     
     The test sub-class should define a setUp method that sets the following:
     
-    * self.ns to an instance of the API implementation sub-class
-    * self.node_size to the node size
+    * ``self.ns`` to an instance of the API implementation sub-class
+    * ``self.node_size`` to the node size
+    
+    Key size (``self.key_bytes``) is always 3.
     
     '''
     
