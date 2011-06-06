@@ -30,12 +30,15 @@ class UploadQueue(object):
     '''Queue of objects waiting to be uploaded to the store.
     
     We don't upload nodes directly, because it frequently happens
-    that a node gets modified or deleted soon after it is created,
-    it makes sense to wait a bit so we can avoid the costly upload
+    that a node gets modified or deleted soon after it is created.
+    It makes sense to wait a bit so we can avoid the costly upload
     operation.
     
     This class holds the nodes in a queue, and uploads them
     if they get pushed out of the queue.
+    
+    ``really_put`` is the function to call to really upload a node.
+    ``max_length`` is the maximum number of nodes to keep in the queue.
     
     '''
 
@@ -44,22 +47,27 @@ class UploadQueue(object):
         self.lru = lru.LRUCache(max_length, forget_hook=self._push_oldest)
         
     def put(self, node):
+        '''Put a node into the queue.'''
         self.lru.add(node.id, node)
 
     def _push_oldest(self, node_id, node):
         self.really_put(node)
 
     def push(self):
+        '''Upload all nodes in the queue.'''
         while len(self.lru) > 0:
             node_id, node = self.lru.remove_oldest()
             self.really_put(node)
     
     def remove(self, node_id):
+        '''Remove a node from the queue given its id.'''
         return self.lru.remove(node_id)
         
     def list_ids(self):
+        '''List identifiers of all nodes in the queue.'''
         return self.lru.keys()
         
     def get(self, node_id):
+        '''Get a node node given its id.'''
         return self.lru.get(node_id)
 
