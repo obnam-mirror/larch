@@ -250,7 +250,7 @@ class BTreeTests(unittest.TestCase):
         old_root = self.tree.root
         extra_root = self.tree._new_index([old_root.first_key()], 
                                           [old_root.id])
-        self.tree.set_root(extra_root)
+        self.tree._set_root(extra_root)
         # Fix old root's refcount, since it got incremented to 2.
         self.ns.set_refcount(old_root.id, 1)
         
@@ -264,7 +264,7 @@ class BTreeTests(unittest.TestCase):
         old_root = self.tree.root
         extra_root = self.tree._new_index([old_root.first_key()], 
                                           [old_root.id])
-        self.tree.set_root(extra_root)
+        self.tree._set_root(extra_root)
         
         # Make old root's refcount be 2, so it looks like it is shared
         # between trees.

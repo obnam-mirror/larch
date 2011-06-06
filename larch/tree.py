@@ -103,7 +103,7 @@ class BTree(object):
         tracing.trace('id=%s' % index.id)
         return index
 
-    def set_root(self, new_root):
+    def _set_root(self, new_root):
         '''Replace existing root node.'''
         tracing.trace('new_root.id=%s' % new_root.id)
         if self.root is not None and self.root.id != new_root.id:
@@ -258,7 +258,7 @@ class BTree(object):
                 new_root = self._new_index(keys, values)
                 tracing.trace('create new root: id=%s' % new_root.id)
 
-        self.set_root(new_root)
+        self._set_root(new_root)
 
     def _insert_into_index(self, old_index, key, value):
         '''Insert key, value into an index node.
@@ -373,7 +373,7 @@ class BTree(object):
             raise KeyError(key)
 
         new_root = self._remove_from_index(self.root, key)
-        self.set_root(new_root)
+        self._set_root(new_root)
         self._reduce_height()
 
     def _remove_from_index(self, old_index, key):
@@ -523,7 +523,7 @@ class BTree(object):
             # gets decremented. set_root will set the refcount to be 1.
             tracing.trace('setting node %s refcount to 2' % child.id)
             self.node_store.set_refcount(child.id, 2)
-            self.set_root(child)
+            self._set_root(child)
         tracing.trace('done reducing height')
 
     def increment(self, node_id):
