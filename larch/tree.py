@@ -109,7 +109,7 @@ class BTree(object):
         if self.root is not None and self.root.id != new_root.id:
             tracing.trace('decrement old root %s' % self.root.id)
             self.decrement(self.root.id)
-        self.put_node(new_root)
+        self._put_node(new_root)
         self.root = new_root
         tracing.trace('setting node %s refcount to 1' % self.root.id)
         self.node_store.set_refcount(self.root.id, 1)
@@ -118,7 +118,7 @@ class BTree(object):
         '''Return node corresponding to a node id.'''
         return self.node_store.get_node(node_id)
 
-    def put_node(self, node):
+    def _put_node(self, node):
         '''Put node into node store.'''
         tracing.trace('node.id=%s' % node.id)
         assert self.node_store.codec.size(node) <= self.node_store.node_size
@@ -233,7 +233,7 @@ class BTree(object):
         if self.root is None or len(self.root) == 0:
             tracing.trace('tree is empty')
             leaf = self._new_leaf([key], [value])
-            self.put_node(leaf)
+            self._put_node(leaf)
             if self.root is None:
                 new_root = self._new_index([key], [leaf.id])
             else:
@@ -299,12 +299,12 @@ class BTree(object):
             tracing.trace('new index node id=%s' % new.id)
             for k in keys:
                 new_index.remove(k)
-            self.put_node(new_index)
-            self.put_node(new)
+            self._put_node(new_index)
+            self._put_node(new)
             return [new_index, new]
         else:
             tracing.trace('no need to split index node id=%s' % new_index.id)
-            self.put_node(new_index)
+            self._put_node(new_index)
             return [new_index]
 
     def _insert_into_leaf(self, leaf, key, value):
@@ -355,7 +355,7 @@ class BTree(object):
             leaves = [new, new2]
 
         for x in leaves:
-            self.put_node(x)
+            self._put_node(x)
         return leaves
 
     def remove(self, key):
@@ -395,7 +395,7 @@ class BTree(object):
             assert isinstance(child, larch.LeafNode)
             leaf = self._shadow(child)
             leaf.remove(key)
-            self.put_node(leaf)
+            self._put_node(leaf)
             new_index.remove(child_key)
             if len(leaf) > 0:
                 self._add_or_merge_leaf(new_index, leaf)
@@ -405,7 +405,7 @@ class BTree(object):
                     self.decrement(leaf.id)
             self.decrement(child.id)
 
-        self.put_node(new_index)
+        self._put_node(new_index)
         return new_index
         
     def _add_or_merge_index(self, parent, index):
@@ -432,7 +432,7 @@ class BTree(object):
             new_node = node
 
         assert new_node is not None
-        self.put_node(new_node)
+        self._put_node(new_node)
         parent.add(new_node.first_key(), new_node.id)
         self.increment(new_node.id)
         if new_node != node: # pragma: no cover
@@ -474,7 +474,7 @@ class BTree(object):
             new_node = self._shadow(node)
             for k in sibling:
                 add(new_node, k, sibling[k])
-            self.put_node(new_node)
+            self._put_node(new_node)
             parent.remove(sibling_key)
             tracing.trace('decrementing now-unused sibling %s' % sibling.id)
             self.decrement(sibling.id)

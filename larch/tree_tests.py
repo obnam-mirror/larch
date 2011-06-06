@@ -82,21 +82,21 @@ class BTreeTests(unittest.TestCase):
 
     def test_shadow_returns_new_leaf_if_cannot_be_modified(self):
         node = self.tree._new_leaf(['foo'], ['bar'])
-        self.tree.put_node(node)
+        self.tree._put_node(node)
         self.ns.set_refcount(node.id, 2)
         node2 = self.tree._shadow(node)
         self.assertNotEqual(node2.id, node.id)
 
     def test_shadow_returns_new_index_if_cannot_be_modified(self):
         node = self.tree._new_index(['foo'], [1])
-        self.tree.put_node(node)
+        self.tree._put_node(node)
         self.ns.set_refcount(node.id, 2)
         node2 = self.tree._shadow(node)
         self.assertNotEqual(node2.id, node.id)
 
     def test_shadow_returns_same_node_that_can_be_modified(self):
         node = self.tree._new_index(['foo'], [1])
-        self.tree.put_node(node)
+        self.tree._put_node(node)
         self.ns.set_refcount(node.id, 1)
         node2 = self.tree._shadow(node)
         self.assertEqual(node2.id, node.id)
@@ -111,7 +111,7 @@ class BTreeTests(unittest.TestCase):
 
     def test_new_index_increments_childrens_refcounts(self):
         leaf = self.tree._new_leaf([], [])
-        self.tree.put_node(leaf)
+        self.tree._put_node(leaf)
         self.assertEqual(self.ns.get_refcount(leaf.id), 0)
         self.tree._new_index(['foo'], [leaf.id])
         self.assertEqual(self.ns.get_refcount(leaf.id), 1)
