@@ -26,18 +26,39 @@ import larch.fsck
 class Fsck(cliapp.Application):
 
     def process_args(self, args):
-        ts = ttystatus.TerminalStatus(period=0.1)
-        ts.add(ttystatus.Literal('checking nodes '))
-        ts.add(ttystatus.PercentDone('nodes_done', 'nodes_total', decimals=2))
-        ts.add(ttystatus.Literal(' '))
-        ts.add(ttystatus.RemainingTime('nodes_done', 'nodes_total'))
-        ts.add(ttystatus.Literal(' remaining'))
+        self.ts = ttystatus.TerminalStatus(period=0.1)
+        self.ts['check'] = 0
+        self.ts['checks'] = 0
+        self.ts['checkname'] = ''
+        self.ts.add(ttystatus.PercentDone('check', 'checks', decimals=2))
+        self.ts.add(ttystatus.Literal(' '))
+        self.ts.add(ttystatus.RemainingTime('check', 'checks'))
+        self.ts.add(ttystatus.Literal(' remaining; now: '))
+        self.ts.add(ttystatus.String('checkname'))
 
+        self.errors = False
         for dirname in args:
+            self.ts.notify('fsck-larch for %s' % dirname)
             forest = larch.open_forest(dirname=dirname)
-            fsck = larch.fsck.Fsck(ts, forest)
-            fsck.check_forest()
+            fsck = larch.fsck.Fsck(forest, self.report)
+            fsck.find_work()
             
+            self.ts['checks'] = len(fsck.work)
+            self.ts['check'] = 0
+            for work in fsck.work:
+                self.ts['check'] += 1
+                self.ts['checkname'] = str(work)
+                work.do()
+
+        self.ts.finish()
+        
+        if self.errors:
+            sys.exit(1)
+
+    def report(self, msg):
+        self.errors = True
+        self.ts.notify(msg)
+        logging.error(msg)
 
 if __name__ == '__main__':
     Fsck().run()

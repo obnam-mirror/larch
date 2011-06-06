@@ -21,138 +21,134 @@ import ttystatus
 import larch
 
 
-class Fsck(object):
+class Error(Exception):
 
-    '''Verify that a B-tree is logically correct.'''
+    def __init__(self, msg):
+        self.msg = 'Assertion failed: %s' % msg
+        
+    def __str__(self):
+        return self.msg
+
+
+class WorkItem(object):
+
+    '''A work item for fsck.'''
+
+    def __str__(self):
+        return self.name
     
-    def __init__(self, status, forest):
-        self.status = status
-        self.forest = forest
-        self.ns = self.forest.node_store
-        self.minkey = '\x00' * self.ns.codec.key_bytes
-        self.maxkey = '\xff' * self.ns.codec.key_bytes
+    def do(self):
+        pass
 
     def error(self, msg):
-        self.status.notify('ERROR: %s' % msg)
+        self.fsck.report('%s: %s' % (self.name, msg))
 
-    def info(self, msg):
-        self.status.notify(msg)
-        
-    def _assert(self, cond, msg1, msg2):
-        if not cond:
-            if msg1:
-                self.error(msg1)
-            self.error('not true: %s' % msg2)
-
-    def assert_equal(self, a, b, msg=''):
-        self._assert(a == b, msg, '%s == %s' % (repr(a), repr(b)))
-
-    def assert_greater(self, a, b, msg=''):
-        self._assert(a > b, msg, '%s > %s' % (repr(a), repr(b)))
-
-    def assert_ge(self, a, b, msg=''):
-        self._assert(a >= b, msg, '%s >= %s' % (repr(a), repr(b)))
-
-    def assert_in_keyrange(self, a, lo, hi, msg=''):
-        '''half-open range: lo <= a < hi'''
-        self._assert(lo <= a < hi, msg, 
-                     '%s <= %s < %s' % (repr(lo), repr(a), repr(hi)))
-
-    def assert_in(self, value, collection, msg=''):
-        self._assert(value in collection, msg, 
-                     '%s in %s' % (repr(value), repr(collection)))
-
-    def check_node(self, node, minkey, maxkey):
-        keys = node.keys()
-        self.assert_greater(self.ns.get_refcount(node.id), 0, 
-                            'node refcount must be > 0')
-        self.assert_greater(len(keys), 0, 'node must have children')
-        self.assert_equal(sorted(keys), keys, 'node keys must be sorted')
-        self.assert_equal(sorted(set(keys)), keys, 'node keys must be unique')
-        self.assert_in_keyrange(keys[0], minkey, maxkey,
-                                'node keys must be within range')
-        if len(keys) > 1:
-            self.assert_in_keyrange(keys[-1], minkey, maxkey,
-                                    'keys must be within range')
-    
-    def check_leaf_node(self, node, minkey, maxkey):
-        pass
-    
-    def check_index_node(self, node, minkey, maxkey):
-        keys = node.keys()
-        child0_id = node[keys[0]]
+    def get_node(self, node_id):
         try:
-            child0 = self.ns.get_node(child0_id)
+            return self.fsck.forest.node_store.get_node(node_id)
         except larch.NodeMissing:
-            self.error('child missing: %d' % child0_id)
-            self.error('index node not checked: %d' % node.id)
-            return
-        child_type = type(child0)
+            self.error('node %s is missing' % node_id)
 
-        for key in keys:
-            child = self.ns.get_node(node[key])
-            
-            self.assert_in(type(child), [larch.IndexNode, larch.LeafNode],
-                           'type must be index or leaf')
-            self.assert_equal(type(child), child_type,
-                              'all children must have same type')
-            
-    def check_root_node(self, root):
-        self.assert_equal(self.ns.get_refcount(root.id), 1, 
-                          'root refcount should be 1')
-        self.assert_equal(type(root), larch.IndexNode, 'root must be an index')
-        
-    def walk(self, node, minkey, maxkey):
-        if node.id in self.checked:
-            return
-        self.checked.add(node.id)
-        yield node, minkey, maxkey
-        if type(node) is larch.IndexNode:
+
+class CheckNode(WorkItem):
+
+    def __init__(self, fsck, node_id):
+        self.fsck = fsck
+        self.node_id = node_id
+        self.name = 'node %s' % node_id
+
+    def do(self):
+        node = self.get_node(self.node_id)
+        if node:
+            if type(node) not in [larch.IndexNode, larch.LeafNode]:
+                self.error('node must be an index or leaf node')
+                return
             keys = node.keys()
-            next_keys = keys[1:] + [maxkey]
-            for i in range(len(keys)):
-                child_id = node[keys[i]]
-                try:
-                    child = self.ns.get_node(child_id)
-                except larch.NodeMissing:
-                    self.error('node missing: %d' % child_id)
-                else:
-                    for t in self.walk(child, keys[i], next_keys[i]):
-                        yield t
+            if self.fsck.forest.node_store.get_refcount(node.id) <= 0:
+                self.error('node refcount must be > 0')
+            if not len(keys):
+                self.error('node must have keys')
+            if sorted(keys) != keys:
+                self.error('node keys must be sorted')
+            if sorted(set(keys)) != keys:
+                self.error('node keys must be unique')
+
+
+class CheckRoot(WorkItem):
+
+    def __init__(self, fsck, root_id):
+        self.fsck = fsck
+        self.root_id = root_id
+        self.name = 'root node %s' % root_id
         
-    def check_tree(self, root_id):
-        try:
-            root = self.ns.get_node(root_id)
-        except larch.NodeMissing:
-            self.error('root node missing: %d' % root_id)
-        else:
-            self.check_root_node(root)
-            for node, min2, max2 in self.walk(root, self.minkey, self.maxkey):
-                self.status['node_id'] = str(node.id)
-                self.status['nodes_done'] += 1
-                self.check_node(node, min2, max2)
-                if type(node) is larch.IndexNode:
-                    self.check_index_node(node, min2, max2)
-                else:
-                    self.check_leaf_node(node, min2, max2)
+    def do(self):
+        node = self.get_node(self.root_id)
+        if node:
+            if self.fsck.forest.node_store.get_refcount(self.root_id) != 1:
+                self.error('root refcount must be 1')
+            if type(node) != larch.IndexNode:
+                self.error('root must be an index node')
 
-    def forest_root_ids(self):
-        string = self.ns.get_metadata('root_ids')
-        return [int(x) for x in string.split(',')]
 
-    def check_forest(self):
-        self.info('larch fsck')
+class CheckRecursively(WorkItem):
 
-        nodes = self.ns.list_nodes()
-        self.info('nodes: %d' % len(nodes))
+    def __init__(self, fsck, root_id):
+        self.fsck = fsck
+        self.root_id = root_id
+        self.name = 'tree %s' % root_id
         
-        self.status['node_id'] = '---'
-        self.status['nodes_done'] = 0
-        self.status['nodes_total'] = len(nodes)
+    def do(self):
+        seen = set()
+        for node, minkey, maxkey in self.walk(self.root_id):
+            if node.id not in seen:
+                seen.add(node.id)
+                keys = node.keys()
+                if keys[0] < minkey:
+                    self.error('node %s: first key is too small' % node.id)
+                if keys[-1] > maxkey:
+                    self.error('node %s: last key is too large' % node.id)
+        for node_id in self.fsck.forest.node_store.list_nodes():
+            if node_id not in seen:
+                self.error('node %d is out of touch' % node_id)
 
-        self.checked = set()
-        for root_id in self.forest_root_ids():
-            self.check_tree(root_id)
+    def walk(self, root_id):
+
+        def walker(node_id, minkey, maxkey):
+            node = self.get_node(node_id)
+            if node:
+                yield node, minkey, maxkey
+                if type(node) == larch.IndexNode:
+                    keys = node.keys()
+                    for i, key in enumerate(keys):
+                        child_id = node[key]
+                        if i + 1 < len(keys):
+                            next_key = keys[i+1]
+                        else:
+                            next_key = maxkey
+                        for x in walker(child_id, key,  next_key):
+                            yield x
         
-        self.status.finish()
+        ns  = self.fsck.forest.node_store
+        tree_minkey = chr(0) * ns.codec.key_bytes
+        tree_maxkey = chr(255) * ns.codec.key_bytes
+        for x in walker(root_id, tree_minkey, tree_maxkey):
+            yield x
+
+
+class Fsck(object):
+
+    '''Verify internal consistency of a larch.Forest.'''
+    
+    def __init__(self, forest, report):
+        self.forest = forest
+        self.report = report
+        self.work = []
+
+    def find_work(self):
+        for node_id in self.forest.node_store.list_nodes():
+            self.work.append(CheckNode(self, node_id))
+        for tree in self.forest.trees:
+            self.work.append(CheckRoot(self, tree.root.id))
+        for tree in self.forest.trees:
+            self.work.append(CheckRecursively(self, tree.root.id))
 
