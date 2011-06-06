@@ -50,6 +50,10 @@ class Forest(object):
     the original (and vice versa). You can have up to 65535 
     clones of a tree.
     
+    The list of trees in the forest is stored in the ``trees``
+    property as a list of trees in the order in which they were
+    created.
+    
     '''
 
     def __init__(self, node_store):
@@ -109,7 +113,12 @@ class Forest(object):
         self.trees.remove(tree)
 
     def commit(self):
-        '''Make sure all changes are stored into the node store.'''
+        '''Make sure all changes are stored into the node store.
+        
+        Changes made to the forest are guaranteed to be persistent
+        only if commit is called successfully.
+        
+        '''
         self.node_store.push_upload_queue()
         self.node_store.set_metadata('last_id', self.last_id)
         root_ids = ','.join('%d' % t.root.id 
