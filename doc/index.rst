@@ -21,6 +21,24 @@ for on-disk storage.
 * Rodeh paper: http://liw.fi/larch/ohad-btrees-shadowing-clones.pdf
 
 
+Classes and functions
+=====================
+
+Anything that is available as ``larch.foo.bar`` is also
+available as ``larch.bar``.
+
+.. toctree::
+   :maxdepth: 2
+   
+   forest
+   btree
+   node
+   codec
+   nodestore
+   refcountstore
+   uploadqueue
+
+
 Quick start
 ===========
 
@@ -83,12 +101,6 @@ You probably don't need to worry about anything else than the
 ``Forest`` and ``BTree`` classes, unless you want to provide your
 own ``NodeStore`` instance.
 
-Reference manual
-================
-
-.. automodule:: larch
-   :members:
-   :undoc-members:
 
 
 Indices and tables
