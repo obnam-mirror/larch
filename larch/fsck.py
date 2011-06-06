@@ -72,6 +72,11 @@ class CheckNode(WorkItem):
                 self.error('node keys must be sorted')
             if sorted(set(keys)) != keys:
                 self.error('node keys must be unique')
+            encoded = self.fsck.forest.node_store.codec.encode(node)
+            if len(encoded) > self.fsck.forest.node_store.node_size:
+                self.error('node is too large')
+            if len(encoded) == 0:
+                self.error('node has zero size when encoded')
 
 
 class CheckRoot(WorkItem):
