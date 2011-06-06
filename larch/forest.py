@@ -56,9 +56,9 @@ class Forest(object):
         self.node_store = node_store
         self.trees = []
         self.last_id = 0
-        self.read_metadata()
+        self._read_metadata()
 
-    def read_metadata(self):
+    def _read_metadata(self):
         keys = self.node_store.get_metadata_keys()
         if 'last_id' in keys:
             self.last_id = int(self.node_store.get_metadata('last_id'))
