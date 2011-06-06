@@ -80,7 +80,7 @@ class BTree(object):
 
     def new_id(self):
         '''Generate a new node identifier.'''
-        return self.forest.new_id()
+        return self.forest._new_id()
     
     def new_leaf(self, keys, values):
         '''Create a new leaf node.'''
