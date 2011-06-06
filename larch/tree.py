@@ -73,7 +73,7 @@ class BTree(object):
         if root_id is None:
             self.root = None
         else:
-            self.root = self.get_node(root_id)
+            self.root = self._get_node(root_id)
             
         tracing.trace('init BTree %s with root_id %s' % (self, root_id))
 
@@ -114,7 +114,7 @@ class BTree(object):
         tracing.trace('setting node %s refcount to 1' % self.root.id)
         self.node_store.set_refcount(self.root.id, 1)
         
-    def get_node(self, node_id):
+    def _get_node(self, node_id):
         '''Return node corresponding to a node id.'''
         return self.node_store.get_node(node_id)
 
@@ -145,7 +145,7 @@ class BTree(object):
             # If k is None, then the indexing of node will cause KeyError
             # to be returned, just like we want to. This saves us from
             # having to test for it separately.
-            node = self.get_node(node[k])
+            node = self._get_node(node[k])
             
         if isinstance(node, larch.LeafNode):
             return node[key]
@@ -166,7 +166,7 @@ class BTree(object):
                 yield pair
 
     def _lookup_range(self, node_id, minkey, maxkey):
-        node = self.get_node(node_id)
+        node = self._get_node(node_id)
         if isinstance(node, larch.LeafNode):
             for key in node.find_keys_in_range(minkey, maxkey):
                 yield key, node[key]
@@ -192,7 +192,7 @@ class BTree(object):
         return self._range_is_empty(self.root.id, minkey, maxkey)
 
     def _range_is_empty(self, node_id, minkey, maxkey):
-        node = self.get_node(node_id)
+        node = self._get_node(node_id)
         if isinstance(node, larch.LeafNode):
             return node.find_keys_in_range(minkey, maxkey) == []
         else:
@@ -278,7 +278,7 @@ class BTree(object):
         if child_key is None:
             child_key = new_index.first_key()
 
-        child = self.get_node(new_index[child_key])
+        child = self._get_node(new_index[child_key])
         if isinstance(child, larch.IndexNode):
             new_kids = self._insert_into_index(child, key, value)
         else:
@@ -380,7 +380,7 @@ class BTree(object):
         tracing.trace('old_index.id=%s' % old_index.id)
         child_key = old_index.find_key_for_child_containing(key)
         new_index = self._shadow(old_index)
-        child = self.get_node(new_index[child_key])
+        child = self._get_node(new_index[child_key])
         
         if isinstance(child, larch.IndexNode):
             new_kid = self._remove_from_index(child, key)
@@ -468,7 +468,7 @@ class BTree(object):
     def _merge_nodes(self, parent, node, sibling_index, merge_p, add):
         sibling_key = parent.keys()[sibling_index]
         sibling_id = parent[sibling_key]
-        sibling = self.get_node(sibling_id)
+        sibling = self._get_node(sibling_id)
         if merge_p(node, sibling):
             tracing.trace('merging nodes %s and %s' % (node.id, sibling.id))
             new_node = self._shadow(node)
@@ -512,7 +512,7 @@ class BTree(object):
                 tracing.trace('only child is shared')
                 break
 
-            child = self.get_node(child_id)
+            child = self._get_node(child_id)
             if isinstance(child, larch.LeafNode):
                 tracing.trace('only child is a leaf node')
                 break
@@ -544,7 +544,7 @@ class BTree(object):
         else:
             tracing.trace('node %s refcount %s, removing node' % 
                          (node_id, refcount))
-            node = self.node_store.get_node(node_id)
+            node = self._get_node(node_id)
             if isinstance(node, larch.IndexNode):
                 tracing.trace('reducing refcounts for children')
                 for child_id in node.values():
@@ -560,7 +560,7 @@ class BTree(object):
             if isinstance(node, larch.IndexNode):
                 f.write('%*sindex (id=%d, refs=%d)\n' % (indent*2, '', node.id, refs))
                 for key in node:
-                    child = self.get_node(node[key])
+                    child = self._get_node(node[key])
                     dumper(child, indent + 1)
             else:
                 assert isinstance(node, larch.LeafNode)

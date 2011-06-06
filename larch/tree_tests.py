@@ -103,11 +103,11 @@ class BTreeTests(unittest.TestCase):
 
     def test_new_leaf_does_not_put_node_into_store(self):
         leaf = self.tree._new_leaf([], [])
-        self.assertRaises(larch.NodeMissing, self.tree.get_node, leaf.id)
+        self.assertRaises(larch.NodeMissing, self.tree._get_node, leaf.id)
 
     def test_new_index_does_not_put_node_into_store(self):
         index = self.tree._new_index([], [])
-        self.assertRaises(larch.NodeMissing, self.tree.get_node, index.id)
+        self.assertRaises(larch.NodeMissing, self.tree._get_node, index.id)
 
     def test_new_index_increments_childrens_refcounts(self):
         leaf = self.tree._new_leaf([], [])
@@ -190,7 +190,7 @@ class BTreeTests(unittest.TestCase):
                 else:
                     up = keys[i+1]
                 if self.dump: print '%*sin child, keys should be in %s..%s' % (level*indent, '', key, up)
-                if not self.keys_are_in_range(self.tree.get_node(node[key]), key, up, level+1):
+                if not self.keys_are_in_range(self.tree._get_node(node[key]), key, up, level+1):
                     return False
         return True
 
@@ -199,7 +199,7 @@ class BTreeTests(unittest.TestCase):
             return max(node.keys())
         else:
             return max(node.keys() + 
-                       [self.find_largest_key(self.tree.get_node(node[key]))
+                       [self.find_largest_key(self.tree._get_node(node[key]))
                         for key in node.keys()])
 
     def nextkey(self, key):
@@ -288,7 +288,7 @@ class BTreeTests(unittest.TestCase):
             f.write('%*sIndex:\n' % (level*indent, ''))
             for key in node.keys():
                 f.write('%*s%s:\n' % ((level+1)*indent, '', key))
-                self.dump_tree(self.tree.get_node(node[key]), level=level+2)
+                self.dump_tree(self.tree._get_node(node[key]), level=level+2)
 
     def test_insert_many_remove_many_works(self):
         keys = ['%03d' % i for i in range(100)]
@@ -561,7 +561,7 @@ class BTreeBalanceTests(unittest.TestCase):
         else:
             assert isinstance(node, larch.IndexNode)
             for key in node:
-                child = self.tree.get_node(node[key])
+                child = self.tree._get_node(node[key])
                 if not self.leaves_at_same_depth(child, depth + 1):
                     return False
             return True
@@ -572,7 +572,7 @@ class BTreeBalanceTests(unittest.TestCase):
                 if len(node) < self.fanout or len(node) > 2 * self.fanout + 1:
                     return False
             for key in node:
-                child = self.tree.get_node(node[key])
+                child = self.tree._get_node(node[key])
                 ok = self.indexes_filled_right_amount(child, isroot=False)
                 if not ok:
                     return False
