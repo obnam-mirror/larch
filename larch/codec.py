@@ -30,7 +30,7 @@ class NodeCodec(object):
     
     Node identifiers are assumed to fit into 64 bits.
     
-    Leaf node values are assumed to fit into 65535 bytes.
+    Leaf node values are assumed to fit into 4 gibibytes.
     
     '''
 
