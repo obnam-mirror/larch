@@ -3,3 +3,4 @@
 ./setup.py
 ./example.py
 ./doc/conf.py
+./larch/fsck.py
