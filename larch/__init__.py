@@ -24,6 +24,7 @@ from forest import Forest, open_forest, BadKeySize, BadNodeSize
 from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig, 
                        NodeExists, NodeCannotBeModified)
 from refcountstore import RefcountStore
+from lru import LRUCache
 from uploadqueue import UploadQueue
 from nodestore_disk import NodeStoreDisk, LocalFS
 from nodestore_memory import NodeStoreMemory

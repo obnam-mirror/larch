@@ -16,7 +16,6 @@
 
 import ConfigParser
 import logging
-import lru
 import os
 import StringIO
 import struct

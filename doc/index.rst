@@ -37,6 +37,7 @@ available as ``larch.bar``.
    nodestore
    refcountstore
    uploadqueue
+   lru
 
 
 Quick start

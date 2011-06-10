@@ -16,7 +16,6 @@
 
 import ConfigParser
 import logging
-import lru
 import os
 import StringIO
 import struct
@@ -88,7 +87,7 @@ class NodeStoreDisk(larch.NodeStore):
         self.metadata_name = os.path.join(dirname, 'metadata')
         self.metadata = None
         self.rs = larch.RefcountStore(self)
-        self.cache = lru.LRUCache(lru_size)
+        self.cache = larch.LRUCache(lru_size)
         self.upload_max = upload_max
         self.upload_queue = larch.UploadQueue(self._really_put_node, 
                                               self.upload_max)

@@ -16,7 +16,6 @@
 
 import ConfigParser
 import logging
-import lru
 import os
 import StringIO
 import struct
@@ -44,7 +43,7 @@ class UploadQueue(object):
 
     def __init__(self, really_put, max_length):
         self.really_put = really_put
-        self.lru = lru.LRUCache(max_length, forget_hook=self._push_oldest)
+        self.lru = larch.LRUCache(max_length, forget_hook=self._push_oldest)
         
     def put(self, node):
         '''Put a node into the queue.'''
