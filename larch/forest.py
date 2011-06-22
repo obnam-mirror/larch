@@ -79,7 +79,7 @@ class Forest(object):
             else:
                 self.trees = []
     
-    def _new_id(self):
+    def new_id(self):
         '''Generate next node id for this forest.
         
         Trees should use this whenever they create new nodes.

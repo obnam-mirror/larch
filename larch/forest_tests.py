@@ -29,8 +29,8 @@ class ForestTests(unittest.TestCase):
         self.forest = larch.Forest(self.ns)
 
     def test_new_node_ids_grow(self):
-        id1 = self.forest._new_id()
-        id2 = self.forest._new_id()
+        id1 = self.forest.new_id()
+        id2 = self.forest.new_id()
         self.assertEqual(id1 + 1, id2)
 
     def test_has_no_trees_initially(self):
