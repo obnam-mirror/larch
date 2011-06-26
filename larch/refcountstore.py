@@ -37,7 +37,7 @@ def decode_refcounts(encoded):
     n = struct.calcsize('!QH')
     start_id, how_many = struct.unpack('!QH', encoded[:n])
     counts = struct.unpack('!' + 'H' * how_many, encoded[n:])
-    return [(start_id + i, counts[i]) for i in range(how_many)]
+    return zip(range(start_id, start_id + how_many), counts)
 
 
 class RefcountStore(object):
