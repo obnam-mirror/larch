@@ -102,8 +102,9 @@ class RefcountStoreTests(unittest.TestCase):
         refs = range(2048)
         for ref in refs:
             self.rs.set_refcount(ref, ref)
-        encoded = self.rs._encode_refcounts(0, 1024)
-        decoded = self.rs._decode_refcounts(encoded)
+        encoded = larch.refcountstore.encode_refcounts(self.rs.refcounts, 
+                                                       0, 1024)
+        decoded = larch.refcountstore.decode_refcounts(encoded)
         self.assertEqual(decoded, [(x, x) for x in refs[:1024]])
 
     def test_group_returns_correct_start_id_for_node_zero(self):
