@@ -24,6 +24,22 @@ import tempfile
 import larch
 
 
+def encode_refcounts(refcounts, start_id, how_many):
+    fmt = '!QH' + 'H' * how_many
+    args = [start_id, how_many] + ([0] * how_many)
+    keys = set(refcounts.keys())
+    wanted = set(range(start_id, start_id + how_many))
+    for key in wanted.intersection(keys):
+        args[2 + key - start_id] = refcounts[key]
+    return struct.pack(fmt, *args)
+    
+def decode_refcounts(encoded):
+    n = struct.calcsize('!QH')
+    start_id, how_many = struct.unpack('!QH', encoded[:n])
+    counts = struct.unpack('!' + 'H' * how_many, encoded[n:])
+    return [(start_id + i, counts[i]) for i in range(how_many)]
+
+
 class RefcountStore(object):
 
     '''Store node reference counts.
@@ -79,7 +95,8 @@ class RefcountStore(object):
             for start_id in range(self._start_id(ids[0]), 
                                   self._start_id(ids[-1]) + 1, 
                                   self.per_group):
-                encoded = self._encode_refcounts(start_id, self.per_group)
+                encoded = encode_refcounts(self.refcounts, start_id, 
+                                           self.per_group)
                 filename = self._group_filename(start_id)
                 self.node_store.vfs.overwrite_file(filename, encoded)
             self.dirty.clear()
@@ -88,7 +105,7 @@ class RefcountStore(object):
         filename = self._group_filename(start_id)
         if self.node_store.vfs.exists(filename):
             encoded = self.node_store.vfs.cat(filename)
-            return self._decode_refcounts(encoded)
+            return decode_refcounts(encoded)
 
     def _group_filename(self, start_id):
         return os.path.join(self.node_store.dirname, self.refcountdir,
@@ -96,17 +113,4 @@ class RefcountStore(object):
 
     def _start_id(self, node_id):
         return (node_id / self.per_group) * self.per_group
-
-    def _encode_refcounts(self, start_id, how_many):
-        fmt = '!QH' + 'H' * how_many
-        args = ([start_id, how_many] +
-                [self.refcounts.get(i, 0)
-                 for i in range(start_id, start_id + how_many)])
-        return struct.pack(fmt, *args)
-
-    def _decode_refcounts(self, encoded):
-        n = struct.calcsize('!QH')
-        start_id, how_many = struct.unpack('!QH', encoded[:n])
-        counts = struct.unpack('!' + 'H' * how_many, encoded[n:])
-        return [(start_id + i, counts[i]) for i in range(how_many)]
 
