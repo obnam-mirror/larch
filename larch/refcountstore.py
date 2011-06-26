@@ -26,11 +26,13 @@ import larch
 
 def encode_refcounts(refcounts, start_id, how_many):
     fmt = '!QH' + 'H' * how_many
-    args = ([start_id, how_many] +
-            [refcounts.get(i, 0)
-             for i in range(start_id, start_id + how_many)])
+    args = [start_id, how_many] + ([0] * how_many)
+    keys = set(refcounts.keys())
+    wanted = set(range(start_id, start_id + how_many))
+    for key in wanted.intersection(keys):
+        args[2 + key - start_id] = refcounts[key]
     return struct.pack(fmt, *args)
-
+    
 def decode_refcounts(encoded):
     n = struct.calcsize('!QH')
     start_id, how_many = struct.unpack('!QH', encoded[:n])
