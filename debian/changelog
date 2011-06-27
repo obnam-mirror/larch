@@ -1,3 +1,10 @@
+python-larch (0.20) UNRELEASED; urgency=low
+
+  * New upstream release. This is the first release to be uploaded to
+    Debian. (Closes: #631864)
+
+ -- Lars Wirzenius <liw@liw.fi>  Mon, 27 Jun 2011 23:06:13 +0100
+
 python-larch (0.19) squeeze; urgency=low
 
   * New upstream version.
