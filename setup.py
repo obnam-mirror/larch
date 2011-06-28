@@ -21,9 +21,34 @@ import larch
 setup(
     name='larch',
     version=larch.version,
-    description='B-tree data structure',
+    description='copy-on-write B-tree data structure',
+    long_description='''\
+An implementation of a particular kind of B-tree, based on research
+by Ohad Rodeh. This is the same data structure that btrfs uses, but
+in a new, pure-Python implementation.
+
+The distinctive feature of this B-tree is that a node is never (conceptually)
+modified. Instead, all updates are done by copy-on-write. This makes it
+easy to clone a tree, and modify only the clone, while other processes
+access the original tree.
+
+The implementation is generic and flexible, so that you may use it in
+a variety of situations. For example, the tree itself does not decide
+where its nodes are stored: you provide a class that does that for it.
+The library contains two implementations, one for in-memory and one
+for on-disk storage.
+''',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Topic :: Software Development :: Libraries',
+    ],
     author='Lars Wirzenius',
     author_email='liw@liw.fi',
     url='http://liw.fi/larch/',
     packages=['larch'],
 )
+
