@@ -20,7 +20,7 @@ import larch
 
 setup(
     name='larch',
-    version=larch.version,
+    version=larch.__version__,
     description='copy-on-write B-tree data structure',
     long_description='''\
 An implementation of a particular kind of B-tree, based on research
