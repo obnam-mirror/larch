@@ -50,5 +50,6 @@ for on-disk storage.
     author_email='liw@liw.fi',
     url='http://liw.fi/larch/',
     packages=['larch'],
+    scripts=['fsck-larch'],
 )
 
