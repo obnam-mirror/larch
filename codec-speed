@@ -29,16 +29,15 @@ import larch
 class CodecBenchmark(cliapp.Application):
 
     def add_settings(self):
-        self.settings.add_string_setting(['csv'],
-                                         'append a CSV row to FILE',
-                                         metavar='FILE')
-        self.settings.add_boolean_setting(['profile'],
-                                          'run benchmark under profiling?')
-        self.settings.add_integer_setting(['keys', 'n'],
-                                          'run benchmark with N keys '
-                                            '(default: %default)',
-                                          metavar='N',
-                                          default=10000)
+        self.settings.string(['csv'],
+                             'append a CSV row to FILE',
+                             metavar='FILE')
+        self.settings.boolean(['profile'],
+                              'run benchmark under profiling?')
+        self.settings.integer(['keys', 'n'],
+                              'run benchmark with N keys (default: %default)',
+                              metavar='N',
+                              default=10000)
 
     def process_args(self, args):
         n = self.settings['keys']

@@ -45,19 +45,18 @@ import larch
 class SpeedTest(cliapp.Application):
 
     def add_settings(self):
-        self.settings.add_boolean_setting(['profile'], 
-                'profile with cProfile?')
-        self.settings.add_boolean_setting(['log-memory-use'], 'log VmRSS?')
-        self.settings.add_string_setting(['trace'], 
+        self.settings.boolean(['profile'], 'profile with cProfile?')
+        self.settings.boolean(['log-memory-use'], 'log VmRSS?')
+        self.settings.string(['trace'], 
                 'code module in which to do trace logging')
-        self.settings.add_integer_setting(['keys'], 
+        self.settings.integer(['keys'], 
                 'how many keys to test with (default is %default)',
                 default=1000)
-        self.settings.add_string_setting(['location'], 
+        self.settings.string(['location'], 
                 'where to store B-tree on disk (in-memory test if not set)')
-        self.settings.add_string_setting(['csv'],
-                                         'append a CSV row to FILE',
-                                         metavar='FILE')
+        self.settings.string(['csv'],
+                'append a CSV row to FILE',
+                metavar='FILE')
 
     def process_args(self, args):
         if self.settings['trace']:
