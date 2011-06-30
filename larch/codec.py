@@ -54,6 +54,22 @@ class NodeCodec(object):
         return (self.leaf_header.size + len(keys) * self.leaf_pair_fixed_size +
                 len(''.join([value for value in values])))
 
+    def leaf_size_delta_add(self, old_size, value):
+        '''Return size of node that gets a new key/value pair added.
+        
+        ``old_size`` is the old size of the node. The key must not already
+        have existed in the node.
+        
+        '''
+        
+        delta = self.leaf_pair_fixed_size + len(value)
+        return old_size + delta
+
+    def leaf_size_delta_replace(self, old_size, old_value, new_value):
+        '''Return size of node that gets a value replaced.'''
+        
+        return old_size + len(new_value) - len(old_value)
+
     def encode_leaf(self, node):
         '''Encode a leaf node as a byte string.'''
 

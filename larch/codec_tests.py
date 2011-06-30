@@ -35,6 +35,31 @@ class NodeCodecTests(unittest.TestCase):
     def test_returns_reasonable_size_for_empty_leaf_generic(self):
         leaf = larch.LeafNode(0, [], [])
         self.assert_(self.codec.size(leaf) > 10)
+        
+    def test_returns_ok_delta_for_added_key_value(self):
+        leaf = larch.LeafNode(0, [], [])
+        old_size = self.codec.leaf_size(leaf.keys(), leaf.values())
+        new_size = self.codec.leaf_size_delta_add(old_size, 'bar')
+        self.assert_(new_size > old_size + len('foo') + len('bar'))
+
+    def test_returns_ok_delta_for_changed_value_of_same_size(self):
+        leaf = larch.LeafNode(0, ['foo'], ['bar'])
+        old_size = self.codec.leaf_size(leaf.keys(), leaf.values())
+        new_size = self.codec.leaf_size_delta_replace(old_size, 'bar', 'xxx')
+        self.assertEqual(new_size, old_size)
+
+    def test_returns_ok_delta_for_changed_value_of_larger_size(self):
+        leaf = larch.LeafNode(0, ['foo'], ['bar'])
+        old_size = self.codec.leaf_size(leaf.keys(), leaf.values())
+        new_size = self.codec.leaf_size_delta_replace(old_size, 'bar',
+                                                      'foobar')
+        self.assertEqual(new_size, old_size + len('foobar') - len('foo'))
+
+    def test_returns_ok_delta_for_changed_value_of_shorter_size(self):
+        leaf = larch.LeafNode(0, ['foo'], ['bar'])
+        old_size = self.codec.leaf_size(leaf.keys(), leaf.values())
+        new_size = self.codec.leaf_size_delta_replace(old_size, 'bar',  '')
+        self.assertEqual(new_size, old_size - len('foo'))
 
     def test_returns_reasonable_size_for_empty_index_generic(self):
         index = larch.IndexNode(0, [], [])

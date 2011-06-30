@@ -314,11 +314,22 @@ class BTree(object):
         '''
         
         tracing.trace('leaf.id=%s' % leaf.id)
-        new = self._shadow(leaf)
-        new.add(key, value)
 
+        codec = self.node_store.codec
         max_size = self.node_store.node_size
         size = self._leaf_size
+
+        new = self._shadow(leaf)
+        old_size = size(new)
+        if key in new:
+            old_value = new[key]
+            new.add(key, value)
+            new.size = codec.leaf_size_delta_replace(old_size, old_value, 
+                                                     value)
+        else:
+            new.add(key, value)
+            new.size = codec.leaf_size_delta_add(old_size, value)
+
 
         if size(new) <= max_size:
             tracing.trace('leaf did not grow too big')
