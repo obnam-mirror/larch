@@ -332,24 +332,16 @@ class BTree(object):
             new2 = self._new_leaf(keys[n:], values[n:])
             for key in new2:
                 new.remove(key)
-            assert size(new) > 0
-            assert size(new2) > 0
             if size(new2) > max_size: # pragma: no cover
-                assert size(new) < max_size
                 while size(new2) > max_size:
                     key = new2.keys()[0]
                     new.add(key, new2[key])
                     new2.remove(key)
             elif size(new) > max_size: # pragma: no cover
-                assert size(new2) < max_size
                 while size(new) > max_size:
                     key = new.keys()[-1]
                     new2.add(key, new[key])
                     new.remove(key)
-            assert size(new) > 0
-            assert size(new2) > 0
-            assert size(new) <= max_size
-            assert size(new2) <= max_size
 
             leaves = [new, new2]
 
