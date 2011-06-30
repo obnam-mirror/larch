@@ -121,7 +121,6 @@ class BTree(object):
     def _put_node(self, node):
         '''Put node into node store.'''
         tracing.trace('node.id=%s' % node.id)
-        assert self.node_store.codec.size(node) <= self.node_store.node_size
         return self.node_store.put_node(node)
 
     def _leaf_size(self, node):
