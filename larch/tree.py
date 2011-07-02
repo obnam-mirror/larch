@@ -284,10 +284,15 @@ class BTree(object):
             new_kids = self._insert_into_leaf(child, key, value)
 
         new_index.remove(child_key)
+        do_dec = True
         for kid in new_kids:
             new_index.add(kid.first_key(), kid.id)
-            self._increment(kid.id)
-        self._decrement(child.id)
+            if kid.id != child.id:
+                self._increment(kid.id)
+            else:
+                do_dec = False
+        if do_dec: # pragma: no cover
+            self._decrement(child.id)
 
         if len(new_index) > self.max_index_length:
             tracing.trace('need to split index node id=%s' % new_index.id)
@@ -296,8 +301,7 @@ class BTree(object):
             values = new_index.values()[n:]
             new = larch.IndexNode(self._new_id(), keys, values)
             tracing.trace('new index node id=%s' % new.id)
-            for k in keys:
-                new_index.remove(k)
+            new_index.remove_index_range(n, len(new_index))
             self._put_node(new_index)
             self._put_node(new)
             return [new_index, new]

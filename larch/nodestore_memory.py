@@ -55,8 +55,6 @@ class NodeStoreMemory(larch.NodeStore):
             raise larch.NodeMissing(node_id)
 
     def start_modification(self, node):
-        if not self.can_be_modified(node):
-            raise larch.NodeCannotBeModified(node.id)
         node.frozen = False
     
     def remove_node(self, node_id):
