@@ -296,8 +296,7 @@ class BTree(object):
             values = new_index.values()[n:]
             new = larch.IndexNode(self._new_id(), keys, values)
             tracing.trace('new index node id=%s' % new.id)
-            for k in keys:
-                new_index.remove(k)
+            new_index.remove_index_range(n, len(new_index))
             self._put_node(new_index)
             self._put_node(new)
             return [new_index, new]
