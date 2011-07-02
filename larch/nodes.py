@@ -218,13 +218,9 @@ class IndexNode(Node):
         if i < len(self._keys):
             if self._keys[i] == key:
                 return key
-            elif i == 0:
-                return None
-            else:
+            elif i:
                 return self._keys[i-1]
-        elif i == 0:
-            return None
-        else:
+        elif i:
             return self._keys[i-1]
 
     def find_children_in_range(self, minkey, maxkey):
