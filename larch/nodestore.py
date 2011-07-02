@@ -314,13 +314,6 @@ class NodeStoreTests(object): # pragma: no cover
         self.ns.start_modification(node)
         self.assertFalse(node.frozen)
 
-    def test_start_modification_on_unmodifiable_node_fails(self):
-        node = larch.LeafNode(0, [], [])
-        self.ns.put_node(node)
-        self.ns.set_refcount(node.id, 2)
-        self.assertRaises(NodeCannotBeModified, 
-                          self.ns.start_modification, node)
-
     def test_removes_node(self):
         node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
