@@ -384,6 +384,9 @@ class BTreeTests(unittest.TestCase):
                            ('006', '006'),
                            ('008', '008')])
 
+    def test_count_range_returns_zero_for_empty_tree(self):
+        self.assertEqual(self.tree.count_range('000', '000'), 0)
+
     def test_count_range_returns_zero_for_empty_range_at_beginning(self):
         self.create_tree_for_range()
         self.assertEqual(self.tree.count_range('000', '000'), 0)
