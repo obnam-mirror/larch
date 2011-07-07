@@ -384,6 +384,33 @@ class BTreeTests(unittest.TestCase):
                            ('006', '006'),
                            ('008', '008')])
 
+    def test_count_range_returns_zero_for_empty_tree(self):
+        self.assertEqual(self.tree.count_range('000', '000'), 0)
+
+    def test_count_range_returns_zero_for_empty_range_at_beginning(self):
+        self.create_tree_for_range()
+        self.assertEqual(self.tree.count_range('000', '000'), 0)
+
+    def test_count_range_returns_zero_for_empty_range_in_middle(self):
+        self.create_tree_for_range()
+        self.assertEqual(self.tree.count_range('003', '003'), 0)
+
+    def test_count_range_returns_zero_for_empty_range_at_end(self):
+        self.create_tree_for_range()
+        self.assertEqual(self.tree.count_range('009', '009'), 0)
+
+    def test_count_range_returns_one_for_range_with_one_key(self):
+        self.create_tree_for_range()
+        self.assertEqual(self.tree.count_range('002', '002'), 1)
+
+    def test_count_range_returns_one_for_range_with_one_key_part_2(self):
+        self.create_tree_for_range()
+        self.assertEqual(self.tree.count_range('001', '003'), 1)
+
+    def test_count_range_returns_correct_result_for_longer_range(self):
+        self.create_tree_for_range()
+        self.assertEqual(self.tree.count_range('000', '009'), 4)
+
     def test_range_is_empty_returns_true_for_empty_tree(self):
         self.assertTrue(self.tree.range_is_empty('bar', 'foo'))
         

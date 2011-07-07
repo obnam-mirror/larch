@@ -114,6 +114,16 @@ class SpeedTest(cliapp.Application):
                                         list(tree.lookup_range(x[0], x[1])),
                                     nop, 'lookup_range')
 
+        # Measure count of range lookup results.
+        len_lookup_range = self.measure(ranges,
+                         lambda x: len(list(tree.lookup_range(x[0], x[1]))),
+                         nop, 'len_lookup_range')
+
+        # Measure count range.
+        count_range = self.measure(ranges,
+                                   lambda x: tree.count_range(x[0], x[1]),
+                                   nop, 'count_range')
+
         # Measure inserts into existing tree.
         random.shuffle(keys)
         insert2 = self.measure(keys, lambda key: tree.insert(key, value),
@@ -137,7 +147,7 @@ class SpeedTest(cliapp.Application):
             return n / (result[i] - looptime[i])
         def report(label, result):
             cpu, wall = result
-            print '%-12s: %5.3f s (%8.1f/s) CPU; %5.3f s (%8.1f/s) wall' % \
+            print '%-16s: %5.3f s (%8.1f/s) CPU; %5.3f s (%8.1f/s) wall' % \
                 (label, cpu, speed(result, 0), wall, speed(result, 1))
 
         print 'location:', location if location else 'memory'
@@ -145,6 +155,8 @@ class SpeedTest(cliapp.Application):
         report('insert', insert)
         report('lookup', lookup)
         report('lookup_range', lookup_range)
+        report('len_lookup_range', len_lookup_range)
+        report('count_range', count_range)
         report('insert2', insert2)
         report('remove', remove)
         report('remove_range', remove_range)

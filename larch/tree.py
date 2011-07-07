@@ -176,6 +176,28 @@ class BTree(object):
                 for pair in self._lookup_range(child_id, minkey, maxkey):
                     yield pair
 
+    def count_range(self, minkey, maxkey):
+        '''Return number of keys in range.'''
+
+        self._check_key_size(minkey)
+        self._check_key_size(maxkey)
+
+        if self.root is None:
+            return 0
+
+        return self._count_range(self.root.id, minkey, maxkey)
+
+    def _count_range(self, node_id, minkey, maxkey):
+        node = self._get_node(node_id)
+        if isinstance(node, larch.LeafNode):
+            return len(list(node.find_keys_in_range(minkey, maxkey)))
+        else:
+            assert isinstance(node, larch.IndexNode)
+            count = 0
+            for child_id in node.find_children_in_range(minkey, maxkey):
+                count += self._count_range(child_id, minkey, maxkey)
+            return count
+
     def range_is_empty(self, minkey, maxkey):
         '''Is a range empty in the tree?
         
