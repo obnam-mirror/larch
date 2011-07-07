@@ -176,6 +176,10 @@ class BTree(object):
                 for pair in self._lookup_range(child_id, minkey, maxkey):
                     yield pair
 
+    def count_range(self, minkey, maxkey):
+        '''Return number of keys in range.'''
+        return 0
+
     def range_is_empty(self, minkey, maxkey):
         '''Is a range empty in the tree?
         
