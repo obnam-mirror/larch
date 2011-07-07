@@ -119,6 +119,11 @@ class SpeedTest(cliapp.Application):
                          lambda x: len(list(tree.lookup_range(x[0], x[1]))),
                          nop, 'len_lookup_range')
 
+        # Measure count range.
+        count_range = self.measure(ranges,
+                                   lambda x: tree.count_range(x[0], x[1]),
+                                   nop, 'count_range')
+
         # Measure inserts into existing tree.
         random.shuffle(keys)
         insert2 = self.measure(keys, lambda key: tree.insert(key, value),
@@ -151,6 +156,7 @@ class SpeedTest(cliapp.Application):
         report('lookup', lookup)
         report('lookup_range', lookup_range)
         report('len_lookup_range', len_lookup_range)
+        report('count_range', count_range)
         report('insert2', insert2)
         report('remove', remove)
         report('remove_range', remove_range)
