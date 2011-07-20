@@ -4,6 +4,7 @@ python-larch (0.20) UNRELEASED; urgency=low
     Debian. (Closes: #631864)
   * Package description has been improved.
   * debian/pycompat: removed for being useless.
+  * Updated to use dh_python2.
 
  -- Lars Wirzenius <liw@liw.fi>  Mon, 27 Jun 2011 23:06:13 +0100
 
