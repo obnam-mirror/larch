@@ -3,7 +3,7 @@ Maintainer: Lars Wirzenius <liw@liw.fi>
 Section: python
 Priority: optional
 Standards-Version: 3.9.2
-Build-Depends: debhelper (>= 7.3.8), python-all-dev (>= 2.6.6-3~), 
+Build-Depends: debhelper (>= 7.3.8), python (>= 2.6.6-3~), 
     python-coverage-test-runner, python-tracing, python-sphinx
 X-Python-Version: >= 2.6
 
