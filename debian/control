@@ -2,17 +2,14 @@ Source: python-larch
 Maintainer: Lars Wirzenius <liw@liw.fi>
 Section: python
 Priority: optional
-Standards-Version: 3.9.0
-Build-Depends: debhelper (>= 7.3.8), python-support (>= 1.0.3), 
-    python (>= 2.5), extrautils (>= 1.6), python-lru (>= 0.4),
+Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 7.3.8), python-all-dev (>= 2.6.6-3~), 
     python-coverage-test-runner, python-tracing, python-sphinx
-XS-Python-Version: >= 2.5
+X-Python-Version: >= 2.6
 
 Package: python-larch
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python (>= 2.5), 
-    python-lru (>= 0.4), python-tracing, python-cliapp
-XB-Python-Version: ${python:Versions}
+Depends: ${python:Depends}, ${misc:Depends}, python-tracing, python-cliapp
 Description: B-tree library for Python
  An implementation of a particular kind of B-tree, based on research
  by Ohad Rodeh. This is the same data structure that btrfs uses, but
