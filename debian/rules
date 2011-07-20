@@ -2,3 +2,11 @@
 %:
 	dh $@ --with=python2 --buildsystem=python_distutils
 
+override_dh_auto_build:
+	$(MAKE)
+	dh_auto_build --with=python2 --buildsystem=python_distutils
+	
+override_dh_auto_clean:
+	$(MAKE) clean
+	dh_auto_clean --with=python2 --buildsystem=python_distutils
+
