@@ -1,4 +1,4 @@
-python-larch (0.20) UNRELEASED; urgency=low
+python-larch (0.20) unstable; urgency=low
 
   * New upstream release. This is the first release to be uploaded to
     Debian. (Closes: #631864)
@@ -6,7 +6,7 @@ python-larch (0.20) UNRELEASED; urgency=low
   * debian/pycompat: removed for being useless.
   * Updated to use dh_python2.
 
- -- Lars Wirzenius <liw@liw.fi>  Mon, 27 Jun 2011 23:06:13 +0100
+ -- Lars Wirzenius <liw@liw.fi>  Wed, 20 Jul 2011 22:24:18 +0100
 
 python-larch (0.19) squeeze; urgency=low
 
