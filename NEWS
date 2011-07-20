@@ -5,6 +5,27 @@ These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
+Version 0.20, released 2011-07-20
+---------------------------------
+
+* `pydoc larch` should now work better.
+* Changes to larch benchmarking scripts (to make them use cliapp).
+* `fsck-larch` improvements:
+  - now uses cliapp, for better usability
+  - now automatically detects a forest's key and node sizes,
+    so the user no longer needs to give them manually.
+  - some more checks
+  - installed as part of the Debian package
+* API documentation with Sphinx. As part of that, the API was cleaned up
+  a bit with regards to public and private methods (the latter being
+  prefixed by underscores now).
+* The separate LRU cache implementation is now included in larch, to
+  avoid yet another dependency, and to avoid polluting PyPI.
+* Various speedups.
+* `BTree.count_range` method added, for speed.
+* Library version number is now `larch.__version__` instead of
+  `larch.version`, to follow Python conventions.
+
 Version 0.19, released 2011-03-21
 ---------------------------------
 
