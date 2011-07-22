@@ -18,7 +18,7 @@
 all:
 	$(MAKE) -C doc html
 
-check: all
+check:
 	python -m CoverageTestRunner --ignore-missing-from=without-tests
 	rm .coverage
 	./insert-remove-test tempdir 100
