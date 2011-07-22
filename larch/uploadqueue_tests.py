@@ -20,7 +20,6 @@ import tempfile
 import unittest
 
 import larch
-import nodestore_disk
 
 
 class UploadQueueTests(unittest.TestCase):
