@@ -114,7 +114,7 @@ class CheckRecursively(WorkItem):
                     self.error('node %s: last key is too large' % node.id)
         for node_id in self.fsck.forest.node_store.list_nodes():
             if node_id not in seen:
-                self.error('node %d is out of touch' % node_id)
+                self.error('node %d is not part of the tree' % node_id)
 
     def walk(self, root_id):
 
