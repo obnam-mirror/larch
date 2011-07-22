@@ -93,6 +93,8 @@ class CheckRoot(WorkItem):
                 self.error('root refcount must be 1')
             if type(node) != larch.IndexNode:
                 self.error('root must be an index node')
+        else:
+            self.error('missing root node %s' % self.root_id)
 
 
 class CheckRecursively(WorkItem):
@@ -118,7 +120,8 @@ class CheckRecursively(WorkItem):
 
     def walk(self, root_id):
 
-        def walker(node_id, minkey, maxkey):
+        def walker(node_id, minkey, maxkey, expected_type):
+            expected_child = None
             node = self.get_node(node_id)
             if node:
                 yield node, minkey, maxkey
@@ -130,13 +133,25 @@ class CheckRecursively(WorkItem):
                             next_key = keys[i+1]
                         else:
                             next_key = maxkey
-                        for x in walker(child_id, key,  next_key):
+                        if expected_child is None:
+                            child = self.get_node(child_id)
+                            if child:
+                                expected_child = type(child)
+                        for x in walker(child_id, key,  next_key, 
+                                         expected_child):
                             yield x
+            else:
+                if expected_type == larch.IndexNode:
+                    self.error('cannot find index node %s' % node_id)
+                elif expected_type == larch.LeafNode:
+                    self.error('cannot find leaf node %s' % node_id)
+                else:
+                    self.error('cannot find node of unknown type %s' % node_id)
         
         ns  = self.fsck.forest.node_store
         tree_minkey = chr(0) * ns.codec.key_bytes
         tree_maxkey = chr(255) * ns.codec.key_bytes
-        for x in walker(root_id, tree_minkey, tree_maxkey):
+        for x in walker(root_id, tree_minkey, tree_maxkey, larch.IndexNode):
             yield x
 
 
