@@ -179,7 +179,7 @@ class Fsck(object):
             self.work.append(CheckNode(self, node_id))
         for tree in self.forest.trees:
             self.work.append(CheckRoot(self, tree.root.id))
-        extra = CheckExtraNodes()
+        extra = CheckExtraNodes(self)
         for tree in self.forest.trees:
             self.work.append(CheckRecursively(self, tree.root.id, extra.seen))
         self.work.append(extra)
