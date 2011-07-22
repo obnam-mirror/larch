@@ -99,24 +99,21 @@ class CheckRoot(WorkItem):
 
 class CheckRecursively(WorkItem):
 
-    def __init__(self, fsck, root_id):
+    def __init__(self, fsck, root_id, seen):
         self.fsck = fsck
         self.root_id = root_id
         self.name = 'tree %s' % root_id
+        self.seen = seen
         
     def do(self):
-        seen = set()
         for node, minkey, maxkey in self.walk(self.root_id):
-            if node.id not in seen:
-                seen.add(node.id)
+            if node.id not in self.seen:
+                self.seen.add(node.id)
                 keys = node.keys()
                 if keys[0] < minkey:
                     self.error('node %s: first key is too small' % node.id)
                 if keys[-1] > maxkey:
                     self.error('node %s: last key is too large' % node.id)
-        for node_id in self.fsck.forest.node_store.list_nodes():
-            if node_id not in seen:
-                self.error('node %d is not part of the tree' % node_id)
 
     def walk(self, root_id):
 
@@ -155,6 +152,19 @@ class CheckRecursively(WorkItem):
             yield x
 
 
+class CheckExtraNodes(WorkItem):
+
+    def __init__(self, fsck):
+        self.fsck = fsck
+        self.seen = set()
+        self.name = 'extra nodes'
+
+    def do(self):
+        for node_id in self.fsck.forest.node_store.list_nodes():
+            if node_id not in self.seen:
+                self.error('node %d is not part of the tree' % node_id)
+
+
 class Fsck(object):
 
     '''Verify internal consistency of a larch.Forest.'''
@@ -169,6 +179,8 @@ class Fsck(object):
             self.work.append(CheckNode(self, node_id))
         for tree in self.forest.trees:
             self.work.append(CheckRoot(self, tree.root.id))
+        extra = CheckExtraNodes()
         for tree in self.forest.trees:
-            self.work.append(CheckRecursively(self, tree.root.id))
+            self.work.append(CheckRecursively(self, tree.root.id, extra.seen))
+        self.work.append(extra)
 
