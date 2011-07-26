@@ -20,6 +20,7 @@ import os
 import StringIO
 import struct
 import tempfile
+import tracing
 
 import larch
 
@@ -82,6 +83,7 @@ class NodeStoreDisk(larch.NodeStore):
     def __init__(self, node_size, codec, dirname=None, upload_max=1024, 
                  lru_size=100, vfs=None):
         assert dirname is not None
+        tracing.trace('new NodeStoreDisk')
         larch.NodeStore.__init__(self, node_size, codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
@@ -95,9 +97,12 @@ class NodeStoreDisk(larch.NodeStore):
 
     def _load_metadata(self):
         if self.metadata is None:
+            tracing.trace('load metadata')
             self.metadata = ConfigParser.ConfigParser()
             self.metadata.add_section('metadata')
             if self.vfs.exists(self.metadata_name):
+                tracing.trace('metadata file (%s) exists, reading it' % 
+                                self.metadata_name)
                 data = self.vfs.cat(self.metadata_name)
                 f = StringIO.StringIO(data)
                 self.metadata.readfp(f)
@@ -125,6 +130,7 @@ class NodeStoreDisk(larch.NodeStore):
             raise KeyError(key)
 
     def save_metadata(self):
+        tracing.trace('saving metadata')
         self._load_metadata()
         f = StringIO.StringIO()
         self.metadata.write(f)
@@ -137,18 +143,22 @@ class NodeStoreDisk(larch.NodeStore):
         return os.path.join(self.dirname, self.nodedir, subdir, basename)
         
     def put_node(self, node):
+        tracing.trace('putting node %s into cache and upload queue' % node.id)
         node.frozen = True
         self.cache.add(node.id, node)
         self.upload_queue.put(node)
 
     def push_upload_queue(self):
+        tracing.trace('pushing upload queue')
         self.upload_queue.push()
 
     def _really_put_node(self, node):
+        tracing.trace('really put node %s' % node.id)
         encoded_node = self.codec.encode(node)
         if len(encoded_node) > self.node_size:
             raise larch.NodeTooBig(node, len(encoded_node))
         name = self.pathname(node.id)
+        tracing.trace('node %s to be stored in %s' % (node.id, name))
         if self.vfs.exists(name):
             self.vfs.remove(name)
         dirname = os.path.dirname(name)
@@ -157,16 +167,20 @@ class NodeStoreDisk(larch.NodeStore):
         self.vfs.overwrite_file(name, encoded_node)
         
     def get_node(self, node_id):
+        tracing.trace('getting node %s' % node_id)
         node = self.cache.get(node_id)
         if node is not None:
+            tracing.trace('cache hit: %s' % node_id)
             return node
 
         node = self.upload_queue.get(node_id)
         if node is not None:
+            tracing.trace('upload queue hit: %s' % node_id)
             return node
 
         name = self.pathname(node_id)
         if self.vfs.exists(name):
+            tracing.trace('reading node %s from file %s' % (node_id, name))
             encoded = self.vfs.cat(name)
             node = self.codec.decode(encoded)
             node.frozen = True
@@ -176,10 +190,13 @@ class NodeStoreDisk(larch.NodeStore):
             raise larch.NodeMissing(node_id)
 
     def start_modification(self, node):
+        tracing.trace('start modiyfing node %s' % node.id)
         self.upload_queue.remove(node.id)
         node.frozen = False
     
     def remove_node(self, node_id):
+        tracing.trace('removing node %s (incl. cache and upload queue)' % 
+                        node_id)
         self.cache.remove(node_id)
         got_it = self.upload_queue.remove(node_id)
         name = self.pathname(node_id)
@@ -205,4 +222,5 @@ class NodeStoreDisk(larch.NodeStore):
         self.rs.set_refcount(node_id, refcount)
 
     def save_refcounts(self):
+        tracing.trace('saving refcounts')
         self.rs.save_refcounts()

@@ -136,6 +136,7 @@ class BTree(object):
         
         '''
 
+        tracing.trace('looking up %s' % repr(key))
         self._check_key_size(key)
 
         node = self.root
@@ -158,6 +159,8 @@ class BTree(object):
 
         '''
 
+        tracing.trace('looking up range %s .. %s' % 
+                        (repr(minkey), repr(maxkey)))
         self._check_key_size(minkey)
         self._check_key_size(maxkey)
         if self.root is not None:
@@ -179,6 +182,7 @@ class BTree(object):
     def count_range(self, minkey, maxkey):
         '''Return number of keys in range.'''
 
+        tracing.trace('count_range(%s, %s)' % (repr(minkey), repr(maxkey)))
         self._check_key_size(minkey)
         self._check_key_size(maxkey)
 
@@ -205,7 +209,8 @@ class BTree(object):
         and checking if there are any keys returned.
         
         '''
-        
+
+        tracing.trace('range_is_empty(%s, %s)' % (repr(minkey), repr(maxkey)))
         self._check_key_size(minkey)
         self._check_key_size(maxkey)
         if self.root is None:
@@ -226,14 +231,19 @@ class BTree(object):
     def _shadow(self, node):
         '''Shadow a node: make it possible to modify it in-place.'''
 
+        tracing.trace('node.id=%s' % node.id)
         if self.node_store.can_be_modified(node):
+            tracing.trace('can be modified in place')
             self.node_store.start_modification(node)
             new = node
         elif isinstance(node, larch.IndexNode):
+            tracing.trace('new index node')
             new = self._new_index(node.keys(), node.values())
         else:
+            tracing.trace('new leaf node')
             new = self._new_leaf(node.keys(), node.values())
             new.size = node.size
+        tracing.trace('returning new.id=%s' % new.id)
         return new
         
     def insert(self, key, value):
@@ -517,6 +527,7 @@ class BTree(object):
 
         '''
 
+        tracing.trace('minkey=%s maxkey=%s' % (repr(minkey), repr(maxkey)))
         self._check_key_size(minkey)
         self._check_key_size(maxkey)
         keys = [k for k, v in self.lookup_range(minkey, maxkey)]

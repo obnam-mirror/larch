@@ -20,6 +20,7 @@ import os
 import StringIO
 import struct
 import tempfile
+import tracing
 
 import larch
 
@@ -77,6 +78,7 @@ class RefcountStore(object):
 
     def set_refcount(self, node_id, refcount):
         '''Set the reference count for a given node.'''
+        tracing.trace('setting refcoutn for %s to %s' % (node_id, refcount))
         if refcount == 0:
             if node_id in self.refcounts:
                 del self.refcounts[node_id]
@@ -86,6 +88,8 @@ class RefcountStore(object):
 
     def save_refcounts(self):
         '''Save all modified refcounts.'''
+        tracing.trace('saving refcounts (len(dirty) = %s)' % 
+                            (len(self.dirty)))
         if self.dirty:
             level = logging.getLogger().getEffectiveLevel()
             dirname = os.path.join(self.node_store.dirname, self.refcountdir)

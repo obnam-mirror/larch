@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import tracing
+
 import larch
 
 
@@ -61,23 +63,29 @@ class Forest(object):
     '''
 
     def __init__(self, node_store):
+        tracing.trace('new larch.Forest with node_store=%s' % repr(node_store))
         self.node_store = node_store
         self.trees = []
         self.last_id = 0
         self._read_metadata()
 
     def _read_metadata(self):
+        tracing.trace('reading metadata')
         keys = self.node_store.get_metadata_keys()
+        tracing.trace('metadata keys: %s' % repr(keys))
         if 'last_id' in keys:
             self.last_id = int(self.node_store.get_metadata('last_id'))
+            tracing.trace('last_id = %s' % self.last_id)
         if 'root_ids' in keys:
             s = self.node_store.get_metadata('root_ids')
             if s.strip():
                 root_ids = [int(x) for x in s.split(',')]
                 self.trees = [larch.BTree(self, self.node_store, root_id)
                               for root_id in root_ids]
+                tracing.trace('root_ids: %s' % repr(root_ids))
             else:
                 self.trees = []
+                tracing.trace('empty root_ids')
     
     def new_id(self):
         '''Generate next node id for this forest.
@@ -89,6 +97,7 @@ class Forest(object):
         '''
 
         self.last_id += 1
+        tracing.trace('new id = %d' % self.last_id)
         return self.last_id
 
     def new_tree(self, old=None):
@@ -99,6 +108,7 @@ class Forest(object):
 
         '''
 
+        tracing.trace('new tree (old=%s)' % repr(old))
         if old:
             old_root = self.node_store.get_node(old.root.id)
             keys = old_root.keys()
@@ -109,10 +119,12 @@ class Forest(object):
         t = larch.BTree(self, self.node_store, None)
         t._set_root(t._new_index(keys, values))
         self.trees.append(t)
+        tracing.trace('new tree root id: %s' % t.root.id)
         return t
 
     def remove_tree(self, tree):
         '''Remove a tree from the forest.'''
+        tracing.trace('removing tree with root id %d' % tree.root.id)
         tree._decrement(tree.root.id)
         self.trees.remove(tree)
 
@@ -123,6 +135,7 @@ class Forest(object):
         only if commit is called successfully.
         
         '''
+        tracing.trace('committing forest')
         self.node_store.push_upload_queue()
         self.node_store.set_metadata('last_id', self.last_id)
         root_ids = ','.join('%d' % t.root.id 
@@ -152,6 +165,8 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
     class initializer.
     
     '''
+
+    tracing.trace('opening forest')
 
     codec = codec or larch.NodeCodec
     node_store = node_store or larch.NodeStoreDisk

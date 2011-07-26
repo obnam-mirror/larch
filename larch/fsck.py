@@ -16,6 +16,7 @@
 
 import logging
 import sys
+import tracing
 import ttystatus
 
 import larch
@@ -58,6 +59,7 @@ class CheckNode(WorkItem):
         self.name = 'node %s' % node_id
 
     def do(self):
+        tracing.trace('checking node %s' % self.node_id)
         node = self.get_node(self.node_id)
         if node:
             if type(node) not in [larch.IndexNode, larch.LeafNode]:
@@ -87,6 +89,7 @@ class CheckRoot(WorkItem):
         self.name = 'root node %s' % root_id
         
     def do(self):
+        tracing.trace('checking root node %s' % self.root_id)
         node = self.get_node(self.root_id)
         if node:
             if self.fsck.forest.node_store.get_refcount(self.root_id) != 1:
@@ -106,8 +109,10 @@ class CheckRecursively(WorkItem):
         self.seen = seen
         
     def do(self):
+        tracing.trace('checking recursive from root node %s' % self.root_id)
         for node, minkey, maxkey in self.walk(self.root_id):
             if node.id not in self.seen:
+                tracing.trace('checking node %s' % node.id)
                 self.seen.add(node.id)
                 keys = node.keys()
                 if keys[0] < minkey:
@@ -160,6 +165,7 @@ class CheckExtraNodes(WorkItem):
         self.name = 'extra nodes'
 
     def do(self):
+        tracing.trace('checking for extra nodes')
         for node_id in self.fsck.forest.node_store.list_nodes():
             if node_id not in self.seen:
                 self.error('node %d is not part of the tree' % node_id)
