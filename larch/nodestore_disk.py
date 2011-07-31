@@ -2,8 +2,8 @@
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
+# the Free Software Foundation, either version 3 of the License, or
 # 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,6 +23,11 @@ import tempfile
 import tracing
 
 import larch
+
+
+DIR_DEPTH = 3
+DIR_BITS = 12
+DIR_SKIP = 13
 
 
 class LocalFS(object):
@@ -94,6 +99,8 @@ class NodeStoreDisk(larch.NodeStore):
         self.upload_queue = larch.UploadQueue(self._really_put_node, 
                                               self.upload_max)
         self.vfs = vfs if vfs != None else LocalFS()
+        self.idpath = larch.IdPath(os.path.join(dirname, self.nodedir), 
+                                   DIR_DEPTH, DIR_BITS, DIR_SKIP)
 
     def _load_metadata(self):
         if self.metadata is None:
@@ -138,9 +145,7 @@ class NodeStoreDisk(larch.NodeStore):
         self.vfs.rename(self.metadata_name + '_new', self.metadata_name)
 
     def pathname(self, node_id):
-        basename = '%x' % node_id
-        subdir = '%d' % (node_id / (2**13))
-        return os.path.join(self.dirname, self.nodedir, subdir, basename)
+        return self.idpath.convert(node_id)
         
     def put_node(self, node):
         tracing.trace('putting node %s into cache and upload queue' % node.id)

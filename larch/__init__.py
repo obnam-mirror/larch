@@ -26,6 +26,7 @@ from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig,
 from refcountstore import RefcountStore
 from lru import LRUCache
 from uploadqueue import UploadQueue
+from idpath import IdPath
 from nodestore_disk import NodeStoreDisk, LocalFS
 from nodestore_memory import NodeStoreMemory
 
