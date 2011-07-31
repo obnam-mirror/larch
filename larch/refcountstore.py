@@ -102,7 +102,10 @@ class RefcountStore(object):
                                            self.per_group)
                 filename = self._group_filename(start_id)
                 self.node_store.vfs.overwrite_file(filename, encoded)
-            self.dirty.clear()
+
+        # We re-initialize these so that they don't grow indefinitely.
+        self.refcounts = dict()
+        self.dirty = set()
 
     def _load_refcount_group(self, start_id):
         filename = self._group_filename(start_id)
