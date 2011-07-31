@@ -94,7 +94,8 @@ class NodeStoreDisk(larch.NodeStore):
         self.metadata_name = os.path.join(dirname, 'metadata')
         self.metadata = None
         self.rs = larch.RefcountStore(self)
-        self.cache = larch.LRUCache(lru_size)
+        self.cache_size = lru_size
+        self.cache = larch.LRUCache(self.cache_size)
         self.upload_max = upload_max
         self.upload_queue = larch.UploadQueue(self._really_put_node, 
                                               self.upload_max)
@@ -156,6 +157,7 @@ class NodeStoreDisk(larch.NodeStore):
     def push_upload_queue(self):
         tracing.trace('pushing upload queue')
         self.upload_queue.push()
+        self.cache = larch.LRUCache(self.cache_size)
 
     def _really_put_node(self, node):
         tracing.trace('really put node %s' % node.id)
