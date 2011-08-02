@@ -3,6 +3,7 @@ python-larch (0.21-1) unstable; urgency=low
   * New upstream release.
   * Change package to be non-native.
   * Add build-dependency on python-cliapp.
+  * fsck-larch manpage build disabled, until ttystatus is in Debian.
 
  -- Lars Wirzenius <liw@liw.fi>  Tue, 02 Aug 2011 20:00:24 +0100
 
