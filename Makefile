@@ -15,8 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-all:
+all: fsck-larch.1
 	$(MAKE) -C doc html
+
+fsck-larch.1: fsck-larch.1.in fsck-larch
+	./fsck-larch --generate-manpage=fsck-larch.1.in > fsck-larch.1
 
 check:
 	python -m CoverageTestRunner --ignore-missing-from=without-tests
@@ -27,4 +30,5 @@ check:
 clean:
 	rm -f .coverage *.py[co] larch/*.py[co] insert.prof lookup.prof
 	rm -rf build tempdir larch.log example.tree
+	rm -f fsck-larch.1
 	$(MAKE) -C doc clean
