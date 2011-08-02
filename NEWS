@@ -5,6 +5,26 @@ These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
+Version 0.21, released 2011-08-02
+---------------------------------
+
+* Better error messages from `fsck-larch`.
+* Bug fix: `fsck-larch` no longer reports as missing nodes that aren't
+  in use by all B-trees in a forest.
+* `fsck-larch` now has a manual page.
+* More `tracing.trace` statements to make it easier to track when nodes
+  are created and destroyed.
+* B-tree nodes are now stored in a more efficient way on disk (several
+  levels of directories, not just one). This is a compatibility breaker:
+  old B-trees aren't readable with new larch, and B-trees created with
+  the new larch aren't readable by old larch.
+* A couple of memory leaks fixed: both were caches that grew effectively
+  without bounds.
+* Least-Recently-Used caches now log their hit/miss statistics
+  explicitly. Previous this was done in the `__del__` method, but those
+  did not get called deterministically, so the logging did not always
+  happen.
+
 Version 0.20, released 2011-07-20
 ---------------------------------
 

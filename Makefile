@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-all: fsck-larch.1
+all: # fsck-larch.1
 	$(MAKE) -C doc html
 
 fsck-larch.1: fsck-larch.1.in fsck-larch

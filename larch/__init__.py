@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-__version__ = '0.20'
+__version__ = '0.21'
 
 
 from nodes import FrozenNode, Node, LeafNode, IndexNode
