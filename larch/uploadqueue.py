@@ -42,7 +42,12 @@ class UploadQueue(object):
 
     def __init__(self, really_put, max_length):
         self.really_put = really_put
-        self.lru = larch.LRUCache(max_length, forget_hook=self._push_oldest)
+        self._max_length = max_length
+        self._create_lru()
+
+    def _create_lru(self):
+        self.lru = larch.LRUCache(self._max_length, 
+                                  forget_hook=self._push_oldest)
         
     def put(self, node):
         '''Put a node into the queue.'''
@@ -56,6 +61,8 @@ class UploadQueue(object):
         while len(self.lru) > 0:
             node_id, node = self.lru.remove_oldest()
             self.really_put(node)
+        self.lru.log_stats()
+        self._create_lru()
     
     def remove(self, node_id):
         '''Remove a node from the queue given its id.'''

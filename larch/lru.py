@@ -48,9 +48,9 @@ class LRUCache(object):
         self.hits = 0
         self.misses = 0
 
-    def __del__(self):
-        logging.info('LRUCache %s: hits=%s misses=%s' % 
-                     (self, self.hits, self.misses))
+    def log_stats(self): # pragma: no cover
+        logging.debug('LRUCache %s: hits=%s misses=%s' %
+                      (self, self.hits, self.misses))
 
     def __len__(self):
         return len(self.ids)

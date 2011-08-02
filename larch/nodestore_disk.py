@@ -157,6 +157,7 @@ class NodeStoreDisk(larch.NodeStore):
     def push_upload_queue(self):
         tracing.trace('pushing upload queue')
         self.upload_queue.push()
+        self.cache.log_stats()
         self.cache = larch.LRUCache(self.cache_size)
 
     def _really_put_node(self, node):
