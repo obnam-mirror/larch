@@ -5,6 +5,14 @@ These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
+Version 0.22, released 2011-08-03
+---------------------------------
+
+* The library now declares which on-disk format it supports, so that B-trees
+  stored with an incompatible format can be detected.
+* `fsck-larch` now has a `--trace` option, and the library has a bit more 
+  tracing statements.
+
 Version 0.21, released 2011-08-02
 ---------------------------------
 

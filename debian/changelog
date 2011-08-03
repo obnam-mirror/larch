@@ -1,3 +1,9 @@
+python-larch (0.22-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Lars Wirzenius <liw@liw.fi>  Wed, 03 Aug 2011 15:44:57 +0100
+
 python-larch (0.21-1) unstable; urgency=low
 
   * New upstream release.
