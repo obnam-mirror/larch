@@ -78,6 +78,7 @@ class Forest(object):
             tracing.trace('last_id = %s' % self.last_id)
         if 'root_ids' in keys:
             s = self.node_store.get_metadata('root_ids')
+            tracing.trace('root_ids: %s', s)
             if s.strip():
                 root_ids = [int(x) for x in s.split(',')]
                 self.trees = [larch.BTree(self, self.node_store, root_id)
