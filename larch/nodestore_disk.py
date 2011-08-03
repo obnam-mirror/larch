@@ -129,6 +129,7 @@ class NodeStoreDisk(larch.NodeStore):
     def set_metadata(self, key, value):
         self._load_metadata()
         self.metadata.set('metadata', key, value)
+        tracing.trace('key=%s value=%s', repr(key), repr(value))
 
     def remove_metadata(self, key):
         self._load_metadata()
