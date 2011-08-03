@@ -82,13 +82,20 @@ class NodeStoreDisk(larch.NodeStore):
     used, but any class can be substituted.
     
     '''
+    
+    # The on-disk format version is format_base combined with whatever
+    # format the codec specifies.
+    format_base = 1
 
     nodedir = 'nodes'
 
     def __init__(self, node_size, codec, dirname=None, upload_max=1024, 
-                 lru_size=100, vfs=None):
+                 lru_size=100, vfs=None, format=None):
+        tracing.trace('new NodeStoreDisk: %s', dirname)
         assert dirname is not None
-        tracing.trace('new NodeStoreDisk')
+        if format is not None:
+            tracing.trace('forcing format_base: %s', format)
+            self.format_base = format
         larch.NodeStore.__init__(self, node_size, codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
@@ -103,6 +110,10 @@ class NodeStoreDisk(larch.NodeStore):
         self.idpath = larch.IdPath(os.path.join(dirname, self.nodedir), 
                                    DIR_DEPTH, DIR_BITS, DIR_SKIP)
 
+    @property
+    def format_version(self):
+        return '%s/%s' % (self.format_base, self.codec.format)
+
     def _load_metadata(self):
         if self.metadata is None:
             tracing.trace('load metadata')
@@ -114,6 +125,20 @@ class NodeStoreDisk(larch.NodeStore):
                 data = self.vfs.cat(self.metadata_name)
                 f = StringIO.StringIO(data)
                 self.metadata.readfp(f)
+                self._verify_metadata()
+            else:
+                self.metadata.set('metadata', 'format', self.format_version)
+
+    def _verify_metadata(self):
+        if not self.metadata.has_option('metadata', 'format'):
+            raise Exception('larch on-disk format missing '
+                                '(old version?): %s' % self.dirname)
+        format = self.metadata.get('metadata', 'format')
+        if format != self.format_version:
+            raise Exception('larch on-disk format is incompatible '
+                                '(is %s, should be %s): %s' %
+                                (format, self.format_version,
+                                 self.dirname))
 
     def get_metadata_keys(self):
         self._load_metadata()

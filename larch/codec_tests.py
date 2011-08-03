@@ -26,6 +26,9 @@ class NodeCodecTests(unittest.TestCase):
         self.index = larch.IndexNode(5678, ['bar', 'foo'], [1234, 7890])
         self.codec = larch.NodeCodec(3)
 
+    def test_has_format_version(self):
+        self.assertNotEqual(self.codec.format, None)
+
     def test_returns_reasonable_size_for_empty_leaf(self):
         self.assert_(self.codec.leaf_size([], []) > 10)
 

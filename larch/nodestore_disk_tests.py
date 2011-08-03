@@ -34,9 +34,32 @@ class NodeStoreDiskTests(unittest.TestCase, larch.NodeStoreTests):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
-    def new_ns(self):
+    def new_ns(self, format=None):
         return nodestore_disk.NodeStoreDisk(self.node_size, self.codec,
-                                            dirname=self.tempdir)
+                                             dirname=self.tempdir,
+                                             format=format)
+
+    def test_metadata_has_format_version(self):
+        self.assertEqual(self.ns.get_metadata('format'), 
+                         self.ns.format_version)
+
+    def test_metadata_format_version_is_persistent(self):
+        self.ns.save_metadata()
+        ns2 = self.new_ns()
+        self.assertEqual(ns2.get_metadata('format'),
+                         ns2.format_version)
+
+    def test_refuses_to_open_if_format_version_is_old(self):
+        old = self.new_ns(format=0)
+        old.save_metadata()
+        new = self.new_ns(format=1)
+        self.assertRaises(Exception, new.get_metadata, 'format')
+
+    def test_refuses_to_open_if_format_version_is_not_there(self):
+        self.ns.remove_metadata('format')
+        self.ns.save_metadata()
+        ns2 = self.new_ns()
+        self.assertRaises(Exception, ns2.get_metadata, 'format')
 
     def test_has_persistent_metadata(self):
         self.ns.set_metadata('foo', 'bar')
@@ -47,7 +70,7 @@ class NodeStoreDiskTests(unittest.TestCase, larch.NodeStoreTests):
     def test_metadata_does_not_persist_without_saving(self):
         self.ns.set_metadata('foo', 'bar')
         ns2 = self.new_ns()
-        self.assertEqual(ns2.get_metadata_keys(), [])
+        self.assertEqual(ns2.get_metadata_keys(), ['format'])
 
     def test_refcounts_persist(self):
         self.ns.set_refcount(0, 1234)

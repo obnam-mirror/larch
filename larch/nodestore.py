@@ -228,31 +228,29 @@ class NodeStoreTests(object): # pragma: no cover
         self.assert_(self.ns.max_value_size > 1)
         self.assert_(self.ns.max_value_size < self.node_size / 2)
 
-    def test_has_no_metadata_initially(self):
-        self.assertEqual(self.ns.get_metadata_keys(), [])
-        
     def test_sets_metadata(self):
         self.ns.set_metadata('foo', 'bar')
-        self.assertEqual(self.ns.get_metadata_keys(), ['foo'])
+        self.assert_('foo' in self.ns.get_metadata_keys())
         self.assertEqual(self.ns.get_metadata('foo'), 'bar')
         
     def test_sets_existing_metadata(self):
         self.ns.set_metadata('foo', 'bar')
         self.ns.set_metadata('foo', 'foobar')
-        self.assertEqual(self.ns.get_metadata_keys(), ['foo'])
+        self.assert_('foo' in self.ns.get_metadata_keys())
         self.assertEqual(self.ns.get_metadata('foo'), 'foobar')
 
     def test_removes_metadata(self):
         self.ns.set_metadata('foo', 'bar')
         self.ns.remove_metadata('foo')
-        self.assertEqual(self.ns.get_metadata_keys(), [])
+        self.assert_('foo' not in self.ns.get_metadata_keys())
 
     def test_sets_several_metadata_keys(self):
+        old_keys = self.ns.get_metadata_keys()
         pairs = dict(('%d' % i, '%0128d' % i) for i in range(1024))
         for key, value in pairs.iteritems():
             self.ns.set_metadata(key, value)
         self.assertEqual(sorted(self.ns.get_metadata_keys()), 
-                         sorted(pairs.keys()))
+                         sorted(pairs.keys() + old_keys))
         for key, value in pairs.iteritems():
             self.assertEqual(self.ns.get_metadata(key), value)
 

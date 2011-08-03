@@ -33,6 +33,8 @@ class NodeCodec(object):
     Leaf node values are assumed to fit into 4 gibibytes.
     
     '''
+    
+    format = 1
 
     # We use the struct module for encoding and decoding. For speed,
     # we construct the format string all at once, so that there is only
