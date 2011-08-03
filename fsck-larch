@@ -18,6 +18,7 @@
 import cliapp
 import logging
 import sys
+import tracing
 import ttystatus
 
 import larch.fsck
@@ -25,7 +26,14 @@ import larch.fsck
 
 class Fsck(cliapp.Application):
 
+    def add_settings(self):
+        self.settings.string_list(['trace'], 'add PATTERN to trace patterns',
+                                  metavar='PATTERN')
+
     def process_args(self, args):
+        for pattern in self.settings['trace']:
+            tracing.trace_add_pattern(pattern)
+    
         self.ts = ttystatus.TerminalStatus(period=0.1)
         self.ts['check'] = 0
         self.ts['checks'] = 0
