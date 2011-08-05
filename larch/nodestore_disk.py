@@ -90,7 +90,7 @@ class NodeStoreDisk(larch.NodeStore):
     nodedir = 'nodes'
 
     def __init__(self, node_size, codec, dirname=None, upload_max=1024, 
-                 lru_size=100, vfs=None, format=None):
+                 lru_size=500, vfs=None, format=None):
         tracing.trace('new NodeStoreDisk: %s', dirname)
         assert dirname is not None
         if format is not None:

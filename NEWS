@@ -5,6 +5,13 @@ These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
 
+Version 0.23, released UNRELEASED
+---------------------------------
+
+* The default size of the LRU cache used by NodeStoreDisk is not 500
+  instead of 100. This provides much better performance with large
+  trees: 37% vs 99% cache hit rates with speed-test for 100k keys.
+
 Version 0.22, released 2011-08-03
 ---------------------------------
 
