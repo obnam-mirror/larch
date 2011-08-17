@@ -5,13 +5,13 @@ Priority: optional
 Standards-Version: 3.9.2
 Build-Depends: debhelper (>= 7.3.8), python (>= 2.6.6-3~), 
     python-coverage-test-runner, python-tracing, python-sphinx,
-    python-cliapp (>= 0.14)
+    python-cliapp (>= 0.14), python-ttystatus
 X-Python-Version: >= 2.6
 
 Package: python-larch
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, python-tracing, 
-    python-cliapp (>= 0.14)
+    python-cliapp (>= 0.14), python-ttystatus
 Description: B-tree library for Python
  An implementation of a particular kind of B-tree, based on research
  by Ohad Rodeh. This is the same data structure that btrfs uses, but
