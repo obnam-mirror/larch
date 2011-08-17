@@ -163,9 +163,12 @@ class BTree(object):
                         (repr(minkey), repr(maxkey)))
         self._check_key_size(minkey)
         self._check_key_size(maxkey)
-        if self.root is not None:
-            for pair in self._lookup_range(self.root.id, minkey, maxkey):
-                yield pair
+        if self.root is None:
+            return []
+        else:
+            return [pair 
+                     for pair in 
+                        self._lookup_range(self.root.id, minkey, maxkey)]
 
     def _lookup_range(self, node_id, minkey, maxkey):
         node = self._get_node(node_id)
