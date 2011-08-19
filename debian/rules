@@ -5,6 +5,10 @@
 override_dh_auto_build:
 	$(MAKE)
 	dh_auto_build --with=python2 --buildsystem=python_distutils
+
+override_dh_auto_install:
+	dh_auto_install --with=python2 --buildsystem=python_distutils
+	rm debian/python-larch/usr/share/doc/python-larch/html/_static/jquery.js
 	
 override_dh_auto_clean:
 	$(MAKE) clean
