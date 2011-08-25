@@ -13,6 +13,10 @@ things, this makes it easy to clone a tree, and modify only the clone, while
 other processes access the original tree. This is utterly wonderful for my 
 backup application, and that's the reason I wrote larch in the first place.
 
+(The previous paragraph contains a small lie: larch does modify nodes in
+place, if they are not shared between trees. This is necessary for
+performance.)
+
 I have tried to keep the implementation generic and flexibile, so that you 
 may use it in a variety of situations. For example, the tree itself does not 
 decide where its nodes are stored: you provide a class that does that for it. 
