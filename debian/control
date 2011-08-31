@@ -12,6 +12,7 @@ Package: python-larch
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, python-tracing, 
     python-cliapp (>= 0.14), python-ttystatus, libjs-jquery
+Recommends: python-ttystatus
 Description: B-tree library for Python
  An implementation of a particular kind of B-tree, based on research
  by Ohad Rodeh. This is the same data structure that btrfs uses, but

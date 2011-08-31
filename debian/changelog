@@ -1,3 +1,9 @@
+python-larch (0.23-2) unstable; urgency=low
+
+  * Install python-larch manpage.
+
+ -- Lars Wirzenius <liw@liw.fi>  Wed, 31 Aug 2011 17:15:27 +0100
+
 python-larch (0.23-1) unstable; urgency=low
 
   * Add dependency on python-ttystatus. Thanks, Jo Shields, for the
