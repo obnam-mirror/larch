@@ -11,7 +11,7 @@ X-Python-Version: >= 2.6
 Package: python-larch
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, python-tracing, 
-    python-cliapp (>= 0.14), python-ttystatus, libjs-jquery
+    python-cliapp (>= 0.14), libjs-jquery
 Recommends: python-ttystatus
 Description: B-tree library for Python
  An implementation of a particular kind of B-tree, based on research

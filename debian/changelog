@@ -1,6 +1,8 @@
 python-larch (0.23-2) unstable; urgency=low
 
-  * Install python-larch manpage.
+  * Install fsck-larch manpage.
+  * Weaken python-ttystatus dependency to a recommends, since it's only
+    needed by fsck-larch.
 
  -- Lars Wirzenius <liw@liw.fi>  Wed, 31 Aug 2011 17:15:27 +0100
 
