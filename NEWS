@@ -4,6 +4,10 @@ NEWS for larch
 These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
+Version 0.24, released 2011-09-17
+---------------------------------
+
+* Debian packaging install the fsck-larch manual page.
 
 Version 0.23, released 2011-08-19
 ---------------------------------
