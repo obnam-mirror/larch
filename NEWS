@@ -4,6 +4,13 @@ NEWS for larch
 These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
+Version 0.25, released 2011-10-02
+---------------------------------
+
+* `fsck` can now optionally attempt to fix B-trees with missing nodes.
+  The index nodes referring to the missing nodes get adjusted to drop
+  the reference.
+
 Version 0.24, released 2011-09-17
 ---------------------------------
 
