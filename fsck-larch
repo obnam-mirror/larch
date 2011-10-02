@@ -29,6 +29,7 @@ class Fsck(cliapp.Application):
     def add_settings(self):
         self.settings.string_list(['trace'], 'add PATTERN to trace patterns',
                                   metavar='PATTERN')
+        self.settings.boolean(['fix'], 'fix problems found?')
 
     def process_args(self, args):
         for pattern in self.settings['trace']:
@@ -48,7 +49,8 @@ class Fsck(cliapp.Application):
         for dirname in args:
             self.ts.notify('fsck-larch for %s' % dirname)
             forest = larch.open_forest(dirname=dirname)
-            fsck = larch.fsck.Fsck(forest, self.report)
+            fsck = larch.fsck.Fsck(forest, self.warning, self.error, 
+                                   self.settings['fix'])
             fsck.find_work()
             
             self.ts['checks'] = len(fsck.work)
@@ -63,10 +65,14 @@ class Fsck(cliapp.Application):
         if self.errors:
             sys.exit(1)
 
-    def report(self, msg):
+    def error(self, msg):
         self.errors = True
         self.ts.notify(msg)
         logging.error(msg)
+
+    def warning(self, msg):
+        self.ts.notify(msg)
+        logging.warning(msg)
 
 if __name__ == '__main__':
     Fsck().run()

@@ -78,6 +78,9 @@ class Node(object):
     def __len__(self):
         return len(self._keys)
 
+    def __nonzero__(self):
+        return True
+
     def keys(self):
         '''Return keys in the node, sorted.'''
         return self._keys

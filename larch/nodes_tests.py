@@ -40,6 +40,10 @@ class NodeTests(unittest.TestCase):
     def test_has_id(self):
         self.assertEqual(self.node.id, self.node_id)
 
+    def test_empty_node_is_still_true(self):
+        empty = larch.nodes.Node(self.node_id, [], [])
+        self.assert_(empty)
+
     def test_has_no_size(self):
         self.assertEqual(self.node.size, None)
 
@@ -256,7 +260,6 @@ class IndexNodeTests(unittest.TestCase):
         self.index_id = 1234
         self.index = larch.IndexNode(self.index_id, ['bar', 'foo'],
                                      [self.leaf1.id, self.leaf2.id])
-
 
     def test_find_key_for_child_containing(self):
         find = self.index.find_key_for_child_containing
