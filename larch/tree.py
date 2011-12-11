@@ -137,6 +137,8 @@ class BTree(object):
         '''
 
         tracing.trace('looking up %s' % repr(key))
+        tracing.trace('tree is %s (root id %s)',
+                      self, self.root.id if self.root else None)
         self._check_key_size(key)
 
         node = self.root
@@ -161,6 +163,8 @@ class BTree(object):
 
         tracing.trace('looking up range %s .. %s' % 
                         (repr(minkey), repr(maxkey)))
+        tracing.trace('tree is %s (root id %s)',
+                      self, self.root.id if self.root else None)
         self._check_key_size(minkey)
         self._check_key_size(maxkey)
         if self.root is None:
@@ -186,6 +190,8 @@ class BTree(object):
         '''Return number of keys in range.'''
 
         tracing.trace('count_range(%s, %s)' % (repr(minkey), repr(maxkey)))
+        tracing.trace('tree is %s (root id %s)',
+                      self, self.root.id if self.root else None)
         self._check_key_size(minkey)
         self._check_key_size(maxkey)
 
@@ -214,6 +220,8 @@ class BTree(object):
         '''
 
         tracing.trace('range_is_empty(%s, %s)' % (repr(minkey), repr(maxkey)))
+        tracing.trace('tree is %s (root id %s)',
+                      self, self.root.id if self.root else None)
         self._check_key_size(minkey)
         self._check_key_size(maxkey)
         if self.root is None:
@@ -259,6 +267,8 @@ class BTree(object):
 
         tracing.trace('key=%s' % repr(key))
         tracing.trace('value=%s' % repr(value))
+        tracing.trace('tree is %s (root id %s)',
+                      self, self.root.id if self.root else None)
         self._check_key_size(key)
         self._check_value_size(value)
 
@@ -407,6 +417,8 @@ class BTree(object):
         '''
 
         tracing.trace('key=%s' % repr(key))    
+        tracing.trace('tree is %s (root id %s)',
+                      self, self.root.id if self.root else None)
         self._check_key_size(key)
 
         if self.root is None:
@@ -419,6 +431,8 @@ class BTree(object):
 
     def _remove_from_index(self, old_index, key):
         tracing.trace('old_index.id=%s' % old_index.id)
+        tracing.trace('tree is %s (root id %s)',
+                      self, self.root.id if self.root else None)
         child_key = old_index.find_key_for_child_containing(key)
         new_index = self._shadow(old_index)
         child = self._get_node(new_index[child_key])
@@ -531,6 +545,8 @@ class BTree(object):
         '''
 
         tracing.trace('minkey=%s maxkey=%s' % (repr(minkey), repr(maxkey)))
+        tracing.trace('tree is %s (root id %s)',
+                      self, self.root.id if self.root else None)
         self._check_key_size(minkey)
         self._check_key_size(maxkey)
         keys = [k for k, v in self.lookup_range(minkey, maxkey)]
