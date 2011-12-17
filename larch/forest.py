@@ -198,7 +198,6 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
             raise exception(value, wanted)
 
     check_size('key_size', key_size, BadKeySize)
-    check_size('node_size', node_size, BadNodeSize)
 
     return Forest(ns)
 

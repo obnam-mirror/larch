@@ -4,6 +4,16 @@ NEWS for larch
 These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
+Version 0.26, released UNRELEASED
+---------------------------------
+
+* `open_forest` now works even if the requested node size is different
+  from the node size used with an existing tree. The requested size is
+  just ignored, rather than causing an error. This is useful for, say,
+  Obnam, when the user decides to change the node size setting, or
+  when Obnam's default node size for a tree grows. This way, things
+  work.
+
 Version 0.25, released 2011-10-02
 ---------------------------------
 

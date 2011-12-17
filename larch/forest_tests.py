@@ -147,16 +147,18 @@ class OpenForestTests(unittest.TestCase):
                           node_size=self.node_size,
                           dirname=self.tempdir)
 
-    def test_fail_if_existing_tree_has_incompatible_node_size(self):
+    def test_opens_existing_tree_with_incompatible_node_size(self):
         f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
                               dirname=self.tempdir)
         f.commit()
-        
-        self.assertRaises(larch.BadNodeSize, 
-                          larch.open_forest,
-                          key_size=self.key_size, 
-                          node_size=self.node_size + 1,
-                          dirname=self.tempdir)
+
+        new_size = self.node_size + 1
+        f2 = larch.open_forest(key_size=self.key_size, 
+                               node_size=new_size,
+                               dirname=self.tempdir)
+                               
+        self.assertEqual(int(f2.node_store.get_metadata('node_size')), 
+                         self.node_size)
 
     def test_opens_existing_tree_with_compatible_key_and_node_size(self):
         f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
