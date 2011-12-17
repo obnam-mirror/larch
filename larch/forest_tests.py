@@ -157,7 +157,8 @@ class OpenForestTests(unittest.TestCase):
                                node_size=new_size,
                                dirname=self.tempdir)
                                
-        self.assertEqual(f2.node_store.metadata['node-size'], new_size)
+        self.assertEqual(int(f2.node_store.get_metadata('node_size')), 
+                         self.node_size)
 
     def test_opens_existing_tree_with_compatible_key_and_node_size(self):
         f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
