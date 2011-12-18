@@ -3,6 +3,9 @@ python-larch (0.26-1) unstable; urgency=low
   * New upstream release.
   * debian/control: change libjs-jquery to Suggests, from Depends. It's only
     needed for API documentation, which most people won't care about.
+  * debian/control, debian/python-larch.links: replace embedded underscore.js
+    with a symlink.
+  * debian/source/format: switch back to the simple 1.0 source format.
 
  -- Lars Wirzenius <liw@liw.fi>  Sun, 18 Dec 2011 15:35:54 +0000
 
