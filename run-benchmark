@@ -1,8 +1,0 @@
-#!/bin/sh
-
-set -e
-
-WIKI=$HOME/liw.fi
-./codec-speed --keys 10000 --csv $WIKI/larch/codec-speed.csv
-./speed-test --keys 1000000 --csv $WIKI/larch/speed-test.csv \
-    --location speed-test.tmp
