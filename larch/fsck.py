@@ -33,10 +33,18 @@ class Error(Exception):
 
 class WorkItem(object):
 
-    '''A work item for fsck.'''
+    '''A work item for fsck.
+    
+    Subclass can optionally set the ``name`` attribute; the class name
+    is used by default.
+    
+    '''
 
     def __str__(self):
-        return self.name
+        if hasattr(self, 'name'):
+            return self.name
+        else:
+            return self.__class__.__name__
     
     def do(self):
         pass
