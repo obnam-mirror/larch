@@ -27,7 +27,7 @@ class DummyNodeStore(object):
 
     def __init__(self, dirname):
         self.dirname = dirname
-        self.vfs = self
+        self.journal = self
 
     def makedirs(self, dirname):
         if not os.path.exists(dirname):

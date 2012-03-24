@@ -76,6 +76,7 @@ class NodeStoreDiskTests(unittest.TestCase, larch.NodeStoreTests):
         self.ns.set_refcount(0, 1234)
         self.per_group = 2
         self.ns.save_refcounts()
+        self.ns.journal.commit()
         ns2 = self.new_ns()
         self.assertEqual(self.ns.get_refcount(0), 1234)
         self.assertEqual(ns2.get_refcount(0), 1234)
