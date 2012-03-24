@@ -145,9 +145,8 @@ class Forest(object):
         self.node_store.set_metadata('key_size', 
                                      self.node_store.codec.key_bytes)
         self.node_store.set_metadata('node_size', self.node_store.node_size)
-        self.node_store.save_metadata()
         self.node_store.save_refcounts()
-        self.node_store.push_upload_queue()
+        self.node_store.commit()
 
 
 def open_forest(key_size=None, node_size=None, codec=None, node_store=None, 

@@ -199,7 +199,6 @@ class NodeStoreDisk(larch.NodeStore):
         self.upload_queue.push()
         self.cache.log_stats()
         self.cache = larch.LRUCache(self.cache_size)
-        self.journal.commit()
 
     def _really_put_node(self, node):
         tracing.trace('really put node %s' % node.id)
@@ -273,3 +272,9 @@ class NodeStoreDisk(larch.NodeStore):
     def save_refcounts(self):
         tracing.trace('saving refcounts')
         self.rs.save_refcounts()
+        
+    def commit(self):
+        self.push_upload_queue()
+        self.save_metadata()
+        self.journal.commit()
+
