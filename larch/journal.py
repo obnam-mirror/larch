@@ -158,14 +158,12 @@ class Journal(object):
             self._vivify(self.deletedir, [])
 
     def commit(self):
-        flag = os.path.join(self.newdir, self.flag_file)
-
-        if self.fs.exists(self.newdir):
-            self._vivify(self.newdir, [flag])
-
         if self.fs.exists(self.deletedir):
             self._clear_directory(self.deletedir)
-            
+
+        flag = os.path.join(self.newdir, self.flag_file)
+        if self.fs.exists(self.newdir):
+            self._vivify(self.newdir, [flag])
         if self.fs.exists(flag):
             real_flag = os.path.join(self.storedir, self.flag_file)
             self.fs.rename(flag, real_flag)
