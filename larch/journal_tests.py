@@ -55,7 +55,7 @@ class JournalTests(unittest.TestCase):
         self.assertTrue(self.j.exists(dirname))
 
     def test_rollback_undoes_new_directories(self):
-        dirname = self.join('foo')
+        dirname = self.join('foo/bar/foobar')
         self.j.makedirs(dirname)
         self.j.rollback()
         self.assertFalse(self.j.exists(dirname))

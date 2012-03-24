@@ -73,11 +73,27 @@ class Journal(object):
         return False
 
     def exists(self, filename):
-        return self.fs.exists(filename)
+        return (self.fs.exists(filename) or 
+                self.fs.exists(self._new(filename)))
         
     def makedirs(self, dirname):
-        self.fs.makedirs(dirname)
+        x = self._new(dirname)
+        print; 
+        print 'dirname:', dirname
+        print 'x:', x
+        self.fs.makedirs(x)
+
+    def _clear_directory(self, dirname):
+        basenames = self.fs.listdir(dirname)
+        for basename in basenames:
+            pathname = os.path.join(dirname, basename)
+            if self.fs.isdir(pathname):
+                self._clear_directory(pathname)
+                self.fs.rmdir(pathname)
+            else:
+                self.fs.remove(pathname)
 
     def rollback(self):
-        pass
+        new = os.path.join(self.storedir, 'new')
+        self._clear_directory(new)
 

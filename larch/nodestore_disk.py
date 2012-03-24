@@ -44,6 +44,10 @@ class LocalFS(object): # pragma: no cover
         '''Create directories, simliar to os.makedirs.'''
         if not os.path.exists(dirname):
             os.makedirs(dirname)
+            
+    def rmdir(self, dirname):
+        '''Remove an empty directory.'''
+        os.rmdir(dirname)
 
     def cat(self, filename):
         '''Return contents of a file.'''
@@ -72,6 +76,10 @@ class LocalFS(object): # pragma: no cover
     def remove(self, filename):
         '''Remove a file.'''
         os.remove(filename)
+        
+    def listdir(self, dirname):
+        '''Return basenames from directory.'''
+        return os.listdir(dirname)
 
 
 class NodeStoreDisk(larch.NodeStore):
