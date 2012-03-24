@@ -84,6 +84,10 @@ class JournalTests(unittest.TestCase):
         self.j.rollback()
         self.assertTrue(self.j.exists(dirname))
 
+    def test_rmdir_raises_oserror_for_directory_that_never_was(self):
+        dirname = self.join('foo')
+        self.assertRaises(OSError, self.j.rmdir, dirname)
+
     def test_creates_new_file(self):
         filename = self.join('foo')
         self.j.overwrite_file(filename, 'bar')
