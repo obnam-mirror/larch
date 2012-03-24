@@ -54,7 +54,7 @@ class Journal(object):
     
     '''
     
-    flag_file = 'metadata'
+    flag_basename = 'metadata'
     
     def __init__(self, fs, storedir):
         self.fs = fs
@@ -63,6 +63,13 @@ class Journal(object):
             self.storedir += os.sep
         self.newdir = os.path.join(self.storedir, 'new/')
         self.deletedir = os.path.join(self.storedir, 'delete/')
+        self.flag_file = os.path.join(self.storedir, self.flag_basename)
+        self.new_flag = os.path.join(self.newdir, self.flag_basename)
+        
+        if self.fs.exists(self.new_flag):
+            self.commit()
+        else:
+            self.rollback()
 
     def _relative(self, filename):
         '''Return the part of filename that is relative to storedir.'''
@@ -78,8 +85,7 @@ class Journal(object):
         return os.path.join(self.deletedir, self._relative(filename))
     
     def metadata_is_pending(self):
-        filename = os.path.join(self.newdir, self.flag_file)
-        return self.fs.exists(filename)
+        return self.fs.exists(self.flag_file)
 
     def exists(self, filename):
         return (self.fs.exists(filename) or 
@@ -157,14 +163,13 @@ class Journal(object):
         if self.fs.exists(self.deletedir):
             self._vivify(self.deletedir, [])
 
-    def commit(self):
+    def commit(self, skip=[]):
         if self.fs.exists(self.deletedir):
             self._clear_directory(self.deletedir)
 
-        flag = os.path.join(self.newdir, self.flag_file)
         if self.fs.exists(self.newdir):
-            self._vivify(self.newdir, [flag])
-        if self.fs.exists(flag):
-            real_flag = os.path.join(self.storedir, self.flag_file)
-            self.fs.rename(flag, real_flag)
+            skip = [self._new(x) for x in skip]
+            self._vivify(self.newdir, [self.new_flag] + skip)
+        if not skip and self.fs.exists(self.new_flag):
+            self.fs.rename(self.new_flag, self.flag_file)
 

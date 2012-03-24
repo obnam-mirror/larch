@@ -47,7 +47,8 @@ class JournalTests(unittest.TestCase):
         self.assertFalse(self.j.metadata_is_pending())
 
     def test_has_pending_metadata_when_created(self):
-        self.j.overwrite_file(self.join('metadata'), '')
+        with open(self.join('metadata'), 'w'):
+            pass
         self.assertTrue(self.j.metadata_is_pending())
 
     def test_does_not_know_random_directory_initially(self):
@@ -161,7 +162,24 @@ class JournalTests(unittest.TestCase):
 
     def test_commits_metadata(self):
         metadata = self.join('metadata')
-        self.j.overwrite_file(metadata, '')
+        self.j.overwrite_file(metadata, 'yuck')
         self.j.commit()
-        self.assertEqual(self.j.cat(metadata), '')
+        self.assertEqual(self.fs.cat(self.join(metadata)), 'yuck')
+
+    def test_unflagged_commit_means_new_instance_rollbacks(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        
+        j2 = larch.Journal(self.fs, self.tempdir)
+        self.assertFalse(j2.exists(filename))
+
+    def test_partial_commit_finished_by_new_instance(self):
+        filename = self.join('foo/bar')
+        metadata = self.join('metadata')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.overwrite_file(metadata, '')
+        self.j.commit(skip=[filename])
+        
+        j2 = larch.Journal(self.fs, self.tempdir)
+        self.assertTrue(j2.exists(filename))
 
