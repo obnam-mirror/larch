@@ -46,6 +46,10 @@ class JournalTests(unittest.TestCase):
     def test_has_no_pending_metadata_initially(self):
         self.assertFalse(self.j.metadata_is_pending())
 
+    def test_has_pending_metadata_when_created(self):
+        self.j.overwrite_file(self.join('metadata'), '')
+        self.assertTrue(self.j.metadata_is_pending())
+
     def test_does_not_know_random_directory_initially(self):
         self.assertFalse(self.j.exists(self.join('foo')))
 

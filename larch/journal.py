@@ -54,6 +54,8 @@ class Journal(object):
     
     '''
     
+    flag_file = 'metadata'
+    
     def __init__(self, fs, storedir):
         self.fs = fs
         self.storedir = storedir
@@ -76,7 +78,8 @@ class Journal(object):
         return os.path.join(self.deletedir, self._relative(filename))
     
     def metadata_is_pending(self):
-        return False
+        filename = os.path.join(self.newdir, self.flag_file)
+        return self.fs.exists(filename)
 
     def exists(self, filename):
         return (self.fs.exists(filename) or 
