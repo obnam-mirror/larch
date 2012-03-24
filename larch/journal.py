@@ -61,8 +61,8 @@ class Journal(object):
         self.storedir = storedir
         if not self.storedir.endswith(os.sep):
             self.storedir += os.sep
-        self.newdir = os.path.join(self.storedir, 'new')
-        self.deletedir = os.path.join(self.storedir, 'delete')
+        self.newdir = os.path.join(self.storedir, 'new/')
+        self.deletedir = os.path.join(self.storedir, 'delete/')
 
     def _relative(self, filename):
         '''Return the part of filename that is relative to storedir.'''
@@ -136,40 +136,32 @@ class Journal(object):
                 else:
                     self.fs.remove(pathname)
 
+    def _vivify(self, dirname, exclude):
+        all_excludes = [dirname] + exclude
+        for pathname in self._climb(dirname):
+            if pathname not in all_excludes:
+                r = os.path.join(self.storedir, pathname[len(dirname):])
+                parent = os.path.dirname(r)
+                if self.fs.isdir(pathname):
+                    if not self.fs.exists(r):
+                        self.fs.makedirs(parent)
+                        self.fs.rename(pathname, r)
+                else:
+                    self.fs.makedirs(os.path.dirname(r))
+                    self.fs.rename(pathname, r)
+
     def rollback(self):
         if self.fs.exists(self.newdir):
             self._clear_directory(self.newdir)
 
         if self.fs.exists(self.deletedir):
-            for pathname in self._climb(self.deletedir):
-                if pathname != self.deletedir:
-                    r = self._relative(pathname)
-                    assert r.startswith('delete/')
-                    r = r[len('delete/'):]
-                    r = os.path.join(self.storedir, r)
-                    if self.fs.isdir(pathname):
-                        self.fs.rmdir(pathname)
-                    else:
-                        dirname = os.path.dirname(r)
-                        self.fs.makedirs(dirname)
-                        self.fs.rename(pathname, r)
+            self._vivify(self.deletedir, [])
 
     def commit(self):
         flag = os.path.join(self.newdir, self.flag_file)
 
-        for pathname in self._climb(self.newdir):
-            if pathname != self.newdir and pathname != flag:
-                r = self._relative(pathname)
-                assert r.startswith('new/')
-                r = r[len('new/'):]
-                r = os.path.join(self.storedir, r)
-                if self.fs.isdir(pathname):
-                    self.fs.makedirs(r)
-                else:
-                    dirname = os.path.dirname(r)
-                    if not self.fs.exists(dirname):
-                        self.fs.makedirs(dirname)
-                    self.fs.rename(pathname, r)
+        if self.fs.exists(self.newdir):
+            self._vivify(self.newdir, [flag])
 
         if self.fs.exists(self.deletedir):
             self._clear_directory(self.deletedir)
