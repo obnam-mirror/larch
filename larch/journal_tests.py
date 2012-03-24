@@ -80,3 +80,9 @@ class JournalTests(unittest.TestCase):
         self.j.rollback()
         self.assertFalse(self.j.exists(filename))
 
+    def test_commits_new_file(self):
+        filename = self.join('foo')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.commit()
+        self.assertEqual(self.j.cat(filename), 'bar')
+
