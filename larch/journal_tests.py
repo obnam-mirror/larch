@@ -14,6 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os
+import shutil
+import tempfile
 import unittest
 
 import larch
@@ -22,8 +25,12 @@ import larch
 class JournalTests(unittest.TestCase):
 
     def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
         self.fs = larch.LocalFS()
         self.j = larch.Journal(self.fs)
+        
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
         
     def test_has_no_pending_metadata_initially(self):
         self.assertFalse(self.j.metadata_is_pending())
