@@ -32,14 +32,25 @@ class JournalTests(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
+    def join(self, *args):
+        return os.path.join(self.tempdir, *args)
+
     def test_constructs_new_filename(self):
-        self.assertEqual(self.j._new(os.path.join(self.tempdir, 'foo')),
-                         os.path.join(self.tempdir, 'new', 'foo'))
+        self.assertEqual(self.j._new(self.join('foo')),
+                         self.join('new', 'foo'))
 
     def test_constructs_deleted_filename(self):
-        self.assertEqual(self.j._deleted(os.path.join(self.tempdir, 'foo')),
-                         os.path.join(self.tempdir, 'delete', 'foo'))
+        self.assertEqual(self.j._deleted(self.join('foo')),
+                         self.join('delete', 'foo'))
         
     def test_has_no_pending_metadata_initially(self):
         self.assertFalse(self.j.metadata_is_pending())
+
+    def test_does_not_know_random_directory_initially(self):
+        self.assertFalse(self.j.exists(self.join('foo')))
+
+    def test_creates_directory(self):
+        dirname = self.join('foo')
+        self.j.makedirs(dirname)
+        self.assertTrue(self.j.exists(dirname))
 

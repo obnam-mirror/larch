@@ -72,3 +72,9 @@ class Journal(object):
     def metadata_is_pending(self):
         return False
 
+    def exists(self, filename):
+        return self.fs.exists(filename)
+        
+    def makedirs(self, dirname):
+        self.fs.makedirs(dirname)
+
