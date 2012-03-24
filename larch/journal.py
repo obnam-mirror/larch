@@ -15,7 +15,9 @@
 
 
 import errno
+import logging
 import os
+import tracing
 
 
 class Journal(object):
@@ -57,6 +59,7 @@ class Journal(object):
     flag_basename = 'metadata'
     
     def __init__(self, fs, storedir):
+        logging.debug('Initializing Journal for %s' % storedir)
         self.fs = fs
         self.storedir = storedir
         if not self.storedir.endswith(os.sep):
@@ -65,10 +68,13 @@ class Journal(object):
         self.deletedir = os.path.join(self.storedir, 'delete/')
         self.flag_file = os.path.join(self.storedir, self.flag_basename)
         self.new_flag = os.path.join(self.newdir, self.flag_basename)
-        
+
+        logging.debug('journal: new_flag = %s' % self.new_flag)        
         if self.fs.exists(self.new_flag):
+            logging.debug('Automatically committing remaining changes')
             self.commit()
         else:
+            logging.debug('Automatically rolling back remaining changes')
             self.rollback()
 
     def _relative(self, filename):
@@ -150,20 +156,28 @@ class Journal(object):
                 parent = os.path.dirname(r)
                 if self.fs.isdir(pathname):
                     if not self.fs.exists(r):
-                        self.fs.makedirs(parent)
+                        if not self.fs.exists(parent):
+                            self.fs.makedirs(parent)
                         self.fs.rename(pathname, r)
                 else:
-                    self.fs.makedirs(os.path.dirname(r))
+                    if not self.fs.exists(parent):
+                        self.fs.makedirs(parent)
                     self.fs.rename(pathname, r)
 
     def rollback(self):
+        tracing.trace('%s start' % self.storedir)
+
         if self.fs.exists(self.newdir):
             self._clear_directory(self.newdir)
 
         if self.fs.exists(self.deletedir):
             self._vivify(self.deletedir, [])
 
+        tracing.trace('%s done' % self.storedir)
+
     def commit(self, skip=[]):
+        tracing.trace('%s start' % self.storedir)
+
         if self.fs.exists(self.deletedir):
             self._clear_directory(self.deletedir)
 
@@ -173,3 +187,4 @@ class Journal(object):
         if not skip and self.fs.exists(self.new_flag):
             self.fs.rename(self.new_flag, self.flag_file)
 
+        tracing.trace('%s done' % self.storedir)
