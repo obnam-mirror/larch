@@ -50,73 +50,108 @@ class JournalTests(unittest.TestCase):
         self.assertFalse(self.j.exists(self.join('foo')))
 
     def test_creates_directory(self):
-        dirname = self.join('foo')
+        dirname = self.join('foo/bar')
         self.j.makedirs(dirname)
         self.assertTrue(self.j.exists(dirname))
 
-    def test_rollback_undoes_new_directories(self):
-        dirname = self.join('foo/bar/foobar')
+    def test_rollback_undoes_directory_creation(self):
+        dirname = self.join('foo/bar')
         self.j.makedirs(dirname)
         self.j.rollback()
         self.assertFalse(self.j.exists(dirname))
 
-    def test_rollback_works_without_changes(self):
-        self.assertEqual(self.j.rollback(), None)
-
-    def test_commits_new_directory(self):
-        dirname = self.join('foo/bar/foobar')
+    def test_rollback_keeps_committed_directory(self):
+        dirname = self.join('foo/bar')
         self.j.makedirs(dirname)
         self.j.commit()
-        self.assertTrue(self.j.exists(dirname))
-
-    def test_creates_new_directory_after_commit(self):
-        dirname = self.join('foo')
-        self.j.makedirs(dirname)
-        self.j.commit()
-        self.j.makedirs(dirname)
-        self.assertTrue(self.j.exists(dirname))
-
-    def test_rollback_brings_back_old_directory(self):
-        dirname = self.join('foo')
-        self.j.makedirs(dirname)
-        self.j.commit()
-        self.j.rmdir(dirname)
         self.j.rollback()
         self.assertTrue(self.j.exists(dirname))
 
-    def test_rmdir_raises_oserror_for_directory_that_never_was(self):
-        dirname = self.join('foo')
-        self.assertRaises(OSError, self.j.rmdir, dirname)
+    def test_rollback_works_without_changes(self):
+        self.assertEqual(self.j.rollback(), None)
 
     def test_creates_new_file(self):
-        filename = self.join('foo')
+        filename = self.join('foo/bar')
         self.j.overwrite_file(filename, 'bar')
         self.assertEqual(self.j.cat(filename), 'bar')
 
     def test_rollback_undoes_new_file(self):
-        filename = self.join('foo')
+        filename = self.join('foo/bar')
         self.j.overwrite_file(filename, 'bar')
         self.j.rollback()
         self.assertFalse(self.j.exists(filename))
 
     def test_commits_new_file(self):
-        filename = self.join('foo')
+        filename = self.join('foo/bar')
         self.j.overwrite_file(filename, 'bar')
         self.j.commit()
+        self.j.rollback()
         self.assertEqual(self.j.cat(filename), 'bar')
 
     def test_creates_new_file_after_commit(self):
-        filename = self.join('foo')
+        filename = self.join('foo/bar')
         self.j.overwrite_file(filename, 'bar')
         self.j.commit()
         self.j.overwrite_file(filename, 'yo')
         self.assertEqual(self.j.cat(filename), 'yo')
 
     def test_rollback_brings_back_old_file(self):
-        filename = self.join('foo')
+        filename = self.join('foo/bar')
         self.j.overwrite_file(filename, 'bar')
         self.j.commit()
         self.j.overwrite_file(filename, 'yo')
         self.j.rollback()
         self.assertEqual(self.j.cat(filename), 'bar')
+
+    def test_removes_uncommitted_file(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.remove(filename)
+        self.assertFalse(self.j.exists(filename))
+
+    def test_rollback_undoes_removal_of_uncommitted_file(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.remove(filename)
+        self.j.rollback()
+        self.assertFalse(self.j.exists(filename))
+
+    def test_commits_file_removal(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.remove(filename)
+        self.j.commit()
+        self.j.rollback()
+        self.assertFalse(self.j.exists(filename))
+
+    def test_removes_committed_file(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.commit()
+        self.j.remove(filename)
+        self.assertFalse(self.j.exists(filename))
+
+    def test_removing_committed_file_twice_causes_oserror(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.commit()
+        self.j.remove(filename)
+        self.assertRaises(OSError, self.j.remove, filename)
+
+    def test_rollback_brings_back_committed_file(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.commit()
+        self.j.remove(filename)
+        self.j.rollback()
+        self.assertEqual(self.j.cat(filename), 'bar')
+
+    def test_commits_removal_of_committed_file(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.commit()
+        self.j.remove(filename)
+        self.j.commit()
+        self.j.rollback()
+        self.assertFalse(self.j.exists(filename))
 

@@ -49,6 +49,9 @@ class Journal(object):
     the commit happens. Otherwise a rollback happens. This guarantees
     that the on-disk state is consistent.
     
+    We only provide enough of a filesystem interface as is needed by
+    NodeStoreDisk. For example, we do not care about directory removal.
+    
     '''
     
     def __init__(self, fs, storedir):
@@ -81,20 +84,6 @@ class Journal(object):
         x = self._new(dirname)
         self.fs.makedirs(x)
 
-    def rmdir(self, dirname):
-        new = self._new(dirname)
-        deleted = self._deleted(dirname)
-        if self.fs.exists(new):
-            self.fs.rmdir(new)
-        elif not self.fs.exists(deleted) and self.fs.exists(dirname):
-            target_parent = self._new(os.path.dirname(dirname))
-            self.fs.makedirs(target_parent)
-            self.fs.rename(dirname, target_parent)
-        else:
-            # Either it doesn't exist at all, or we've already deleted 
-            # it once after the latest commit.
-            raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), dirname))
-
     def overwrite_file(self, filename, contents):
         self.fs.overwrite_file(self._new(filename), contents)
 
@@ -104,6 +93,20 @@ class Journal(object):
             return self.fs.cat(new)
         else:
             return self.fs.cat(filename)
+            
+    def remove(self, filename):
+        new = self._new(filename)
+        deleted = self._deleted(filename)
+        
+        if self.fs.exists(new):
+            self.fs.remove(new)
+        elif self.fs.exists(deleted):
+            raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), filename))
+        else:
+            dirname = os.path.dirname(deleted)
+            if not self.fs.exists(dirname):
+                self.fs.makedirs(dirname)
+            self.fs.rename(filename, deleted)
 
     def _climb(self, dirname):
         basenames = self.fs.listdir(dirname)
@@ -134,6 +137,21 @@ class Journal(object):
         if self.fs.exists(new):
             self._clear_directory(new)
 
+        delete = os.path.join(self.storedir, 'delete')
+        if self.fs.exists(delete):
+            for pathname in self._climb(delete):
+                if pathname != delete:
+                    r = self._relative(pathname)
+                    assert r.startswith('delete/')
+                    r = r[len('delete/'):]
+                    r = os.path.join(self.storedir, r)
+                    if self.fs.isdir(pathname):
+                        self.fs.rmdir(pathname)
+                    else:
+                        dirname = os.path.dirname(r)
+                        self.fs.makedirs(dirname)
+                        self.fs.rename(pathname, r)
+
     def commit(self):
         new = os.path.join(self.storedir, 'new')
         for pathname in self._climb(new):
@@ -150,3 +168,6 @@ class Journal(object):
                         self.fs.makedirs(dirname)
                     self.fs.rename(pathname, r)
 
+        delete = os.path.join(self.storedir, 'delete')
+        if self.fs.exists(delete):
+            self._clear_directory(delete)
