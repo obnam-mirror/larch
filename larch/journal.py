@@ -14,6 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os
+
+
 class Journal(object):
 
     '''A journal layer on top of a virtual filesystem.
@@ -50,6 +53,14 @@ class Journal(object):
     def __init__(self, fs, storedir):
         self.fs = fs
         self.storedir = storedir
+        if not self.storedir.endswith(os.sep):
+            self.storedir += os.sep
+
+    def _new(self, filename):
+        '''Return name for a new file whose final name is filename.'''
+        assert filename.startswith(self.storedir)
+        relative = filename[len(self.storedir):]
+        return os.path.join(self.storedir, 'new', relative)
     
     def metadata_is_pending(self):
         return False
