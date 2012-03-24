@@ -61,6 +61,10 @@ class LocalFS(object):
         '''Does a file exist already?'''
         return os.path.exists(filename)
 
+    def isdir(self, filename):
+        '''Does filename and is it a directory?'''
+        return os.path.isdir(filename)
+
     def rename(self, old, new):
         '''Rename a file.'''
         os.rename(old, new)
