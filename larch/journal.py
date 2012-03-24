@@ -69,7 +69,6 @@ class Journal(object):
         self.flag_file = os.path.join(self.storedir, self.flag_basename)
         self.new_flag = os.path.join(self.newdir, self.flag_basename)
 
-        logging.debug('journal: new_flag = %s' % self.new_flag)        
         if self.fs.exists(self.new_flag):
             logging.debug('Automatically committing remaining changes')
             self.commit()
