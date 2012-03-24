@@ -86,3 +86,18 @@ class JournalTests(unittest.TestCase):
         self.j.commit()
         self.assertEqual(self.j.cat(filename), 'bar')
 
+    def test_creates_new_file_after_commit(self):
+        filename = self.join('foo')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.commit()
+        self.j.overwrite_file(filename, 'yo')
+        self.assertEqual(self.j.cat(filename), 'yo')
+
+    def test_rollback_brings_back_old_file(self):
+        filename = self.join('foo')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.commit()
+        self.j.overwrite_file(filename, 'yo')
+        self.j.rollback()
+        self.assertEqual(self.j.cat(filename), 'bar')
+

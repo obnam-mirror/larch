@@ -84,7 +84,25 @@ class Journal(object):
         self.fs.overwrite_file(self._new(filename), contents)
 
     def cat(self, filename):
-        return self.fs.cat(self._new(filename))
+        new = self._new(filename)
+        if self.fs.exists(new):
+            return self.fs.cat(new)
+        else:
+            return self.fs.cat(filename)
+
+    def _climb(self, dirname):
+        basenames = self.fs.listdir(dirname)
+        filenames = []
+        for basename in basenames:
+            pathname = os.path.join(dirname, basename)
+            if self.fs.isdir(pathname):
+                for x in self._climb(pathname):
+                    yield x
+            else:
+                filenames.append(pathname)
+        for filename in filenames:
+            yield filename
+        yield dirname
 
     def _clear_directory(self, dirname):
         basenames = self.fs.listdir(dirname)
@@ -102,5 +120,18 @@ class Journal(object):
             self._clear_directory(new)
 
     def commit(self):
-        pass
+        new = os.path.join(self.storedir, 'new')
+        for pathname in self._climb(new):
+            if pathname != new:
+                r = self._relative(pathname)
+                assert r.startswith('new/')
+                r = r[len('new/'):]
+                r = os.path.join(self.storedir, r)
+                if self.fs.isdir(pathname):
+                    self.fs.makedirs(r)
+                else:
+                    dirname = os.path.dirname(r)
+                    if not self.fs.exists(dirname):
+                        self.fs.makedirs(dirname)
+                    self.fs.rename(pathname, r)
 
