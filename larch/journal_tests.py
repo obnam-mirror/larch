@@ -69,6 +69,21 @@ class JournalTests(unittest.TestCase):
         self.j.commit()
         self.assertTrue(self.j.exists(dirname))
 
+    def test_creates_new_directory_after_commit(self):
+        dirname = self.join('foo')
+        self.j.makedirs(dirname)
+        self.j.commit()
+        self.j.makedirs(dirname)
+        self.assertTrue(self.j.exists(dirname))
+
+    def test_rollback_brings_back_old_directory(self):
+        dirname = self.join('foo')
+        self.j.makedirs(dirname)
+        self.j.commit()
+        self.j.rmdir(dirname)
+        self.j.rollback()
+        self.assertTrue(self.j.exists(dirname))
+
     def test_creates_new_file(self):
         filename = self.join('foo')
         self.j.overwrite_file(filename, 'bar')

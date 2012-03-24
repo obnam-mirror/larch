@@ -80,6 +80,20 @@ class Journal(object):
         x = self._new(dirname)
         self.fs.makedirs(x)
 
+    def rmdir(self, dirname):
+        new = self._new(dirname)
+        deleted = self._deleted(dirname)
+        if self.fs.exists(new):
+            self.fs.rmdir(new)
+        elif not self.fs.exists(deleted) and self.fs.exists(dirname):
+            target_parent = self._new(os.path.dirname(dirname))
+            self.fs.makedirs(target_parent)
+            self.fs.rename(dirname, target_parent)
+        else:
+            # Either it doesn't exist at all, or we've already deleted 
+            # it once after the latest commit.
+            raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), dirname))
+
     def overwrite_file(self, filename, contents):
         self.fs.overwrite_file(self._new(filename), contents)
 
