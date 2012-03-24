@@ -35,6 +35,10 @@ class JournalTests(unittest.TestCase):
     def test_constructs_new_filename(self):
         self.assertEqual(self.j._new(os.path.join(self.tempdir, 'foo')),
                          os.path.join(self.tempdir, 'new', 'foo'))
+
+    def test_constructs_deleted_filename(self):
+        self.assertEqual(self.j._deleted(os.path.join(self.tempdir, 'foo')),
+                         os.path.join(self.tempdir, 'delete', 'foo'))
         
     def test_has_no_pending_metadata_initially(self):
         self.assertFalse(self.j.metadata_is_pending())
