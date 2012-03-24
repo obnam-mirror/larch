@@ -121,6 +121,7 @@ class NodeStoreDisk(larch.NodeStore):
         self.upload_queue = larch.UploadQueue(self._really_put_node, 
                                               self.upload_max)
         self.vfs = vfs if vfs != None else LocalFS()
+        self.journal = larch.Journal(self.vfs, dirname)
         self.idpath = larch.IdPath(os.path.join(dirname, self.nodedir), 
                                    DIR_DEPTH, DIR_BITS, DIR_SKIP)
 
@@ -133,10 +134,10 @@ class NodeStoreDisk(larch.NodeStore):
             tracing.trace('load metadata')
             self.metadata = ConfigParser.ConfigParser()
             self.metadata.add_section('metadata')
-            if self.vfs.exists(self.metadata_name):
+            if self.journal.exists(self.metadata_name):
                 tracing.trace('metadata file (%s) exists, reading it' % 
                                 self.metadata_name)
-                data = self.vfs.cat(self.metadata_name)
+                data = self.journal.cat(self.metadata_name)
                 f = StringIO.StringIO(data)
                 self.metadata.readfp(f)
                 self._verify_metadata()
@@ -182,8 +183,7 @@ class NodeStoreDisk(larch.NodeStore):
         self._load_metadata()
         f = StringIO.StringIO()
         self.metadata.write(f)
-        self.vfs.overwrite_file(self.metadata_name + '_new', f.getvalue())
-        self.vfs.rename(self.metadata_name + '_new', self.metadata_name)
+        self.journal.overwrite_file(self.metadata_name, f.getvalue())
 
     def pathname(self, node_id):
         return self.idpath.convert(node_id)
@@ -199,6 +199,7 @@ class NodeStoreDisk(larch.NodeStore):
         self.upload_queue.push()
         self.cache.log_stats()
         self.cache = larch.LRUCache(self.cache_size)
+        self.journal.commit()
 
     def _really_put_node(self, node):
         tracing.trace('really put node %s' % node.id)
@@ -207,12 +208,12 @@ class NodeStoreDisk(larch.NodeStore):
             raise larch.NodeTooBig(node, len(encoded_node))
         name = self.pathname(node.id)
         tracing.trace('node %s to be stored in %s' % (node.id, name))
-        if self.vfs.exists(name):
-            self.vfs.remove(name)
+        if self.journal.exists(name):
+            self.journal.remove(name)
         dirname = os.path.dirname(name)
-        if not self.vfs.exists(dirname):
-            self.vfs.makedirs(dirname)
-        self.vfs.overwrite_file(name, encoded_node)
+        if not self.journal.exists(dirname):
+            self.journal.makedirs(dirname)
+        self.journal.overwrite_file(name, encoded_node)
         
     def get_node(self, node_id):
         tracing.trace('getting node %s' % node_id)
@@ -227,9 +228,9 @@ class NodeStoreDisk(larch.NodeStore):
             return node
 
         name = self.pathname(node_id)
-        if self.vfs.exists(name):
+        if self.journal.exists(name):
             tracing.trace('reading node %s from file %s' % (node_id, name))
-            encoded = self.vfs.cat(name)
+            encoded = self.journal.cat(name)
             node = self.codec.decode(encoded)
             node.frozen = True
             self.cache.add(node.id, node)
@@ -248,8 +249,8 @@ class NodeStoreDisk(larch.NodeStore):
         self.cache.remove(node_id)
         got_it = self.upload_queue.remove(node_id)
         name = self.pathname(node_id)
-        if self.vfs.exists(name):
-            self.vfs.remove(name)
+        if self.journal.exists(name):
+            self.journal.remove(name)
         elif not got_it:
             raise larch.NodeMissing(node_id)
         
@@ -258,7 +259,7 @@ class NodeStoreDisk(larch.NodeStore):
 
         nodedir = os.path.join(self.dirname, self.nodedir)
         uploaded = []
-        if self.vfs.exists(nodedir):
+        if self.journal.exists(nodedir):
             for dirname, subdirs, basenames in os.walk(nodedir):
                 uploaded += [int(x, 16) for x in basenames]
         return queued + uploaded
