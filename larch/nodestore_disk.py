@@ -30,7 +30,7 @@ DIR_BITS = 12
 DIR_SKIP = 13
 
 
-class LocalFS(object):
+class LocalFS(object): # pragma: no cover
 
     '''Access to local filesystem.
     
