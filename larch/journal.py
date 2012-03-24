@@ -94,10 +94,12 @@ class Journal(object):
                 self.fs.exists(self._new(filename)))
         
     def makedirs(self, dirname):
+        tracing.trace(dirname)
         x = self._new(dirname)
         self.fs.makedirs(x)
 
     def overwrite_file(self, filename, contents):
+        tracing.trace(filename)
         self.fs.overwrite_file(self._new(filename), contents)
 
     def cat(self, filename):
@@ -108,6 +110,8 @@ class Journal(object):
             return self.fs.cat(filename)
             
     def remove(self, filename):
+        tracing.trace(filename)
+
         new = self._new(filename)
         deleted = self._deleted(filename)
         
@@ -136,15 +140,17 @@ class Journal(object):
         yield dirname
 
     def _clear_directory(self, dirname):
+        tracing.trace(dirname)
         for pathname in self._climb(dirname):
             if pathname != dirname:
                 if self.fs.isdir(pathname):
-                    self._clear_directory(pathname)
                     self.fs.rmdir(pathname)
                 else:
                     self.fs.remove(pathname)
 
     def _vivify(self, dirname, exclude):
+        tracing.trace('dirname: %s' % dirname)
+        tracing.trace('exclude: %s' % repr(exclude))
         all_excludes = [dirname] + exclude
         for pathname in self._climb(dirname):
             if pathname not in all_excludes:
