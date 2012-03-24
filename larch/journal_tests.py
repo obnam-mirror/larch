@@ -68,3 +68,9 @@ class JournalTests(unittest.TestCase):
         self.j.overwrite_file(filename, 'bar')
         self.assertEqual(self.j.cat(filename), 'bar')
 
+    def test_rollback_undoes_new_file(self):
+        filename = self.join('foo')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.rollback()
+        self.assertFalse(self.j.exists(filename))
+
