@@ -236,7 +236,7 @@ class NodeStoreDisk(larch.NodeStore):
             self.cache.add(node.id, node)
             return node
         else:
-            raise larch.NodeMissing(node_id)
+            raise larch.NodeMissing(self.dirname, node_id)
 
     def start_modification(self, node):
         tracing.trace('start modiyfing node %s' % node.id)
@@ -252,7 +252,7 @@ class NodeStoreDisk(larch.NodeStore):
         if self.journal.exists(name):
             self.journal.remove(name)
         elif not got_it:
-            raise larch.NodeMissing(node_id)
+            raise larch.NodeMissing(self.dirname, node_id)
         
     def list_nodes(self):
         queued = self.upload_queue.list_ids()

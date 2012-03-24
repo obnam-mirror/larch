@@ -21,11 +21,13 @@ class NodeMissing(Exception): # pragma: no cover
 
     '''A node cannot be found from a NodeStore.'''
     
-    def __init__(self, node_id):
+    def __init__(self, node_store, node_id):
+        self.node_store = node_store
         self.node_id = node_id
         
     def __str__(self):
-        return 'Node %d cannot be found in the node store' % self.node_id
+        return ('Node %d cannot be found in the node store %s' % 
+                (self.node_id, self.node_store))
 
 
 class NodeTooBig(Exception): # pragma: no cover
