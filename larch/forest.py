@@ -137,7 +137,6 @@ class Forest(object):
         
         '''
         tracing.trace('committing forest')
-        self.node_store.push_upload_queue()
         self.node_store.set_metadata('last_id', self.last_id)
         root_ids = ','.join('%d' % t.root.id 
                             for t in self.trees 
@@ -148,6 +147,7 @@ class Forest(object):
         self.node_store.set_metadata('node_size', self.node_store.node_size)
         self.node_store.save_metadata()
         self.node_store.save_refcounts()
+        self.node_store.push_upload_queue()
 
 
 def open_forest(key_size=None, node_size=None, codec=None, node_store=None, 
