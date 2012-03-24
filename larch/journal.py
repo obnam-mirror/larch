@@ -24,6 +24,27 @@ class Journal(object):
     the changes can be completed later on, or rolled back, depending
     on what's needed for consistency.
     
+    The journal works as follows:
+    
+    * ``x`` is the real filename
+    * ``new/x`` is a new or modified file
+    * ``delete/x`` is a deleted file, moved there immediately
+    
+    Commit does this:
+    
+    * for every ``delete/x``, remove it
+    * for every ``new/x`` except ``new/metadata``, move to ``x``
+    * move ``new/metadata`` to ``metadata``
+    
+    Rollback does this:
+    
+    * remove every ``new/x``
+    * move every ``delete/x`` to ``x``
+    
+    When a journalled node store is opened, if ``new/metadata`` exists,
+    the commit happens. Otherwise a rollback happens. This guarantees
+    that the on-disk state is consistent.
+    
     '''
     
     def __init__(self, fs):
@@ -31,3 +52,4 @@ class Journal(object):
     
     def metadata_is_pending(self):
         return False
+
