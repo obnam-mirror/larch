@@ -27,7 +27,7 @@ class JournalTests(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
         self.fs = larch.LocalFS()
-        self.j = larch.Journal(self.fs)
+        self.j = larch.Journal(self.fs, self.tempdir)
         
     def tearDown(self):
         shutil.rmtree(self.tempdir)

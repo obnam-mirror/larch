@@ -47,8 +47,9 @@ class Journal(object):
     
     '''
     
-    def __init__(self, fs):
+    def __init__(self, fs, storedir):
         self.fs = fs
+        self.storedir = storedir
     
     def metadata_is_pending(self):
         return False
