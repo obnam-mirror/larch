@@ -56,17 +56,18 @@ class Journal(object):
         if not self.storedir.endswith(os.sep):
             self.storedir += os.sep
 
+    def _relative(self, filename):
+        '''Return the part of filename that is relative to storedir.'''
+        assert filename.startswith(self.storedir)
+        return filename[len(self.storedir):]
+
     def _new(self, filename):
         '''Return name for a new file whose final name is filename.'''
-        assert filename.startswith(self.storedir)
-        relative = filename[len(self.storedir):]
-        return os.path.join(self.storedir, 'new', relative)
+        return os.path.join(self.storedir, 'new', self._relative(filename))
 
     def _deleted(self, filename):
         '''Return name for temporary name for file to be deleted.'''
-        assert filename.startswith(self.storedir)
-        relative = filename[len(self.storedir):]
-        return os.path.join(self.storedir, 'delete', relative)
+        return os.path.join(self.storedir, 'delete', self._relative(filename))
     
     def metadata_is_pending(self):
         return False
