@@ -59,6 +59,8 @@ class Journal(object):
         self.storedir = storedir
         if not self.storedir.endswith(os.sep):
             self.storedir += os.sep
+        self.newdir = os.path.join(self.storedir, 'new')
+        self.deletedir = os.path.join(self.storedir, 'delete')
 
     def _relative(self, filename):
         '''Return the part of filename that is relative to storedir.'''
@@ -67,11 +69,11 @@ class Journal(object):
 
     def _new(self, filename):
         '''Return name for a new file whose final name is filename.'''
-        return os.path.join(self.storedir, 'new', self._relative(filename))
+        return os.path.join(self.newdir, self._relative(filename))
 
     def _deleted(self, filename):
         '''Return name for temporary name for file to be deleted.'''
-        return os.path.join(self.storedir, 'delete', self._relative(filename))
+        return os.path.join(self.deletedir, self._relative(filename))
     
     def metadata_is_pending(self):
         return False
@@ -132,14 +134,12 @@ class Journal(object):
                     self.fs.remove(pathname)
 
     def rollback(self):
-        new = os.path.join(self.storedir, 'new')
-        if self.fs.exists(new):
-            self._clear_directory(new)
+        if self.fs.exists(self.newdir):
+            self._clear_directory(self.newdir)
 
-        delete = os.path.join(self.storedir, 'delete')
-        if self.fs.exists(delete):
-            for pathname in self._climb(delete):
-                if pathname != delete:
+        if self.fs.exists(self.deletedir):
+            for pathname in self._climb(self.deletedir):
+                if pathname != self.deletedir:
                     r = self._relative(pathname)
                     assert r.startswith('delete/')
                     r = r[len('delete/'):]
@@ -152,9 +152,8 @@ class Journal(object):
                         self.fs.rename(pathname, r)
 
     def commit(self):
-        new = os.path.join(self.storedir, 'new')
-        for pathname in self._climb(new):
-            if pathname != new:
+        for pathname in self._climb(self.newdir):
+            if pathname != self.newdir:
                 r = self._relative(pathname)
                 assert r.startswith('new/')
                 r = r[len('new/'):]
@@ -167,6 +166,5 @@ class Journal(object):
                         self.fs.makedirs(dirname)
                     self.fs.rename(pathname, r)
 
-        delete = os.path.join(self.storedir, 'delete')
-        if self.fs.exists(delete):
-            self._clear_directory(delete)
+        if self.fs.exists(self.deletedir):
+            self._clear_directory(self.deletedir)
