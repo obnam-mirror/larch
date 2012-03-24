@@ -123,14 +123,13 @@ class Journal(object):
         yield dirname
 
     def _clear_directory(self, dirname):
-        basenames = self.fs.listdir(dirname)
-        for basename in basenames:
-            pathname = os.path.join(dirname, basename)
-            if self.fs.isdir(pathname):
-                self._clear_directory(pathname)
-                self.fs.rmdir(pathname)
-            else:
-                self.fs.remove(pathname)
+        for pathname in self._climb(dirname):
+            if pathname != dirname:
+                if self.fs.isdir(pathname):
+                    self._clear_directory(pathname)
+                    self.fs.rmdir(pathname)
+                else:
+                    self.fs.remove(pathname)
 
     def rollback(self):
         new = os.path.join(self.storedir, 'new')
