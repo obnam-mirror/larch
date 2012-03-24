@@ -159,3 +159,9 @@ class JournalTests(unittest.TestCase):
         self.j.rollback()
         self.assertFalse(self.j.exists(filename))
 
+    def test_commits_metadata(self):
+        metadata = self.join('metadata')
+        self.j.overwrite_file(metadata, '')
+        self.j.commit()
+        self.assertEqual(self.j.cat(metadata), '')
+

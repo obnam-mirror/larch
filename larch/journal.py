@@ -155,8 +155,10 @@ class Journal(object):
                         self.fs.rename(pathname, r)
 
     def commit(self):
+        flag = os.path.join(self.newdir, self.flag_file)
+
         for pathname in self._climb(self.newdir):
-            if pathname != self.newdir:
+            if pathname != self.newdir and pathname != flag:
                 r = self._relative(pathname)
                 assert r.startswith('new/')
                 r = r[len('new/'):]
@@ -171,3 +173,8 @@ class Journal(object):
 
         if self.fs.exists(self.deletedir):
             self._clear_directory(self.deletedir)
+            
+        if self.fs.exists(flag):
+            real_flag = os.path.join(self.storedir, self.flag_file)
+            self.fs.rename(flag, real_flag)
+
