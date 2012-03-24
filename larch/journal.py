@@ -78,9 +78,6 @@ class Journal(object):
         
     def makedirs(self, dirname):
         x = self._new(dirname)
-        print; 
-        print 'dirname:', dirname
-        print 'x:', x
         self.fs.makedirs(x)
 
     def _clear_directory(self, dirname):
@@ -95,5 +92,6 @@ class Journal(object):
 
     def rollback(self):
         new = os.path.join(self.storedir, 'new')
-        self._clear_directory(new)
+        if self.fs.exists(new):
+            self._clear_directory(new)
 

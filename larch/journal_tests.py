@@ -60,3 +60,6 @@ class JournalTests(unittest.TestCase):
         self.j.rollback()
         self.assertFalse(self.j.exists(dirname))
 
+    def test_rollback_works_without_changes(self):
+        self.assertEqual(self.j.rollback(), None)
+
