@@ -80,6 +80,12 @@ class Journal(object):
         x = self._new(dirname)
         self.fs.makedirs(x)
 
+    def overwrite_file(self, filename, contents):
+        self.fs.overwrite_file(self._new(filename), contents)
+
+    def cat(self, filename):
+        return self.fs.cat(self._new(filename))
+
     def _clear_directory(self, dirname):
         basenames = self.fs.listdir(dirname)
         for basename in basenames:

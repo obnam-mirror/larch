@@ -63,3 +63,8 @@ class JournalTests(unittest.TestCase):
     def test_rollback_works_without_changes(self):
         self.assertEqual(self.j.rollback(), None)
 
+    def test_creates_new_file(self):
+        filename = self.join('foo')
+        self.j.overwrite_file(filename, 'bar')
+        self.assertEqual(self.j.cat(filename), 'bar')
+

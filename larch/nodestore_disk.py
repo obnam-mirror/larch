@@ -56,6 +56,8 @@ class LocalFS(object): # pragma: no cover
     def overwrite_file(self, filename, contents):
         '''Write data to disk. File may exist already.'''
         dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
         fd, tempname = tempfile.mkstemp(dir=dirname)
         os.write(fd, contents)
         os.close(fd)
