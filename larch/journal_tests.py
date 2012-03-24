@@ -63,6 +63,12 @@ class JournalTests(unittest.TestCase):
     def test_rollback_works_without_changes(self):
         self.assertEqual(self.j.rollback(), None)
 
+    def test_commits_new_directory(self):
+        dirname = self.join('foo/bar/foobar')
+        self.j.makedirs(dirname)
+        self.j.commit()
+        self.assertTrue(self.j.exists(dirname))
+
     def test_creates_new_file(self):
         filename = self.join('foo')
         self.j.overwrite_file(filename, 'bar')

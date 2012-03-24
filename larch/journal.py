@@ -101,3 +101,6 @@ class Journal(object):
         if self.fs.exists(new):
             self._clear_directory(new)
 
+    def commit(self):
+        pass
+
