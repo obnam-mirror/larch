@@ -78,3 +78,6 @@ class Journal(object):
     def makedirs(self, dirname):
         self.fs.makedirs(dirname)
 
+    def rollback(self):
+        pass
+
