@@ -90,9 +90,6 @@ class Journal(object):
         '''Return name for temporary name for file to be deleted.'''
         return os.path.join(self.deletedir, self._relative(filename))
     
-    def metadata_is_pending(self):
-        return self.fs.exists(self.flag_file)
-
     def exists(self, filename):
         return (self.fs.exists(filename) or 
                 self.fs.exists(self._new(filename)))

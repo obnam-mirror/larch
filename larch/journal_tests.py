@@ -43,14 +43,6 @@ class JournalTests(unittest.TestCase):
         self.assertEqual(self.j._deleted(self.join('foo')),
                          self.join('delete', 'foo'))
         
-    def test_has_no_pending_metadata_initially(self):
-        self.assertFalse(self.j.metadata_is_pending())
-
-    def test_has_pending_metadata_when_created(self):
-        with open(self.join('metadata'), 'w'):
-            pass
-        self.assertTrue(self.j.metadata_is_pending())
-
     def test_does_not_know_random_directory_initially(self):
         self.assertFalse(self.j.exists(self.join('foo')))
 
