@@ -4,6 +4,25 @@ NEWS for larch
 These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
+Version 0.28, released UNRELEASED
+---------------------------------
+
+* Changes to on-disk storage are now done via a journal data structure
+  to protect against corruption from crashing. Previously, if a program
+  using Larch crashed during an unfortunate moment, the on-disk state
+  would not be consistent: some nodes might have been removed, for
+  example, but other nodes or the list of root nodes still referred
+  to them. This is now fixed.
+  
+  The on-disk data format version has not changed: the on-disk format
+  is compatible with old versions of larch, as long as there are no
+  uncommitted changes from a new version.
+  
+  The API has changed, however, and it is now necessary for Larch
+  users to call the `Forest.commit` method to force changes to be
+  stored on disk. Failure to do so will cause changes to be lost,
+  and many annoyed bug reports.
+
 Version 0.27, released 2012-02-18
 ---------------------------------
 
