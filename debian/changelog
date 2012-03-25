@@ -1,6 +1,8 @@
 python-larch (0.28-1) unstable; urgency=low
 
   * New upstream release.
+  * debian/control: Standards-Version bumped. No other changes
+    required.
 
  -- Lars Wirzenius <liw@liw.fi>  Sun, 25 Mar 2012 17:09:50 +0100
 
