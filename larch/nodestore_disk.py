@@ -254,8 +254,8 @@ class NodeStoreDisk(larch.NodeStore):
         nodedir = os.path.join(self.dirname, self.nodedir)
         uploaded = []
         if self.journal.exists(nodedir):
-            for dirname, subdirs, basenames in os.walk(nodedir):
-                uploaded += [int(x, 16) for x in basenames]
+            for filename in self.journal.climb(nodedir, files_only=True):
+                uploaded.append(int(os.path.basename(filename), 16))
         return queued + uploaded
 
     def get_refcount(self, node_id):

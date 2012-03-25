@@ -125,23 +125,24 @@ class Journal(object):
                 self.fs.makedirs(dirname)
             self.fs.rename(filename, deleted)
 
-    def _climb(self, dirname):
+    def climb(self, dirname, files_only=False):
         basenames = self.fs.listdir(dirname)
         filenames = []
         for basename in basenames:
             pathname = os.path.join(dirname, basename)
             if self.fs.isdir(pathname):
-                for x in self._climb(pathname):
+                for x in self.climb(pathname, files_only=files_only):
                     yield x
             else:
                 filenames.append(pathname)
         for filename in filenames:
             yield filename
-        yield dirname
+        if not files_only:
+            yield dirname
 
     def _clear_directory(self, dirname):
         tracing.trace(dirname)
-        for pathname in self._climb(dirname):
+        for pathname in self.climb(dirname):
             if pathname != dirname:
                 if self.fs.isdir(pathname):
                     self.fs.rmdir(pathname)
@@ -152,7 +153,7 @@ class Journal(object):
         tracing.trace('dirname: %s' % dirname)
         tracing.trace('exclude: %s' % repr(exclude))
         all_excludes = [dirname] + exclude
-        for pathname in self._climb(dirname):
+        for pathname in self.climb(dirname):
             if pathname not in all_excludes:
                 r = os.path.join(self.storedir, pathname[len(dirname):])
                 parent = os.path.dirname(r)
