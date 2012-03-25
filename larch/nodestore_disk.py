@@ -207,11 +207,6 @@ class NodeStoreDisk(larch.NodeStore):
             raise larch.NodeTooBig(node, len(encoded_node))
         name = self.pathname(node.id)
         tracing.trace('node %s to be stored in %s' % (node.id, name))
-        if self.journal.exists(name):
-            self.journal.remove(name)
-        dirname = os.path.dirname(name)
-        if not self.journal.exists(dirname):
-            self.journal.makedirs(dirname)
         self.journal.overwrite_file(name, encoded_node)
         
     def get_node(self, node_id):
