@@ -21,11 +21,13 @@ class NodeMissing(Exception): # pragma: no cover
 
     '''A node cannot be found from a NodeStore.'''
     
-    def __init__(self, node_id):
+    def __init__(self, node_store, node_id):
+        self.node_store = node_store
         self.node_id = node_id
         
     def __str__(self):
-        return 'Node %d cannot be found in the node store' % self.node_id
+        return ('Node %d cannot be found in the node store %s' % 
+                (self.node_id, self.node_store))
 
 
 class NodeTooBig(Exception): # pragma: no cover
@@ -169,9 +171,6 @@ class NodeStore(object): # pragma: no cover
     def list_nodes(self):
         '''Return list of ids of all nodes in store.'''
 
-    def push_upload_queue(self):
-        '''Make sure all changes to nodes have been uploaded.'''
-
     def get_refcount(self, node_id):
         '''Return the reference count for a node.'''
 
@@ -183,6 +182,14 @@ class NodeStore(object): # pragma: no cover
 
         This method only applies to node stores that persist.
 
+        '''
+
+    def commit(self):
+        '''Make sure all changes to are committed to the store.
+        
+        Until this is called, there's no guarantee that any of the
+        changes since the previous commit are persistent.
+        
         '''
 
 
@@ -269,7 +276,7 @@ class NodeStoreTests(object): # pragma: no cover
     def test_puts_and_gets_same(self):
         node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
-        self.ns.push_upload_queue()
+        self.ns.commit()
         self.assertEqualNodes(self.ns.get_node(0), node)
 
     def test_put_freezes_node(self):
@@ -315,7 +322,7 @@ class NodeStoreTests(object): # pragma: no cover
     def test_removes_node(self):
         node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
-        self.ns.push_upload_queue()
+        self.ns.commit()
         self.ns.remove_node(0)
         self.assertRaises(NodeMissing, self.ns.get_node, 0)
         self.assertEqual(self.ns.list_nodes(), [])
@@ -330,7 +337,7 @@ class NodeStoreTests(object): # pragma: no cover
     def test_lists_node_zero(self):
         node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
-        self.ns.push_upload_queue()
+        self.ns.commit()
         node_ids = self.ns.list_nodes()
         self.assertEqual(node_ids, [node.id])
 
@@ -346,10 +353,10 @@ class NodeStoreTests(object): # pragma: no cover
     def test_put_allows_to_overwrite_a_node_after_upload_queue_push(self):
         node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
-        self.ns.push_upload_queue()
+        self.ns.commit()
         node = larch.LeafNode(0, ['foo'], ['bar'])
         self.ns.put_node(node)
-        self.ns.push_upload_queue()
+        self.ns.commit()
         new = self.ns.get_node(0)
         self.assertEqual(new.keys(), ['foo'])
         self.assertEqual(new.values(), ['bar'])

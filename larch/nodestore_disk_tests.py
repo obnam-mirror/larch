@@ -76,6 +76,7 @@ class NodeStoreDiskTests(unittest.TestCase, larch.NodeStoreTests):
         self.ns.set_refcount(0, 1234)
         self.per_group = 2
         self.ns.save_refcounts()
+        self.ns.journal.commit()
         ns2 = self.new_ns()
         self.assertEqual(self.ns.get_refcount(0), 1234)
         self.assertEqual(ns2.get_refcount(0), 1234)
@@ -84,7 +85,7 @@ class NodeStoreDiskTests(unittest.TestCase, larch.NodeStoreTests):
         node = larch.LeafNode(0, ['000'], ['x' * (self.node_size + 1)])
         def helper(node):
             self.ns.put_node(node)
-            self.ns.push_upload_queue()
+            self.ns.commit()
         self.assertRaises(larch.NodeTooBig, helper, node)
         
     def test_puts_and_gets_same_with_cache_emptied(self):
@@ -108,7 +109,7 @@ class NodeStoreDiskTests(unittest.TestCase, larch.NodeStoreTests):
     def test_gets_node_from_disk(self):
         node = larch.LeafNode(0, [], [])
         self.ns.put_node(node)
-        self.ns.push_upload_queue()
+        self.ns.commit()
         ns2 = self.new_ns()
         node2 = ns2.get_node(node.id)
         self.assertEqual(node.id, node2.id)

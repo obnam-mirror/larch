@@ -30,7 +30,7 @@ DIR_BITS = 12
 DIR_SKIP = 13
 
 
-class LocalFS(object):
+class LocalFS(object): # pragma: no cover
 
     '''Access to local filesystem.
     
@@ -44,6 +44,10 @@ class LocalFS(object):
         '''Create directories, simliar to os.makedirs.'''
         if not os.path.exists(dirname):
             os.makedirs(dirname)
+            
+    def rmdir(self, dirname):
+        '''Remove an empty directory.'''
+        os.rmdir(dirname)
 
     def cat(self, filename):
         '''Return contents of a file.'''
@@ -52,6 +56,8 @@ class LocalFS(object):
     def overwrite_file(self, filename, contents):
         '''Write data to disk. File may exist already.'''
         dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
         fd, tempname = tempfile.mkstemp(dir=dirname)
         os.write(fd, contents)
         os.close(fd)
@@ -61,6 +67,10 @@ class LocalFS(object):
         '''Does a file exist already?'''
         return os.path.exists(filename)
 
+    def isdir(self, filename):
+        '''Does filename and is it a directory?'''
+        return os.path.isdir(filename)
+
     def rename(self, old, new):
         '''Rename a file.'''
         os.rename(old, new)
@@ -68,6 +78,10 @@ class LocalFS(object):
     def remove(self, filename):
         '''Remove a file.'''
         os.remove(filename)
+        
+    def listdir(self, dirname):
+        '''Return basenames from directory.'''
+        return os.listdir(dirname)
 
 
 class NodeStoreDisk(larch.NodeStore):
@@ -107,6 +121,7 @@ class NodeStoreDisk(larch.NodeStore):
         self.upload_queue = larch.UploadQueue(self._really_put_node, 
                                               self.upload_max)
         self.vfs = vfs if vfs != None else LocalFS()
+        self.journal = larch.Journal(self.vfs, dirname)
         self.idpath = larch.IdPath(os.path.join(dirname, self.nodedir), 
                                    DIR_DEPTH, DIR_BITS, DIR_SKIP)
 
@@ -119,10 +134,10 @@ class NodeStoreDisk(larch.NodeStore):
             tracing.trace('load metadata')
             self.metadata = ConfigParser.ConfigParser()
             self.metadata.add_section('metadata')
-            if self.vfs.exists(self.metadata_name):
+            if self.journal.exists(self.metadata_name):
                 tracing.trace('metadata file (%s) exists, reading it' % 
                                 self.metadata_name)
-                data = self.vfs.cat(self.metadata_name)
+                data = self.journal.cat(self.metadata_name)
                 f = StringIO.StringIO(data)
                 self.metadata.readfp(f)
                 self._verify_metadata()
@@ -168,8 +183,7 @@ class NodeStoreDisk(larch.NodeStore):
         self._load_metadata()
         f = StringIO.StringIO()
         self.metadata.write(f)
-        self.vfs.overwrite_file(self.metadata_name + '_new', f.getvalue())
-        self.vfs.rename(self.metadata_name + '_new', self.metadata_name)
+        self.journal.overwrite_file(self.metadata_name, f.getvalue())
 
     def pathname(self, node_id):
         return self.idpath.convert(node_id)
@@ -193,12 +207,7 @@ class NodeStoreDisk(larch.NodeStore):
             raise larch.NodeTooBig(node, len(encoded_node))
         name = self.pathname(node.id)
         tracing.trace('node %s to be stored in %s' % (node.id, name))
-        if self.vfs.exists(name):
-            self.vfs.remove(name)
-        dirname = os.path.dirname(name)
-        if not self.vfs.exists(dirname):
-            self.vfs.makedirs(dirname)
-        self.vfs.overwrite_file(name, encoded_node)
+        self.journal.overwrite_file(name, encoded_node)
         
     def get_node(self, node_id):
         tracing.trace('getting node %s' % node_id)
@@ -213,15 +222,15 @@ class NodeStoreDisk(larch.NodeStore):
             return node
 
         name = self.pathname(node_id)
-        if self.vfs.exists(name):
+        if self.journal.exists(name):
             tracing.trace('reading node %s from file %s' % (node_id, name))
-            encoded = self.vfs.cat(name)
+            encoded = self.journal.cat(name)
             node = self.codec.decode(encoded)
             node.frozen = True
             self.cache.add(node.id, node)
             return node
         else:
-            raise larch.NodeMissing(node_id)
+            raise larch.NodeMissing(self.dirname, node_id)
 
     def start_modification(self, node):
         tracing.trace('start modiyfing node %s' % node.id)
@@ -234,19 +243,19 @@ class NodeStoreDisk(larch.NodeStore):
         self.cache.remove(node_id)
         got_it = self.upload_queue.remove(node_id)
         name = self.pathname(node_id)
-        if self.vfs.exists(name):
-            self.vfs.remove(name)
+        if self.journal.exists(name):
+            self.journal.remove(name)
         elif not got_it:
-            raise larch.NodeMissing(node_id)
+            raise larch.NodeMissing(self.dirname, node_id)
         
     def list_nodes(self):
         queued = self.upload_queue.list_ids()
 
         nodedir = os.path.join(self.dirname, self.nodedir)
         uploaded = []
-        if self.vfs.exists(nodedir):
-            for dirname, subdirs, basenames in os.walk(nodedir):
-                uploaded += [int(x, 16) for x in basenames]
+        if self.journal.exists(nodedir):
+            for filename in self.journal.climb(nodedir, files_only=True):
+                uploaded.append(int(os.path.basename(filename), 16))
         return queued + uploaded
 
     def get_refcount(self, node_id):
@@ -258,3 +267,9 @@ class NodeStoreDisk(larch.NodeStore):
     def save_refcounts(self):
         tracing.trace('saving refcounts')
         self.rs.save_refcounts()
+        
+    def commit(self):
+        self.push_upload_queue()
+        self.save_metadata()
+        self.journal.commit()
+

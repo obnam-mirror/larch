@@ -52,7 +52,7 @@ class NodeStoreMemory(larch.NodeStore):
         if node_id in self.nodes:
             return self.nodes[node_id]
         else:
-            raise larch.NodeMissing(node_id)
+            raise larch.NodeMissing(repr(self), node_id)
 
     def start_modification(self, node):
         node.frozen = False
@@ -61,7 +61,7 @@ class NodeStoreMemory(larch.NodeStore):
         if node_id in self.nodes:
             del self.nodes[node_id]
         else:
-            raise larch.NodeMissing(node_id)
+            raise larch.NodeMissing(repr(self), node_id)
         
     def list_nodes(self):
         return self.nodes.keys()
