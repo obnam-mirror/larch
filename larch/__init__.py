@@ -28,7 +28,7 @@ from lru import LRUCache
 from uploadqueue import UploadQueue
 from idpath import IdPath
 from journal import Journal
-from nodestore_disk import NodeStoreDisk, LocalFS
+from nodestore_disk import NodeStoreDisk, LocalFS, FormatProblem
 from nodestore_memory import NodeStoreMemory
 
 __all__ = locals()

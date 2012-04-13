@@ -30,6 +30,15 @@ DIR_BITS = 12
 DIR_SKIP = 13
 
 
+class FormatProblem(Exception): # pragma: no cover
+
+    def __init__(self, msg):
+        self.msg = msg
+        
+    def __str__(self):
+        return self.msg
+
+
 class LocalFS(object): # pragma: no cover
 
     '''Access to local filesystem.
@@ -146,11 +155,11 @@ class NodeStoreDisk(larch.NodeStore):
 
     def _verify_metadata(self):
         if not self.metadata.has_option('metadata', 'format'):
-            raise Exception('larch on-disk format missing '
+            raise FormatProblem('larch on-disk format missing '
                                 '(old version?): %s' % self.dirname)
         format = self.metadata.get('metadata', 'format')
         if format != self.format_version:
-            raise Exception('larch on-disk format is incompatible '
+            raise FormatProblem('larch on-disk format is incompatible '
                                 '(is %s, should be %s): %s' %
                                 (format, self.format_version,
                                  self.dirname))
