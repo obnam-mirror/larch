@@ -4,7 +4,7 @@ NEWS for larch
 These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
-Version 0.29, released UNRELEASED
+Version 0.29, released 2012-04-15
 ---------------------------------
 
 * Larch now uses the `larch.FormatProblem´ exception when an on-disk 
