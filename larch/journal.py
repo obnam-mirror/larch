@@ -20,7 +20,7 @@ import os
 import tracing
 
 
-class ReadOnlyMode(Exception):
+class ReadOnlyMode(Exception): # pragma: no cover
 
     def __str__(self):
         return 'Larch B-tree is in read-only mode, no changes allowed'
