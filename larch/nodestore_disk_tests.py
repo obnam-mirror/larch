@@ -35,9 +35,9 @@ class NodeStoreDiskTests(unittest.TestCase, larch.NodeStoreTests):
         shutil.rmtree(self.tempdir)
 
     def new_ns(self, format=None):
-        return nodestore_disk.NodeStoreDisk(self.node_size, self.codec,
-                                             dirname=self.tempdir,
-                                             format=format)
+        return nodestore_disk.NodeStoreDisk(True, self.node_size, self.codec,
+                                            dirname=self.tempdir,
+                                            format=format)
 
     def test_metadata_has_format_version(self):
         self.assertEqual(self.ns.get_metadata('format'), 

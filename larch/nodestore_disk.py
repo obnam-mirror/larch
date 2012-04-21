@@ -112,8 +112,8 @@ class NodeStoreDisk(larch.NodeStore):
 
     nodedir = 'nodes'
 
-    def __init__(self, node_size, codec, dirname=None, upload_max=1024, 
-                 lru_size=500, vfs=None, format=None):
+    def __init__(self, allow_writes, node_size, codec, dirname=None, 
+                 upload_max=1024, lru_size=500, vfs=None, format=None):
         tracing.trace('new NodeStoreDisk: %s', dirname)
         assert dirname is not None
         if format is not None:
@@ -130,7 +130,7 @@ class NodeStoreDisk(larch.NodeStore):
         self.upload_queue = larch.UploadQueue(self._really_put_node, 
                                               self.upload_max)
         self.vfs = vfs if vfs != None else LocalFS()
-        self.journal = larch.Journal(True, self.vfs, dirname)
+        self.journal = larch.Journal(allow_writes, self.vfs, dirname)
         self.idpath = larch.IdPath(os.path.join(dirname, self.nodedir), 
                                    DIR_DEPTH, DIR_BITS, DIR_SKIP)
 

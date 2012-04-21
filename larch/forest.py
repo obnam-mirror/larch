@@ -149,8 +149,8 @@ class Forest(object):
         self.node_store.commit()
 
 
-def open_forest(key_size=None, node_size=None, codec=None, node_store=None, 
-                **kwargs):
+def open_forest(allow_writes=None, key_size=None, node_size=None, codec=None, 
+                node_store=None, **kwargs):
     '''Create or open a forest.
     
     ``key_size`` and ``node_size`` are retrieved from the forest, unless
@@ -167,6 +167,8 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
     '''
 
     tracing.trace('opening forest')
+    
+    assert allow_writes is not None
 
     codec = codec or larch.NodeCodec
     node_store = node_store or larch.NodeStoreDisk
@@ -176,7 +178,7 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
         # For this, we can use any values for node and key sizes,
         # since we won't be accessing nodes or keys.
         c_temp = codec(42)
-        ns_temp = node_store(42, c_temp, **kwargs)
+        ns_temp = node_store(False, 42, c_temp, **kwargs)
         
         assert 'key_size' in ns_temp.get_metadata_keys()
         assert 'node_size' in ns_temp.get_metadata_keys()
@@ -187,7 +189,7 @@ def open_forest(key_size=None, node_size=None, codec=None, node_store=None,
             node_size = int(ns_temp.get_metadata('node_size'))
     
     c = codec(key_size)
-    ns = node_store(node_size, c, **kwargs)
+    ns = node_store(allow_writes, node_size, c, **kwargs)
     
     def check_size(keyname, wanted, exception):
         if keyname not in ns.get_metadata_keys():
