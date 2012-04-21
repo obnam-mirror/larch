@@ -200,7 +200,7 @@ class ReadOnlyJournalTests(unittest.TestCase):
         self.assertRaises(larch.ReadOnlyMode, self.ro.rollback)
 
     def test_readonly_mode_does_not_check_for_directory_creation(self):
-        dirname = self.rw.join('foo/bar')
+        dirname = self.join('foo/bar')
         self.rw.makedirs(dirname)
         self.assertFalse(self.ro.exists(dirname))
 
