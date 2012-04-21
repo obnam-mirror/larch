@@ -209,7 +209,7 @@ class ReadOnlyJournalTests(unittest.TestCase):
                           self.ro.overwrite_file, 'foo', 'bar')
 
     def test_readonly_mode_does_not_check_for_new_file(self):
-        self.rw.ovewrite_file('foo', 'bar')
+        self.rw.overwrite_file('foo', 'bar')
         self.assertFalse(self.ro.exists('foo'))
 
     def test_readonly_mode_does_not_check_for_modified_file(self):
