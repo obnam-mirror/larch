@@ -104,7 +104,7 @@ class Journal(object):
     
     def exists(self, filename):
         return (self.fs.exists(filename) or 
-                self.fs.exists(self._new(filename)))
+                (self.allow_writes and self.fs.exists(self._new(filename))))
         
     def makedirs(self, dirname):
         tracing.trace(dirname)
