@@ -83,6 +83,11 @@ class Journal(object):
             logging.debug('Automatically rolling back remaining changes')
             self.rollback()
 
+    def _require_rw(self):
+        '''Raise error if modifications are not allowed.'''
+        if not self.allow_writes:
+            raise ReadOnlyMode()
+
     def _relative(self, filename):
         '''Return the part of filename that is relative to storedir.'''
         assert filename.startswith(self.storedir)
@@ -102,11 +107,13 @@ class Journal(object):
         
     def makedirs(self, dirname):
         tracing.trace(dirname)
+        self._require_rw()
         x = self._new(dirname)
         self.fs.makedirs(x)
 
     def overwrite_file(self, filename, contents):
         tracing.trace(filename)
+        self._require_rw()
         self.fs.overwrite_file(self._new(filename), contents)
 
     def cat(self, filename):
@@ -118,6 +125,7 @@ class Journal(object):
             
     def remove(self, filename):
         tracing.trace(filename)
+        self._require_rw()
 
         new = self._new(filename)
         deleted = self._deleted(filename)
@@ -176,6 +184,7 @@ class Journal(object):
 
     def rollback(self):
         tracing.trace('%s start' % self.storedir)
+        self._require_rw()
 
         if self.fs.exists(self.newdir):
             self._clear_directory(self.newdir)
@@ -187,6 +196,7 @@ class Journal(object):
 
     def commit(self, skip=[]):
         tracing.trace('%s start' % self.storedir)
+        self._require_rw()
 
         if self.fs.exists(self.deletedir):
             self._clear_directory(self.deletedir)
