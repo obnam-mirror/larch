@@ -76,12 +76,13 @@ class Journal(object):
         self.flag_file = os.path.join(self.storedir, self.flag_basename)
         self.new_flag = os.path.join(self.newdir, self.flag_basename)
 
-        if self.fs.exists(self.new_flag):
-            logging.debug('Automatically committing remaining changes')
-            self.commit()
-        else:
-            logging.debug('Automatically rolling back remaining changes')
-            self.rollback()
+        if self.allow_writes:
+            if self.fs.exists(self.new_flag):
+                logging.debug('Automatically committing remaining changes')
+                self.commit()
+            else:
+                logging.debug('Automatically rolling back remaining changes')
+                self.rollback()
 
     def _require_rw(self):
         '''Raise error if modifications are not allowed.'''
