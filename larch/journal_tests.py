@@ -162,7 +162,7 @@ class JournalTests(unittest.TestCase):
         filename = self.join('foo/bar')
         self.j.overwrite_file(filename, 'bar')
         
-        j2 = larch.Journal(self.fs, self.tempdir)
+        j2 = larch.Journal(True, self.fs, self.tempdir)
         self.assertFalse(j2.exists(filename))
 
     def test_partial_commit_finished_by_new_instance(self):
@@ -172,7 +172,7 @@ class JournalTests(unittest.TestCase):
         self.j.overwrite_file(metadata, '')
         self.j.commit(skip=[filename])
         
-        j2 = larch.Journal(self.fs, self.tempdir)
+        j2 = larch.Journal(True, self.fs, self.tempdir)
         self.assertTrue(j2.exists(filename))
 
 
