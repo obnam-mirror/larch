@@ -226,5 +226,5 @@ class ReadOnlyJournalTests(unittest.TestCase):
         self.rw.overwrite_file(filename, 'bar')
         self.rw.commit()
         self.rw.remove(filename)
-        self.assertEqual(self.ro.cat(filename), 'bar')
+        self.assertRaises(IOError, self.ro.cat, filename)
 
