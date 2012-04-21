@@ -20,6 +20,12 @@ import os
 import tracing
 
 
+class ReadOnlyMode(Exception):
+
+    def __str__(self):
+        return 'Larch B-tree is in read-only mode, no changes allowed'
+
+
 class Journal(object):
 
     '''A journal layer on top of a virtual filesystem.
@@ -58,8 +64,9 @@ class Journal(object):
     
     flag_basename = 'metadata'
     
-    def __init__(self, fs, storedir):
+    def __init__(self, allow_writes, fs, storedir):
         logging.debug('Initializing Journal for %s' % storedir)
+        self.allow_writes = allow_writes
         self.fs = fs
         self.storedir = storedir
         if not self.storedir.endswith(os.sep):

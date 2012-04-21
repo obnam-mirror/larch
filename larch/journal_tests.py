@@ -27,7 +27,7 @@ class JournalTests(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
         self.fs = larch.LocalFS()
-        self.j = larch.Journal(self.fs, self.tempdir)
+        self.j = larch.Journal(True, self.fs, self.tempdir)
         
     def tearDown(self):
         shutil.rmtree(self.tempdir)
@@ -174,4 +174,55 @@ class JournalTests(unittest.TestCase):
         
         j2 = larch.Journal(self.fs, self.tempdir)
         self.assertTrue(j2.exists(filename))
+
+
+class ReadOnlyJournalTests(unittest.TestCase):
+
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+        self.fs = larch.LocalFS()
+        self.rw = larch.Journal(True, self.fs, self.tempdir)
+        self.ro = larch.Journal(False, self.fs, self.tempdir)
+        
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
+    def join(self, *args):
+        return os.path.join(self.tempdir, *args)
+
+    def test_does_not_know_random_directory_initially(self):
+        self.assertFalse(self.ro.exists(self.join('foo')))
+
+    def test_creating_directory_raises_error(self):
+        self.assertRaises(larch.ReadOnlyMode, self.ro.makedirs, 'foo')
+
+    def test_calling_rollback_raises_error(self):
+        self.assertRaises(larch.ReadOnlyMode, self.ro.rollback)
+
+    def test_readonly_mode_does_not_check_for_directory_creation(self):
+        dirname = self.rw.join('foo/bar')
+        self.rw.makedirs(dirname)
+        self.assertFalse(self.ro.exists(dirname))
+
+    def test_write_file_raisees_error(self):
+        self.assertRaises(larch.ReadOnlyMode, 
+                          self.ro.overwrite_file, 'foo', 'bar')
+
+    def test_readonly_mode_does_not_check_for_new_file(self):
+        self.rw.ovewrite_file('foo', 'bar')
+        self.assertFalse(self.ro.exists('foo'))
+
+    def test_readonly_mode_does_not_check_for_modified_file(self):
+        self.rw.ovewrite_file('foo', 'first')
+        self.rw.commit()
+        self.assertEqual(self.ro.cat('foo'), 'first')
+        self.rw.ovewrite_file('foo', 'second')
+        self.assertEqual(self.ro.cat('foo'), 'first')
+
+    def test_readonly_mode_does_not_know_file_is_deleted_in_journal(self):
+        filename = self.join('foo/bar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.rw.commit()
+        self.rw.remove(filename)
+        self.assertEqual(self.ro.cat(filename), 'bar')
 

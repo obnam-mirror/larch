@@ -130,7 +130,7 @@ class NodeStoreDisk(larch.NodeStore):
         self.upload_queue = larch.UploadQueue(self._really_put_node, 
                                               self.upload_max)
         self.vfs = vfs if vfs != None else LocalFS()
-        self.journal = larch.Journal(self.vfs, dirname)
+        self.journal = larch.Journal(True, self.vfs, dirname)
         self.idpath = larch.IdPath(os.path.join(dirname, self.nodedir), 
                                    DIR_DEPTH, DIR_BITS, DIR_SKIP)
 
