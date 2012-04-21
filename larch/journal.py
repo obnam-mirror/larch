@@ -119,7 +119,7 @@ class Journal(object):
 
     def cat(self, filename):
         new = self._new(filename)
-        if self.fs.exists(new):
+        if self.allow_writes and self.fs.exists(new):
             return self.fs.cat(new)
         else:
             return self.fs.cat(filename)
