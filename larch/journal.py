@@ -243,8 +243,11 @@ class Journal(object):
         for pathname in self.climb(deletedir, files_only=True):
             if pathname != deletedir:
                 realname = self._realname(deletedir, pathname)
-                if not self.fs.isdir(realname):
+                try:
                     self.fs.remove(realname)
+                except OSError, e: # pragma: no cover
+                    if e.errno not in (errno.ENOENT, errno.EISDIR):
+                        raise
                 self.fs.remove(pathname)
 
     def commit(self, skip=[]):
