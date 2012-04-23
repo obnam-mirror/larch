@@ -107,8 +107,14 @@ class Journal(object):
         return os.path.join(self.deletedir, self._relative(filename))
     
     def exists(self, filename):
-        return (self.fs.exists(filename) or 
-                (self.allow_writes and self.fs.exists(self._new(filename))))
+        if self.allow_writes:
+            new = self._new(filename)
+            deleted = self._deleted(filename)
+            if self.fs.exists(new):
+                return True
+            elif self.fs.exists(deleted):
+                return False
+        return self.fs.exists(filename)
         
     def makedirs(self, dirname):
         tracing.trace(dirname)
