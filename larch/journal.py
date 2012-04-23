@@ -105,6 +105,11 @@ class Journal(object):
     def _deleted(self, filename):
         '''Return name for temporary name for file to be deleted.'''
         return os.path.join(self.deletedir, self._relative(filename))
+
+    def _realname(self, journaldir, filename):
+        '''Return real name for a file in a journal temporary directory.'''
+        assert filename.startswith(journaldir)
+        return os.path.join(self.storedir, filename[len(journaldir):])
     
     def exists(self, filename):
         if self.allow_writes:
@@ -128,11 +133,15 @@ class Journal(object):
         self.fs.overwrite_file(self._new(filename), contents)
 
     def cat(self, filename):
-        new = self._new(filename)
-        if self.allow_writes and self.fs.exists(new):
-            return self.fs.cat(new)
-        else:
-            return self.fs.cat(filename)
+        if self.allow_writes:
+            new = self._new(filename)
+            deleted = self._deleted(filename)
+            if self.fs.exists(new):
+                return self.fs.cat(new)
+            elif self.fs.exists(deleted):
+                raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), 
+                               filename))
+        return self.fs.cat(filename)
             
     def remove(self, filename):
         tracing.trace(filename)
@@ -147,6 +156,33 @@ class Journal(object):
             raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), filename))
         else:
             self.fs.overwrite_file(deleted, '')
+
+    def list_files(self, dirname):
+        '''List all files.
+        
+        Files only, no directories.
+        
+        '''
+
+        assert not dirname.startswith(self.newdir)
+        assert not dirname.startswith(self.deletedir)
+
+        if self.allow_writes:
+            if self.fs.exists(dirname):
+                for x in self.climb(dirname, files_only=True):
+                    if self.exists(x):
+                        yield x
+            new = self._new(dirname)
+            if self.fs.exists(new):
+                for x in self.climb(new, files_only=True):
+                    yield self._realname(self.newdir, x)
+        else:
+            if self.fs.exists(dirname):
+                for x in self.climb(dirname, files_only=True):
+                    in_new = x.startswith(self.newdir)
+                    in_deleted = x.startswith(self.deletedir)
+                    if not in_new and not in_deleted:
+                        yield x
 
     def climb(self, dirname, files_only=False):
         basenames = self.fs.listdir(dirname)
@@ -178,7 +214,7 @@ class Journal(object):
         all_excludes = [dirname] + exclude
         for pathname in self.climb(dirname):
             if pathname not in all_excludes:
-                r = os.path.join(self.storedir, pathname[len(dirname):])
+                r = self._realname(dirname, pathname)
                 parent = os.path.dirname(r)
                 if self.fs.isdir(pathname):
                     if not self.fs.exists(r):
@@ -198,16 +234,25 @@ class Journal(object):
             self._clear_directory(self.newdir)
 
         if self.fs.exists(self.deletedir):
-            self._vivify(self.deletedir, [])
+            self._clear_directory(self.deletedir)
 
         tracing.trace('%s done' % self.storedir)
+
+    def _really_delete(self, deletedir):
+        tracing.trace(deletedir)
+        for pathname in self.climb(deletedir, files_only=True):
+            if pathname != deletedir:
+                realname = self._realname(deletedir, pathname)
+                if not self.fs.isdir(realname):
+                    self.fs.remove(realname)
+                self.fs.remove(pathname)
 
     def commit(self, skip=[]):
         tracing.trace('%s start' % self.storedir)
         self._require_rw()
 
         if self.fs.exists(self.deletedir):
-            self._clear_directory(self.deletedir)
+            self._really_delete(self.deletedir)
 
         if self.fs.exists(self.newdir):
             skip = [self._new(x) for x in skip]

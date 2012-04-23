@@ -92,6 +92,13 @@ class JournalTests(unittest.TestCase):
         self.j.overwrite_file(filename, 'yo')
         self.assertEqual(self.j.cat(filename), 'yo')
 
+    def test_cat_does_not_find_deleted_file(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.commit()
+        self.j.remove(filename)
+        self.assertRaises(OSError, self.j.cat, filename)
+
     def test_rollback_brings_back_old_file(self):
         filename = self.join('foo/bar')
         self.j.overwrite_file(filename, 'bar')
@@ -227,4 +234,42 @@ class ReadOnlyJournalTests(unittest.TestCase):
         self.rw.commit()
         self.rw.remove(filename)
         self.assertEqual(self.ro.cat(filename), 'bar')
+
+    def tests_lists_no_files_initially(self):
+        dirname = self.join('foo')
+        self.assertEqual(list(self.ro.list_files(dirname)), [])
+
+    def test_lists_files_correctly_when_no_changes(self):
+        dirname = self.join('foo')
+        filename = self.join('foo/bar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.rw.commit()
+        self.assertEqual(list(self.ro.list_files(dirname)), [filename])
+
+    def test_lists_added_file_correctly(self):
+        dirname = self.join('foo')
+        filename = self.join('foo/bar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.assertEqual(list(self.rw.list_files(dirname)), [filename])
+        self.assertEqual(list(self.ro.list_files(dirname)), [])
+
+    def test_lists_added_file_correctly_when_dir_existed_already(self):
+        dirname = self.join('foo')
+        filename = self.join('foo/bar')
+        filename2 = self.join('foo/foobar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.rw.commit()
+        self.rw.overwrite_file(filename2, 'yoyo')
+        self.assertEqual(sorted(list(self.rw.list_files(dirname))),
+                         sorted([filename, filename2]))
+        self.assertEqual(list(self.ro.list_files(dirname)), [filename])
+
+    def test_lists_removed_file_correctly(self):
+        dirname = self.join('foo')
+        filename = self.join('foo/bar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.rw.commit()
+        self.rw.remove(filename)
+        self.assertEqual(list(self.rw.list_files(dirname)), [])
+        self.assertEqual(list(self.ro.list_files(dirname)), [filename])
 

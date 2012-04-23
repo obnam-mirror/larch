@@ -263,7 +263,7 @@ class NodeStoreDisk(larch.NodeStore):
         nodedir = os.path.join(self.dirname, self.nodedir)
         uploaded = []
         if self.journal.exists(nodedir):
-            for filename in self.journal.climb(nodedir, files_only=True):
+            for filename in self.journal.list_files(nodedir):
                 uploaded.append(int(os.path.basename(filename), 16))
         return queued + uploaded
 
