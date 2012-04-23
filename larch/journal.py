@@ -40,18 +40,18 @@ class Journal(object):
     
     * ``x`` is the real filename
     * ``new/x`` is a new or modified file
-    * ``delete/x`` is a deleted file, moved there immediately
+    * ``delete/x`` is a deleted file, created there as a flag file
     
     Commit does this:
     
-    * for every ``delete/x``, remove it
+    * for every ``delete/x``, remove ``x``
     * for every ``new/x`` except ``new/metadata``, move to ``x``
     * move ``new/metadata`` to ``metadata``
     
     Rollback does this:
     
     * remove every ``new/x``
-    * move every ``delete/x`` to ``x``
+    * remove every ``delete/x``
     
     When a journalled node store is opened, if ``new/metadata`` exists,
     the commit happens. Otherwise a rollback happens. This guarantees
@@ -60,6 +60,10 @@ class Journal(object):
     We only provide enough of a filesystem interface as is needed by
     NodeStoreDisk. For example, we do not care about directory removal.
     
+    The journal can be opened in read-only mode, in which case it ignores
+    any changes in ``new`` and ``delete``, and does not try to rollback or
+    commit at start.
+
     '''
     
     flag_basename = 'metadata'
@@ -136,10 +140,7 @@ class Journal(object):
         elif self.fs.exists(deleted):
             raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), filename))
         else:
-            dirname = os.path.dirname(deleted)
-            if not self.fs.exists(dirname):
-                self.fs.makedirs(dirname)
-            self.fs.rename(filename, deleted)
+            self.fs.overwrite_file(deleted, '')
 
     def climb(self, dirname, files_only=False):
         basenames = self.fs.listdir(dirname)
