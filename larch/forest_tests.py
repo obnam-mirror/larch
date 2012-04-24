@@ -132,50 +132,53 @@ class OpenForestTests(unittest.TestCase):
         
     def test_creates_new_forest(self):
         f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
-                              dirname=self.tempdir)
+                              dirname=self.tempdir, allow_writes=True)
         self.assertEqual(f.node_store.codec.key_bytes, self.key_size)
         self.assertEqual(f.node_store.node_size, self.node_size)
 
     def test_fail_if_existing_tree_has_incompatible_key_size(self):
         f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
-                              dirname=self.tempdir)
+                              dirname=self.tempdir, allow_writes=True)
         f.commit()
         
         self.assertRaises(larch.BadKeySize, 
                           larch.open_forest,
                           key_size=self.key_size + 1, 
                           node_size=self.node_size,
-                          dirname=self.tempdir)
+                          dirname=self.tempdir,
+                          allow_writes=True)
 
     def test_opens_existing_tree_with_incompatible_node_size(self):
-        f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
-                              dirname=self.tempdir)
+        f = larch.open_forest(allow_writes=True, key_size=self.key_size, 
+                              node_size=self.node_size, dirname=self.tempdir)
         f.commit()
 
         new_size = self.node_size + 1
         f2 = larch.open_forest(key_size=self.key_size, 
                                node_size=new_size,
-                               dirname=self.tempdir)
+                               dirname=self.tempdir,
+                               allow_writes=True)
                                
         self.assertEqual(int(f2.node_store.get_metadata('node_size')), 
                          self.node_size)
 
     def test_opens_existing_tree_with_compatible_key_and_node_size(self):
         f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
-                              dirname=self.tempdir)
+                              dirname=self.tempdir, allow_writes=True)
         f.commit()
         
         f2 = larch.open_forest(key_size=self.key_size, 
                                node_size=self.node_size,
-                               dirname=self.tempdir)
+                               dirname=self.tempdir,
+                               allow_writes=True)
                                
         self.assert_(True)
 
     def test_opens_existing_tree_without_node_and_key_sizes_given(self):
-        f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,
-                              dirname=self.tempdir)
+        f = larch.open_forest(allow_writes=True, key_size=self.key_size, 
+                              node_size=self.node_size, dirname=self.tempdir)
         f.commit()
-        f2 = larch.open_forest(dirname=self.tempdir)
+        f2 = larch.open_forest(dirname=self.tempdir, allow_writes=True)
         self.assertEqual(f2.node_store.node_size, self.node_size)
         self.assertEqual(f2.node_store.codec.key_bytes, self.key_size)
 

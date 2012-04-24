@@ -27,7 +27,7 @@ from refcountstore import RefcountStore
 from lru import LRUCache
 from uploadqueue import UploadQueue
 from idpath import IdPath
-from journal import Journal
+from journal import Journal, ReadOnlyMode
 from nodestore_disk import NodeStoreDisk, LocalFS, FormatProblem
 from nodestore_memory import NodeStoreMemory
 

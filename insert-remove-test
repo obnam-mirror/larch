@@ -95,7 +95,7 @@ def main():
         if os.path.exists(location):
             raise Exception('%s exists already' % location)
         os.mkdir(location)
-        ns = larch.NodeStoreDisk(node_size, codec, dirname=location)
+        ns = larch.NodeStoreDisk(True, node_size, codec, dirname=location)
 
     forest = larch.Forest(ns)
     tree = forest.new_tree()

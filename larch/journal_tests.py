@@ -27,7 +27,7 @@ class JournalTests(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
         self.fs = larch.LocalFS()
-        self.j = larch.Journal(self.fs, self.tempdir)
+        self.j = larch.Journal(True, self.fs, self.tempdir)
         
     def tearDown(self):
         shutil.rmtree(self.tempdir)
@@ -91,6 +91,13 @@ class JournalTests(unittest.TestCase):
         self.j.commit()
         self.j.overwrite_file(filename, 'yo')
         self.assertEqual(self.j.cat(filename), 'yo')
+
+    def test_cat_does_not_find_deleted_file(self):
+        filename = self.join('foo/bar')
+        self.j.overwrite_file(filename, 'bar')
+        self.j.commit()
+        self.j.remove(filename)
+        self.assertRaises(OSError, self.j.cat, filename)
 
     def test_rollback_brings_back_old_file(self):
         filename = self.join('foo/bar')
@@ -162,7 +169,7 @@ class JournalTests(unittest.TestCase):
         filename = self.join('foo/bar')
         self.j.overwrite_file(filename, 'bar')
         
-        j2 = larch.Journal(self.fs, self.tempdir)
+        j2 = larch.Journal(True, self.fs, self.tempdir)
         self.assertFalse(j2.exists(filename))
 
     def test_partial_commit_finished_by_new_instance(self):
@@ -172,6 +179,97 @@ class JournalTests(unittest.TestCase):
         self.j.overwrite_file(metadata, '')
         self.j.commit(skip=[filename])
         
-        j2 = larch.Journal(self.fs, self.tempdir)
+        j2 = larch.Journal(True, self.fs, self.tempdir)
         self.assertTrue(j2.exists(filename))
+
+
+class ReadOnlyJournalTests(unittest.TestCase):
+
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+        self.fs = larch.LocalFS()
+        self.rw = larch.Journal(True, self.fs, self.tempdir)
+        self.ro = larch.Journal(False, self.fs, self.tempdir)
+        
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
+    def join(self, *args):
+        return os.path.join(self.tempdir, *args)
+
+    def test_does_not_know_random_directory_initially(self):
+        self.assertFalse(self.ro.exists(self.join('foo')))
+
+    def test_creating_directory_raises_error(self):
+        self.assertRaises(larch.ReadOnlyMode, self.ro.makedirs, 'foo')
+
+    def test_calling_rollback_raises_error(self):
+        self.assertRaises(larch.ReadOnlyMode, self.ro.rollback)
+
+    def test_readonly_mode_does_not_check_for_directory_creation(self):
+        dirname = self.join('foo/bar')
+        self.rw.makedirs(dirname)
+        self.assertFalse(self.ro.exists(dirname))
+
+    def test_write_file_raisees_error(self):
+        self.assertRaises(larch.ReadOnlyMode, 
+                          self.ro.overwrite_file, 'foo', 'bar')
+
+    def test_readonly_mode_does_not_check_for_new_file(self):
+        filename = self.join('foo')
+        self.rw.overwrite_file(filename, 'bar')
+        self.assertFalse(self.ro.exists(filename))
+
+    def test_readonly_mode_does_not_check_for_modified_file(self):
+        filename = self.join('foo')
+        self.rw.overwrite_file(filename, 'first')
+        self.rw.commit()
+        self.assertEqual(self.ro.cat(filename), 'first')
+        self.rw.overwrite_file(filename, 'second')
+        self.assertEqual(self.ro.cat(filename), 'first')
+
+    def test_readonly_mode_does_not_know_file_is_deleted_in_journal(self):
+        filename = self.join('foo/bar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.rw.commit()
+        self.rw.remove(filename)
+        self.assertEqual(self.ro.cat(filename), 'bar')
+
+    def tests_lists_no_files_initially(self):
+        dirname = self.join('foo')
+        self.assertEqual(list(self.ro.list_files(dirname)), [])
+
+    def test_lists_files_correctly_when_no_changes(self):
+        dirname = self.join('foo')
+        filename = self.join('foo/bar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.rw.commit()
+        self.assertEqual(list(self.ro.list_files(dirname)), [filename])
+
+    def test_lists_added_file_correctly(self):
+        dirname = self.join('foo')
+        filename = self.join('foo/bar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.assertEqual(list(self.rw.list_files(dirname)), [filename])
+        self.assertEqual(list(self.ro.list_files(dirname)), [])
+
+    def test_lists_added_file_correctly_when_dir_existed_already(self):
+        dirname = self.join('foo')
+        filename = self.join('foo/bar')
+        filename2 = self.join('foo/foobar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.rw.commit()
+        self.rw.overwrite_file(filename2, 'yoyo')
+        self.assertEqual(sorted(list(self.rw.list_files(dirname))),
+                         sorted([filename, filename2]))
+        self.assertEqual(list(self.ro.list_files(dirname)), [filename])
+
+    def test_lists_removed_file_correctly(self):
+        dirname = self.join('foo')
+        filename = self.join('foo/bar')
+        self.rw.overwrite_file(filename, 'bar')
+        self.rw.commit()
+        self.rw.remove(filename)
+        self.assertEqual(list(self.rw.list_files(dirname)), [])
+        self.assertEqual(list(self.ro.list_files(dirname)), [filename])
 

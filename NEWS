@@ -4,6 +4,13 @@ NEWS for larch
 These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Odah Rodeh.
 
+Version 0.30, released UNRELEASED
+---------------------------------
+
+* `NodeStoreDisk` is now explicitly in read-only or read-write mode.
+  In read-only mode it does not replay or rollback to the journal, or
+  care about any changes made there.
+
 Version 0.29, released 2012-04-15
 ---------------------------------
 
