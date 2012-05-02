@@ -231,15 +231,18 @@ class NodeStoreDisk(larch.NodeStore):
             return node
 
         name = self.pathname(node_id)
-        if self.journal.exists(name):
-            tracing.trace('reading node %s from file %s' % (node_id, name))
+        tracing.trace('reading node %s from file %s' % (node_id, name))
+        try:
             encoded = self.journal.cat(name)
+        except (IOError, OSError), e:
+            logging.error('Error reading node: %s: %s: %s' % 
+                            (e.errno, e.strerror, e.filename or name))
+            raise larch.NodeMissing(self.dirname, node_id)
+        else:
             node = self.codec.decode(encoded)
             node.frozen = True
             self.cache.add(node.id, node)
             return node
-        else:
-            raise larch.NodeMissing(self.dirname, node_id)
 
     def start_modification(self, node):
         tracing.trace('start modiyfing node %s' % node.id)
