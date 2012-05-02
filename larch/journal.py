@@ -87,6 +87,8 @@ class Journal(object):
             else:
                 logging.debug('Automatically rolling back remaining changes')
                 self.rollback()
+            self.new_files = set()
+            self.deleted_files = set()
 
     def _require_rw(self):
         '''Raise error if modifications are not allowed.'''
@@ -115,9 +117,9 @@ class Journal(object):
         if self.allow_writes:
             new = self._new(filename)
             deleted = self._deleted(filename)
-            if self.fs.exists(new):
+            if new in self.new_files:
                 return True
-            elif self.fs.exists(deleted):
+            elif deleted in self.deleted_files:
                 return False
         return self.fs.exists(filename)
         
@@ -126,19 +128,22 @@ class Journal(object):
         self._require_rw()
         x = self._new(dirname)
         self.fs.makedirs(x)
+        self.new_files.add(x)
 
     def overwrite_file(self, filename, contents):
         tracing.trace(filename)
         self._require_rw()
-        self.fs.overwrite_file(self._new(filename), contents)
+        new = self._new(filename)
+        self.fs.overwrite_file(new, contents)
+        self.new_files.add(new)
 
     def cat(self, filename):
         if self.allow_writes:
             new = self._new(filename)
             deleted = self._deleted(filename)
-            if self.fs.exists(new):
+            if new in self.new_files:
                 return self.fs.cat(new)
-            elif self.fs.exists(deleted):
+            elif deleted in self.deleted_files:
                 raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), 
                                filename))
         return self.fs.cat(filename)
@@ -150,12 +155,14 @@ class Journal(object):
         new = self._new(filename)
         deleted = self._deleted(filename)
         
-        if self.fs.exists(new):
+        if new in self.new_files:
             self.fs.remove(new)
-        elif self.fs.exists(deleted):
+            self.new_files.remove(new)
+        elif deleted in self.deleted_files:
             raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), filename))
         else:
             self.fs.overwrite_file(deleted, '')
+            self.deleted_files.add(deleted)
 
     def list_files(self, dirname):
         '''List all files.
@@ -236,6 +243,9 @@ class Journal(object):
         if self.fs.exists(self.deletedir):
             self._clear_directory(self.deletedir)
 
+        self.new_files = set()
+        self.deleted_files = set()
+
         tracing.trace('%s done' % self.storedir)
 
     def _really_delete(self, deletedir):
@@ -262,5 +272,8 @@ class Journal(object):
             self._vivify(self.newdir, [self.new_flag] + skip)
         if not skip and self.fs.exists(self.new_flag):
             self.fs.rename(self.new_flag, self.flag_file)
+
+        self.new_files = set()
+        self.deleted_files = set()
 
         tracing.trace('%s done' % self.storedir)
