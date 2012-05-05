@@ -53,13 +53,13 @@ class NodeStoreDiskTests(unittest.TestCase, larch.NodeStoreTests):
         old = self.new_ns(format=0)
         old.save_metadata()
         new = self.new_ns(format=1)
-        self.assertRaises(Exception, new.get_metadata, 'format')
+        self.assertRaises(larch.Error, new.get_metadata, 'format')
 
     def test_refuses_to_open_if_format_version_is_not_there(self):
         self.ns.remove_metadata('format')
         self.ns.save_metadata()
         ns2 = self.new_ns()
-        self.assertRaises(Exception, ns2.get_metadata, 'format')
+        self.assertRaises(larch.Error, ns2.get_metadata, 'format')
 
     def test_has_persistent_metadata(self):
         self.ns.set_metadata('foo', 'bar')

@@ -22,13 +22,10 @@ import ttystatus
 import larch
 
 
-class Error(Exception):
+class Error(larch.Error):
 
     def __init__(self, msg):
         self.msg = 'Assertion failed: %s' % msg
-        
-    def __str__(self):
-        return self.msg
 
 
 class WorkItem(object):

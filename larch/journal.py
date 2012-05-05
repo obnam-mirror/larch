@@ -19,11 +19,13 @@ import logging
 import os
 import tracing
 
+import larch
 
-class ReadOnlyMode(Exception): # pragma: no cover
 
-    def __str__(self):
-        return 'Larch B-tree is in read-only mode, no changes allowed'
+class ReadOnlyMode(larch.Error): # pragma: no cover
+
+    def __init__(self):
+        self.msg = 'Larch B-tree is in read-only mode, no changes allowed'
 
 
 class Journal(object):

@@ -19,37 +19,24 @@ import tracing
 import larch
 
 
-class MetadataMissingKey(Exception):
+class MetadataMissingKey(larch.Error):
 
     def __init__(self, key_name):
         self.msg = 'larch forest metadata missing "%s"' % key_name
 
-    def __str__(self): # pragma: no cover
-        return self.msg
 
-
-class BadKeySize(Exception):
-
-    '''Exception for a bad key size.'''
+class BadKeySize(larch.Error):
 
     def __init__(self, store_key_size, wanted_key_size):
         self.msg = ('Node store has key size %s, program wanted %s' %
                     (store_key_size, wanted_key_size))
-    
-    def __str__(self):
-        return self.msg
 
 
-class BadNodeSize(Exception):
-
-    '''Exception for a bad node size.'''
+class BadNodeSize(larch.Error):
 
     def __init__(self, store_node_size, wanted_node_size):
         self.msg = ('Node store has node size %s, program wanted %s' %
                     (store_node_size, wanted_node_size))
-    
-    def __str__(self):
-        return self.msg
 
 
 class Forest(object):

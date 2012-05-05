@@ -30,13 +30,10 @@ DIR_BITS = 12
 DIR_SKIP = 13
 
 
-class FormatProblem(Exception): # pragma: no cover
+class FormatProblem(larch.Error): # pragma: no cover
 
     def __init__(self, msg):
         self.msg = msg
-        
-    def __str__(self):
-        return self.msg
 
 
 class LocalFS(object): # pragma: no cover

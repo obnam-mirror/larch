@@ -19,15 +19,12 @@ import bisect
 import larch
 
 
-class FrozenNode(Exception):
+class FrozenNode(larch.Error):
 
     '''User tried to modify node that is frozen.'''
 
     def __init__(self, node):
-        self.node = node
-        
-    def __str__(self):
-        return 'Node %s is frozen against modifications' % self.node.id
+        self.msg = 'Node %s is frozen against modifications' % node.id
 
 
 class Node(object):

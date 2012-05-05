@@ -17,6 +17,12 @@
 __version__ = '0.30'
 
 
+class Error(Exception):
+
+    def __str__(self):
+        return self.msg
+
+
 from nodes import FrozenNode, Node, LeafNode, IndexNode
 from codec import NodeCodec, CodecError
 from tree import BTree, KeySizeMismatch, ValueTooLarge

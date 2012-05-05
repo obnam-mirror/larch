@@ -23,30 +23,22 @@ import larch
 '''A simple B-tree implementation.'''
 
 
-class KeySizeMismatch(Exception):
+class KeySizeMismatch(larch.Error):
 
     '''User tried to use key of wrong size.'''
 
     def __init__(self, key, wanted_size):
-        self.key = key
-        self.wanted_size = wanted_size
-        
-    def __str__(self):
-        return 'Key %s is of wrong length (%d, should be %d)' % \
-                (repr(self.key), len(self.key), self.wanted_size)
+        self.msg = ('Key %s is of wrong length (%d, should be %d)' %
+                    (repr(key), len(key), wanted_size))
 
 
-class ValueTooLarge(Exception):
+class ValueTooLarge(larch.Error):
 
     '''User tried ot use a vlaue htat is too large for a node.'''
 
     def __init__(self, value, max_size):
-        self.value = value
-        self.max_size = max_size
-        
-    def __str__(self):
-        return 'Value %s is too long (%d, max %d)' % \
-                (repr(self.value), len(self.value), self.max_size)
+        self.msg = ('Value %s is too long (%d, max %d)' %
+                    (repr(value), len(value), max_size))
        
 
 class BTree(object):

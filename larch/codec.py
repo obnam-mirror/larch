@@ -19,9 +19,10 @@ import struct
 import larch
 
 
-class CodecError(Exception):
+class CodecError(larch.Error):
 
-    '''Exception for decoding errors for nodes.'''
+    def __init__(self, msg):
+        self.msg = msg
 
 
 class NodeCodec(object):

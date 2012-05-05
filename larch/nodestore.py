@@ -17,53 +17,38 @@
 import larch
 
 
-class NodeMissing(Exception): # pragma: no cover
+class NodeMissing(larch.Error):
 
     '''A node cannot be found from a NodeStore.'''
     
     def __init__(self, node_store, node_id):
-        self.node_store = node_store
-        self.node_id = node_id
-        
-    def __str__(self):
-        return ('Node %d cannot be found in the node store %s' % 
-                (self.node_id, self.node_store))
+        self.msg = ('Node %d cannot be found in the node store %s' % 
+                    (node_id, node_store))
 
 
-class NodeTooBig(Exception): # pragma: no cover
+class NodeTooBig(larch.Error):
 
     '''User tried to put a node that was too big into the store.'''
     
     def __init__(self, node, node_size):
-        self.node_type = node.__class__.__name__
-        self.node_id = node.id
-        self.node_size = node_size
-        
-    def __str__(self):
-        return ('%s %d is too big (%d bytes)' % 
-                (self.node_type, self.node_id, self.node_size))
+        self.msg = ('%s %d is too big (%d bytes)' % 
+                    (node.__class__.__name__, node.id, node_size))
         
         
-class NodeExists(Exception): # pragma: no cover
+class NodeExists(larch.Error):
 
     '''User tried to put a node that already exists in the store.'''
     
     def __init__(self, node_id):
-        self.node_id = node_id
-        
-    def __str__(self):
-        return 'Node %d is already in the store' % self.node_id
+        self.msg = 'Node %d is already in the store' % node_id
         
         
-class NodeCannotBeModified(Exception): # pragma: no cover
+class NodeCannotBeModified(larch.Error):
 
     '''User called start_modification on node that cannot be modified.'''
     
     def __init__(self, node_id):
-        self.node_id = node_id
-        
-    def __str__(self):
-        return 'Node %d cannot be modified' % self.node_id
+        self.msg = 'Node %d cannot be modified' % node_id
         
         
 class NodeStore(object): # pragma: no cover
