@@ -20,7 +20,8 @@ __version__ = '0.30'
 from nodes import FrozenNode, Node, LeafNode, IndexNode
 from codec import NodeCodec, CodecError
 from tree import BTree, KeySizeMismatch, ValueTooLarge
-from forest import Forest, open_forest, BadKeySize, BadNodeSize
+from forest import (Forest, open_forest, BadKeySize, BadNodeSize, 
+                    MetadataMissingKey)
 from nodestore import (NodeStore, NodeStoreTests, NodeMissing, NodeTooBig, 
                        NodeExists, NodeCannotBeModified)
 from refcountstore import RefcountStore

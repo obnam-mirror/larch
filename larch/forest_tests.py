@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os
 import shutil
 import tempfile
 import unittest
@@ -135,6 +136,24 @@ class OpenForestTests(unittest.TestCase):
                               dirname=self.tempdir, allow_writes=True)
         self.assertEqual(f.node_store.codec.key_bytes, self.key_size)
         self.assertEqual(f.node_store.node_size, self.node_size)
+
+    def test_fail_if_metadata_missing_key_size(self):
+        with open(os.path.join(self.tempdir, 'metadata'), 'w') as f:
+            f.write('[metadata]\n')
+            f.write('format=1/1\n')
+            f.write('node_size=%s\n' % self.node_size)
+        self.assertRaises(larch.MetadataMissingKey, larch.open_forest,
+                          key_size=self.key_size, node_size=None,
+                          dirname=self.tempdir, allow_writes=False)
+
+    def test_fail_if_metadata_missing_node_size(self):
+        with open(os.path.join(self.tempdir, 'metadata'), 'w') as f:
+            f.write('[metadata]\n')
+            f.write('format=1/1\n')
+            f.write('key_size=%s\n' % self.key_size)
+        self.assertRaises(larch.MetadataMissingKey, larch.open_forest,
+                          key_size=self.key_size, node_size=None,
+                          dirname=self.tempdir, allow_writes=False)
 
     def test_fail_if_existing_tree_has_incompatible_key_size(self):
         f = larch.open_forest(key_size=self.key_size, node_size=self.node_size,

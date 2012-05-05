@@ -19,6 +19,15 @@ import tracing
 import larch
 
 
+class MetadataMissingKey(Exception):
+
+    def __init__(self, key_name):
+        self.msg = 'larch forest metadata missing "%s"' % key_name
+
+    def __str__(self): # pragma: no cover
+        return self.msg
+
+
 class BadKeySize(Exception):
 
     '''Exception for a bad key size.'''
@@ -179,9 +188,11 @@ def open_forest(allow_writes=None, key_size=None, node_size=None, codec=None,
         # since we won't be accessing nodes or keys.
         c_temp = codec(42)
         ns_temp = node_store(False, 42, c_temp, **kwargs)
-        
-        assert 'key_size' in ns_temp.get_metadata_keys()
-        assert 'node_size' in ns_temp.get_metadata_keys()
+
+        if 'key_size' not in ns_temp.get_metadata_keys():
+            raise MetadataMissingKey('key_size')
+        if 'node_size' not in ns_temp.get_metadata_keys():
+            raise MetadataMissingKey('node_size')
         
         if key_size is None:
             key_size = int(ns_temp.get_metadata('key_size'))
