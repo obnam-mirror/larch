@@ -92,11 +92,7 @@ branch of your own and send me a URL, and I'll merge from that.
 Bugs and other things to hack
 -----------------------------
 
-There is an [SD](http://syncwith.us/sd/) bug repository for larch.
-I try to keep it up to date with regards to bugs and wishlist items,
-etc.
-
-* Bugs in SD: <http://code.liw.fi/larch/bugs/>
+See <http://liw.fi/larch/bugs/> for the bug tracker.
 
 If you're interested in hacking the larch code, speed improvements
 are always interesting. See the bug tracker for things known to be
