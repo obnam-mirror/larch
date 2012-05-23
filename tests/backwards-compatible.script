@@ -1,5 +1,5 @@
-# Makefile for B-tree implementation
-# Copyright 2010  Lars Wirzenius
+#!/bin/sh
+# Copyright 2012  Lars Wirzenius
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,21 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-all: fsck-larch.1
-	$(MAKE) -C doc html
+set -eu
 
-fsck-larch.1: fsck-larch.1.in fsck-larch
-	./fsck-larch --generate-manpage=fsck-larch.1.in > fsck-larch.1
 
-check:
-	python -m CoverageTestRunner --ignore-missing-from=without-tests
-	rm .coverage
-	./insert-remove-test tempdir 100
-	rm -r tempdir larch.log
-	cmdtest tests
-	
-clean:
-	rm -f .coverage *.py[co] larch/*.py[co] insert.prof lookup.prof
-	rm -rf build tempdir larch.log example.tree
-	rm -f fsck-larch.1
-	$(MAKE) -C doc clean
+for tarball in test-data/*.tar.gz
+do
+    ./test-backwards-compatibility verify "$tarball"
+done
+
