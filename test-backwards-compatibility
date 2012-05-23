@@ -45,6 +45,7 @@ keys removed.
 
 
 import cliapp
+import os
 import shutil
 import struct
 import tarfile
@@ -58,6 +59,16 @@ class BackwardsCompatibilityTester(cliapp.Application):
     key_size = 4
     node_size = 128
     num_keys = 1024
+    
+    keys1 = range(num_keys)
+
+    remove2 = range(1, num_keys, 2)
+    keys2 = [i for i in keys1 if i not in remove2]
+
+    keys3 = keys2
+
+    remove4 = range(0, num_keys, 2)
+    keys4 = [i for i in keys3 if i not in remove4]
     
     def setup(self):
         self.dirname = tempfile.mkdtemp()
@@ -81,32 +92,66 @@ class BackwardsCompatibilityTester(cliapp.Application):
 
         # First tree.
         t = forest.new_tree()
-        for i in range(self.num_keys):
+        for i in self.keys1:
             t.insert(self.key(i), self.value(i))
             
         # Second tree.
         t = forest.new_tree(t)
-        for i in range(self.num_keys):
-            if (i % 2) == 1:
-                t.remove(self.key(i))
+        for i in self.remove2:
+            t.remove(self.key(i))
             
         # Third tree.
         t = forest.new_tree(t)
-        for i in range(self.num_keys):
-            if (i % 2) == 1:
-                t.insert(self.key(i), self.value(i))
+        for i in self.keys3:
+            t.insert(self.key(i), self.value(i))
             
         # Fourth tree.
         t = forest.new_tree(t)
-        for i in range(self.num_keys):
-            if (i % 2) == 0:
-                t.remove(self.key(i))
+        for i in self.remove4:
+            t.remove(self.key(i))
 
         # Commit and make into a tarball.
         forest.commit()
         tf = tarfile.open(fileobj=self.output, mode='w:gz')
         tf.add(self.dirname, arcname='.')
         tf.close()
+
+    def cmd_verify(self, args):
+        forest_dirname = os.path.join(self.dirname, 'forest')
+
+        for filename in args:
+            os.mkdir(forest_dirname)
+            tf = tarfile.open(filename)
+            tf.extractall(path=forest_dirname)
+            tf.close()
+
+            forest = larch.open_forest(dirname=forest_dirname, 
+                                       allow_writes=False)
+            if len(forest.trees) != 4:
+                raise cliapp.AppException('Need 4 trees, not %d' % 
+                                            len(forest.trees))
+            self.verify_tree(forest.trees[0], self.keys1)
+            self.verify_tree(forest.trees[1], self.keys2)
+            self.verify_tree(forest.trees[2], self.keys3)
+            self.verify_tree(forest.trees[3], self.keys4)
+
+            shutil.rmtree(forest_dirname)
+            
+            self.output.write('%s is OK\n' % filename)
+
+    def verify_tree(self, tree, keys):
+        minkey = self.key(0)
+        maxkey = self.key(2**(8*self.key_size) - 1)
+        
+        i = 0
+        for key, value in tree.lookup_range(minkey, maxkey):
+            if key != self.key(keys[i]):
+                raise cliapp.AppException('Wanted key %s, got %s' %
+                                            (keys[i], repr(key)))
+            if value != self.value(keys[i]):
+                raise cliapp.AppException('Wanted value %s, got %s' %
+                                            (keys[i], repr(value)))
+            i += 1
 
 
 BackwardsCompatibilityTester().run()
