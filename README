@@ -41,6 +41,11 @@ The larch on-disk file format and data structures are frozen as of version
 0.31. That means any B-trees stored on disk with that version, or any
 later version, will be readable by future versions of larch.
 
+This prompts a new version numbering scheme for Larch. In the future,
+the version number is of the form `FORMAT.DATE`, where `FORMAT` is
+the on-disk format version for Larch (currently 1), and the `DATE`
+is the date of the release.
+
 
 Build and install
 -----------------
