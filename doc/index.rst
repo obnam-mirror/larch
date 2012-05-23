@@ -38,6 +38,7 @@ available as ``larch.bar``.
    refcountstore
    uploadqueue
    lru
+   ondisk
 
 
 Quick start
