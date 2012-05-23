@@ -1,0 +1,158 @@
+#!/usr/bin/python
+# Copyright 2012  Lars Wirzenius
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+'''Test backwards compatibility of an on-disk B-tree.
+
+This program tests that a Larch on-disk B-tree is backwards compatible
+with previous versions, at least to the extent that it can be read from.
+This program operates in one of two modes:
+
+* it can generate a new B-tree to be stored as test data for the future
+* it can read an existing tree and verify that it can read it right
+
+The generated B-tree is actually a forest, and contains four trees.
+The first tree has the following keys:
+
+* key size is 4 bytes
+* keys are 0, 1, 2, ..., 1023, converted into binary strings with struct
+* values are 0, 1, 2, ..., 1023, converted into text strings with '%d' % i
+* node size is 128 bytes
+
+The second tree is a clone of the first one, but with all odd-numbered
+keys removed.
+
+The third tree is a clone of the second one, but with all odd-numbered
+keys and values added back.
+
+The fourth tree is a clone of the third one, but with all even-numbered
+keys removed.
+
+'''
+
+
+import cliapp
+import os
+import shutil
+import struct
+import tarfile
+import tempfile
+
+import larch
+
+
+class BackwardsCompatibilityTester(cliapp.Application):
+
+    key_size = 4
+    node_size = 128
+    num_keys = 1024
+    
+    keys1 = range(num_keys)
+
+    remove2 = range(1, num_keys, 2)
+    keys2 = [i for i in keys1 if i not in remove2]
+
+    keys3 = keys2
+
+    remove4 = range(0, num_keys, 2)
+    keys4 = [i for i in keys3 if i not in remove4]
+    
+    def setup(self):
+        self.dirname = tempfile.mkdtemp()
+        
+    def teardown(self):
+        shutil.rmtree(self.dirname)
+
+    def key(self, i):
+        return struct.pack('!L', i)
+        
+    def value(self, i):
+        return '%d' % i
+
+    def cmd_generate(self, args):
+        '''Generate a Larch B-tree forest'''
+        
+        forest = larch.open_forest(key_size=self.key_size,
+                                   node_size=self.node_size,
+                                   dirname=self.dirname,
+                                   allow_writes=True)
+
+        # First tree.
+        t = forest.new_tree()
+        for i in self.keys1:
+            t.insert(self.key(i), self.value(i))
+            
+        # Second tree.
+        t = forest.new_tree(t)
+        for i in self.remove2:
+            t.remove(self.key(i))
+            
+        # Third tree.
+        t = forest.new_tree(t)
+        for i in self.keys3:
+            t.insert(self.key(i), self.value(i))
+            
+        # Fourth tree.
+        t = forest.new_tree(t)
+        for i in self.remove4:
+            t.remove(self.key(i))
+
+        # Commit and make into a tarball.
+        forest.commit()
+        tf = tarfile.open(fileobj=self.output, mode='w:gz')
+        tf.add(self.dirname, arcname='.')
+        tf.close()
+
+    def cmd_verify(self, args):
+        forest_dirname = os.path.join(self.dirname, 'forest')
+
+        for filename in args:
+            os.mkdir(forest_dirname)
+            tf = tarfile.open(filename)
+            tf.extractall(path=forest_dirname)
+            tf.close()
+
+            forest = larch.open_forest(dirname=forest_dirname, 
+                                       allow_writes=False)
+            if len(forest.trees) != 4:
+                raise cliapp.AppException('Need 4 trees, not %d' % 
+                                            len(forest.trees))
+            self.verify_tree(forest.trees[0], self.keys1)
+            self.verify_tree(forest.trees[1], self.keys2)
+            self.verify_tree(forest.trees[2], self.keys3)
+            self.verify_tree(forest.trees[3], self.keys4)
+
+            shutil.rmtree(forest_dirname)
+            
+            self.output.write('%s is OK\n' % filename)
+
+    def verify_tree(self, tree, keys):
+        minkey = self.key(0)
+        maxkey = self.key(2**(8*self.key_size) - 1)
+        
+        i = 0
+        for key, value in tree.lookup_range(minkey, maxkey):
+            if key != self.key(keys[i]):
+                raise cliapp.AppException('Wanted key %s, got %s' %
+                                            (keys[i], repr(key)))
+            if value != self.value(keys[i]):
+                raise cliapp.AppException('Wanted value %s, got %s' %
+                                            (keys[i], repr(value)))
+            i += 1
+
+
+BackwardsCompatibilityTester().run()
+
