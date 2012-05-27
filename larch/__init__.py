@@ -1,4 +1,4 @@
-# Copyright 2010, 2011  Lars Wirzenius
+# Copyright 2010, 2011, 2012  Lars Wirzenius
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-__version__ = '0.31'
+__version__ = '1.20120527'
 
 
 class Error(Exception):

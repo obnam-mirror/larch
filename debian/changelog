@@ -1,3 +1,12 @@
+python-larch (1.20120527-1) unstable; urgency=low
+
+  * New upstream release.
+    - New version scheme. Thank you, Joey Hess.
+    - The on-disk data structures and file formats are now declared frozen.
+      An automatic test has been added to verify that things do not break.
+
+ -- Lars Wirzenius <liw@liw.fi>  Sun, 27 May 2012 11:42:28 +0200
+
 python-larch (0.31-1) unstable; urgency=low
 
   * New upstream version.
