@@ -104,7 +104,7 @@ class CheckNode(WorkItem):
                     new_node = larch.IndexNode(node.id, keys, 
                                                [node[k] for k in keys])
                     self.fsck.forest.node_store.put_node(new_node)
-                tracing.trace('fixed it: %s' % new_node.keys())
+                    tracing.trace('fixed it: %s' % new_node.keys())
 
 
 class CheckRoot(WorkItem):
