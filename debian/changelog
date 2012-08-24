@@ -1,4 +1,4 @@
-python-larch (UNRELEASED) UNRELEASED; urgency=low
+python-larch (1.20120527-1) UNRELEASED; urgency=low
 
   * New upstream release.
     - Fix "UnboundLocalError: local variable 'new_node' referenced before
