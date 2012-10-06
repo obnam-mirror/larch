@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-__version__ = '1.20120930'
+__version__ = '1.20121006'
 
 
 class Error(Exception):

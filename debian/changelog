@@ -1,11 +1,11 @@
-python-larch (1.20120930-1) unstable; urgency=low
+python-larch (1.20121006-1) unstable; urgency=low
 
   * New upstream release.
     - Fix "UnboundLocalError: local variable 'new_node' referenced before
       assignment" (Closes: #675818)
   * debian/control: Add missing build-dependency on cmdtest.
 
- -- Lars Wirzenius <liw@liw.fi>  Sun, 30 Sep 2012 20:46:14 +0100
+ -- Lars Wirzenius <liw@liw.fi>  Sat, 06 Oct 2012 10:27:20 +0100
 
 python-larch (1.20120527-1) unstable; urgency=low
 
