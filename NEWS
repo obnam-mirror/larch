@@ -7,7 +7,11 @@ copy-on-write B-tree, designed by Ohad Rodeh.
 Version 1.20120920, released 2012-09-30
 ---------------------------------------
 
-* 
+* Critical bug fix: an indentation problem in the Python code was fixed.
+  A line was intended wrong, resulting it to not be included in the right
+  block, and therefore not having access to the variable created in that
+  block.
+* Bug fix: The Debian packaging was missing a build dependency on cmdtest.
 
 Version 1.20120527, released 2012-05-27
 ---------------------------------------
