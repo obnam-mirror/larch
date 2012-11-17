@@ -51,11 +51,11 @@ class Fsck(cliapp.Application):
             forest = larch.open_forest(dirname=dirname)
             fsck = larch.fsck.Fsck(forest, self.warning, self.error, 
                                    self.settings['fix'])
-            fsck.find_work()
+            all_work = list(fsck.find_work())
             
-            self.ts['checks'] = len(fsck.work)
+            self.ts['checks'] = len(all_work)
             self.ts['check'] = 0
-            for work in fsck.work:
+            for work in all_work:
                 self.ts['check'] += 1
                 self.ts['checkname'] = str(work)
                 work.do()
