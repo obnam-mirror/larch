@@ -64,7 +64,7 @@ class CheckNode(WorkItem):
     def __init__(self, fsck, node_id):
         self.fsck = fsck
         self.node_id = node_id
-        self.name = 'node %s' % node_id
+        self.name = 'node %s in %s' % (node_id, self.fsck.forest_name)
 
     def do(self):
         tracing.trace('checking node %s' % self.node_id)
@@ -112,7 +112,7 @@ class CheckRoot(WorkItem):
     def __init__(self, fsck, root_id):
         self.fsck = fsck
         self.root_id = root_id
-        self.name = 'root node %s' % root_id
+        self.name = 'root node %s in %s' % (root_id, self.fsck.forest_name)
         
     def do(self):
         tracing.trace('checking root node %s' % self.root_id)
@@ -131,7 +131,7 @@ class CheckRecursively(WorkItem):
     def __init__(self, fsck, root_id, seen):
         self.fsck = fsck
         self.root_id = root_id
-        self.name = 'tree %s' % root_id
+        self.name = 'tree %s in %s' % (root_id, self.fsck.forest_name)
         self.seen = seen
         
     def do(self):
@@ -150,6 +150,9 @@ class CheckRecursively(WorkItem):
     def walk(self, root_id):
 
         def walker(node_id, minkey, maxkey, expected_type):
+            if node_id in self.seen:
+                return
+            self.seen.add(node_id)
             expected_child = None
             node = self.get_node(node_id)
             if node:
@@ -157,7 +160,6 @@ class CheckRecursively(WorkItem):
                 if type(node) == larch.IndexNode:
                     tracing.trace('recursively found index node %s' % node.id)
                     keys = node.keys()
-                    tracing.trace('keys: %s' % repr(keys))
                     for i, key in enumerate(keys):
                         child_id = node[key]
                         if i + 1 < len(keys):
@@ -191,7 +193,7 @@ class CheckExtraNodes(WorkItem):
     def __init__(self, fsck):
         self.fsck = fsck
         self.seen = set()
-        self.name = 'extra nodes'
+        self.name = 'extra nodes in %s' % self.fsck.forest_name
 
     def do(self):
         tracing.trace('checking for extra nodes')
@@ -204,7 +206,7 @@ class CommitForest(WorkItem):
 
     def __init__(self, fsck):
         self.fsck = fsck
-        self.name = 'committing fixes'
+        self.name = 'committing fixes to %s' % self.fsck.forest_name
 
     def do(self):
         tracing.trace('committing changes to forest')
@@ -217,6 +219,8 @@ class Fsck(object):
     
     def __init__(self, forest, warning, error, fix):
         self.forest = forest
+        self.forest_name = getattr(
+            forest.node_store, 'dirname', 'in-memory forest')
         self.warning = warning
         self.error = error
         self.fix = fix
