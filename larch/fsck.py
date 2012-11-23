@@ -220,18 +220,17 @@ class Fsck(object):
         self.warning = warning
         self.error = error
         self.fix = fix
-        self.work = []
 
     def find_work(self):
         for node_id in self.forest.node_store.list_nodes():
             tracing.trace('found node %s' % node_id)
-            self.work.append(CheckNode(self, node_id))
+            yield CheckNode(self, node_id)
         for tree in self.forest.trees:
-            self.work.append(CheckRoot(self, tree.root.id))
+            yield CheckRoot(self, tree.root.id)
         extra = CheckExtraNodes(self)
         for tree in self.forest.trees:
-            self.work.append(CheckRecursively(self, tree.root.id, extra.seen))
-        self.work.append(extra)
+            yield CheckRecursively(self, tree.root.id, extra.seen)
+        yield extra
         if self.fix:
-            self.work.append(CommitForest(self))
+            yield CommitForest(self)
 

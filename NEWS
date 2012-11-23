@@ -4,6 +4,11 @@ NEWS for larch
 These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Ohad Rodeh.
 
+Version UNRELEASED
+------------------
+
+* Make fsck progress reporting be a bit more fine grained.
+
 Version 1.20121006
 ------------------
 
