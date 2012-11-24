@@ -105,6 +105,20 @@ class CheckRefcounts(WorkItem):
                          node_id,
                          refcount,
                          self.fsck.refcounts[node_id]))
+                if self.fsck.fix:
+                    self.fsck.forest.node_store.set_refcount(node_id, refcount)
+
+
+class CommitForest(WorkItem):
+
+    def __init__(self, fsck):
+        self.fsck = fsck
+        self.name = 'committing fixes to %s' % self.fsck.forest_name
+
+    def do(self):
+        tracing.trace('committing changes to %s' % self.fsck.forest_name)
+        self.fsck.forest.commit()
+
 
 class Fsck(object):
 
@@ -122,6 +136,8 @@ class Fsck(object):
     def find_work(self):
         yield CheckForest(self)
         yield CheckRefcounts(self)
+        if self.fix:
+            yield CommitForest(self)
 
     def count(self, node_id):
         self.refcounts[node_id] = self.refcounts.get(node_id, 0) + 1
