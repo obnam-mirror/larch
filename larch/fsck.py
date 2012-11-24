@@ -56,7 +56,9 @@ class WorkItem(object):
         try:
             return self.fsck.forest.node_store.get_node(node_id)
         except larch.NodeMissing:
-            self.error('node %s is missing' % node_id)
+            self.error(
+                'forest %s: node %s is missing' %
+                    (self.fsck.forest_name, node_id))
 
 
 class CheckNode(WorkItem):
@@ -70,10 +72,10 @@ class CheckNode(WorkItem):
         node = self.get_node(self.node_id)
         if type(node) == larch.IndexNode:
             for child_id in node.values():
-                if child_id not in self.fsck.seen_ids:
-                    self.fsck.seen_ids.add(child_id)
+                seen_already = child_id in self.fsck.refcounts
+                self.fsck.count(child_id)
+                if not seen_already:
                     yield CheckNode(self.fsck, child_id)
-
 
 class CheckForest(WorkItem):
 
@@ -83,9 +85,26 @@ class CheckForest(WorkItem):
 
     def do(self):
         for tree in self.fsck.forest.trees:
-            self.fsck.seen_ids.add(tree.root.id)
+            self.fsck.count(tree.root.id)
             yield CheckNode(self.fsck, tree.root.id)
 
+
+class CheckRefcounts(WorkItem):
+
+    def __init__(self, fsck):
+        self.fsck = fsck
+        self.name = 'refcounts in %s' % self.fsck.forest_name
+
+    def do(self):
+        for node_id in self.fsck.refcounts:
+            refcount = self.fsck.forest.node_store.get_refcount(node_id)
+            if refcount != self.fsck.refcounts[node_id]:
+                self.error(
+                    'forest %s: node %s: refcount is %s but should be %s' %
+                        (self.fsck.forest_name,
+                         node_id,
+                         refcount,
+                         self.fsck.refcounts[node_id]))
 
 class Fsck(object):
 
@@ -98,11 +117,11 @@ class Fsck(object):
         self.warning = warning
         self.error = error
         self.fix = fix
-        self.seen_ids = set()
         self.refcounts = {}
 
     def find_work(self):
         yield CheckForest(self)
+        yield CheckRefcounts(self)
 
     def count(self, node_id):
         self.refcounts[node_id] = self.refcounts.get(node_id, 0) + 1
