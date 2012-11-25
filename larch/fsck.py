@@ -106,7 +106,8 @@ class CheckRefcounts(WorkItem):
                          refcount,
                          self.fsck.refcounts[node_id]))
                 if self.fsck.fix:
-                    self.fsck.forest.node_store.set_refcount(node_id, refcount)
+                    self.fsck.forest.node_store.set_refcount(
+                        node_id, self.fsck.refcounts[node_id])
 
 
 class CommitForest(WorkItem):
