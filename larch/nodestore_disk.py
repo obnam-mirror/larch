@@ -20,6 +20,7 @@ import os
 import StringIO
 import struct
 import tempfile
+import traceback
 import tracing
 
 import larch
@@ -234,6 +235,7 @@ class NodeStoreDisk(larch.NodeStore):
         except (IOError, OSError), e:
             logging.error('Error reading node: %s: %s: %s' % 
                             (e.errno, e.strerror, e.filename or name))
+            logging.debug(traceback.format_exc())
             raise larch.NodeMissing(self.dirname, node_id)
         else:
             node = self.codec.decode(encoded)
