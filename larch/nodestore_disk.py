@@ -20,6 +20,7 @@ import os
 import StringIO
 import struct
 import tempfile
+import traceback
 import tracing
 
 import larch
@@ -232,9 +233,10 @@ class NodeStoreDisk(larch.NodeStore):
         try:
             encoded = self.journal.cat(name)
         except (IOError, OSError), e:
-            logging.error('Error reading node: %s: %s: %s' % 
+            logging.debug('Error reading node: %s: %s: %s' % 
                             (e.errno, e.strerror, e.filename or name))
-            raise larch.NodeMissing(self.dirname, node_id)
+            logging.debug(traceback.format_exc())
+            raise larch.NodeMissing(self.dirname, node_id, error=e)
         else:
             node = self.codec.decode(encoded)
             node.frozen = True

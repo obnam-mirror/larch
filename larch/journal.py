@@ -146,8 +146,8 @@ class Journal(object):
             if new in self.new_files:
                 return self.fs.cat(new)
             elif deleted in self.deleted_files:
-                raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), 
-                               filename))
+                raise OSError(
+                    errno.ENOENT, os.strerror(errno.ENOENT), filename)
         return self.fs.cat(filename)
             
     def remove(self, filename):
@@ -161,7 +161,7 @@ class Journal(object):
             self.fs.remove(new)
             self.new_files.remove(new)
         elif deleted in self.deleted_files:
-            raise OSError((errno.ENOENT, os.strerror(errno.ENOENT), filename))
+            raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
         else:
             self.fs.overwrite_file(deleted, '')
             self.deleted_files.add(deleted)
