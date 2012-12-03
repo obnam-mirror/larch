@@ -233,10 +233,10 @@ class NodeStoreDisk(larch.NodeStore):
         try:
             encoded = self.journal.cat(name)
         except (IOError, OSError), e:
-            logging.error('Error reading node: %s: %s: %s' % 
+            logging.debug('Error reading node: %s: %s: %s' % 
                             (e.errno, e.strerror, e.filename or name))
             logging.debug(traceback.format_exc())
-            raise larch.NodeMissing(self.dirname, node_id)
+            raise larch.NodeMissing(self.dirname, node_id, error=e)
         else:
             node = self.codec.decode(encoded)
             node.frozen = True
