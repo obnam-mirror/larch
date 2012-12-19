@@ -77,6 +77,7 @@ class CheckNode(WorkItem):
                 if not seen_already:
                     yield CheckNode(self.fsck, child_id)
 
+
 class CheckForest(WorkItem):
 
     def __init__(self, fsck):
