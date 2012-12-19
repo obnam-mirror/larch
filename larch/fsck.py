@@ -53,6 +53,7 @@ class WorkItem(object):
         self.fsck.error('ERROR: %s: %s' % (self.name, msg))
 
     def get_node(self, node_id):
+        tracing.trace('node_id=%s' % node_id)
         try:
             return self.fsck.forest.node_store.get_node(node_id)
         except larch.NodeMissing:
@@ -61,21 +62,38 @@ class WorkItem(object):
                     (self.fsck.forest_name, node_id))
 
 
-class CheckNode(WorkItem):
+class CheckIndexNode(WorkItem):
 
-    def __init__(self, fsck, node_id):
+    def __init__(self, fsck, node):
         self.fsck = fsck
-        self.node_id = node_id
-        self.name = 'node %s in %s' % (self.node_id, self.fsck.forest_name)
+        self.node = node
+        self.name = 'node %s in %s' % (self.node.id, self.fsck.forest_name)
 
     def do(self):
-        node = self.get_node(self.node_id)
-        if type(node) == larch.IndexNode:
-            for child_id in node.values():
-                seen_already = child_id in self.fsck.refcounts
-                self.fsck.count(child_id)
-                if not seen_already:
-                    yield CheckNode(self.fsck, child_id)
+        tracing.trace('node.id=%s' % self.node.id)
+
+        if type(self.node) != larch.IndexNode:
+            self.error(
+                'Node %s: Expected to get an index node, got %s instead' %
+                    (self.node.id, type(self.node)))
+            return
+
+        child_ids = self.node.values()
+        if len(child_ids) == 0:
+            self.error('Index node %s: No children' % self.node.id)
+            return
+
+        # Increase refcounts for all children, and check that the child
+        # nodes exist. If the children are index nodes, create work
+        # items to check those. Leaf nodes get no further checking.
+
+        for child_id in child_ids:
+            seen_already = child_id in self.fsck.refcounts
+            self.fsck.count(child_id)
+            if not seen_already:
+                child = self.get_node(child_id)
+                if type(child) == larch.IndexNode:
+                    yield CheckIndexNode(self.fsck, child)
 
 
 class CheckForest(WorkItem):
@@ -87,7 +105,9 @@ class CheckForest(WorkItem):
     def do(self):
         for tree in self.fsck.forest.trees:
             self.fsck.count(tree.root.id)
-            yield CheckNode(self.fsck, tree.root.id)
+            root_node = self.get_node(tree.root.id)
+            tracing.trace('root_node.id=%s' % root_node.id)
+            yield CheckIndexNode(self.fsck, root_node)
 
 
 class CheckRefcounts(WorkItem):
