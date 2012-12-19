@@ -61,6 +61,13 @@ class WorkItem(object):
                 'forest %s: node %s is missing' %
                     (self.fsck.forest_name, node_id))
 
+    def start_modification(self, node):
+        self.fsck.forest.node_store.start_modification(node)
+
+    def put_node(self, node):
+        tracing.trace('node.id=%s' % node.id)
+        return self.fsck.forest.node_store.put_node(node)
+
 
 class CheckIndexNode(WorkItem):
 
@@ -74,26 +81,38 @@ class CheckIndexNode(WorkItem):
 
         if type(self.node) != larch.IndexNode:
             self.error(
-                'Node %s: Expected to get an index node, got %s instead' %
-                    (self.node.id, type(self.node)))
+                'forest %s: node %s: '
+                'Expected to get an index node, got %s instead' %
+                    (self.fsck.forest_name, self.node.id, type(self.node)))
             return
 
-        child_ids = self.node.values()
-        if len(child_ids) == 0:
-            self.error('Index node %s: No children' % self.node.id)
+        if len(self.node) == 0:
+            self.error('forest %s: index node %s: No children' %
+                (self.fsck.forest_name, self.node.id))
             return
 
         # Increase refcounts for all children, and check that the child
         # nodes exist. If the children are index nodes, create work
         # items to check those. Leaf nodes get no further checking.
 
-        for child_id in child_ids:
+        drop_keys = []
+        for key in self.node:
+            child_id = self.node[key]
             seen_already = child_id in self.fsck.refcounts
             self.fsck.count(child_id)
             if not seen_already:
                 child = self.get_node(child_id)
-                if type(child) == larch.IndexNode:
+                if child is None:
+                    drop_keys.append(key)
+                elif type(child) == larch.IndexNode:
                     yield CheckIndexNode(self.fsck, child)
+
+        # Fix references to missing children by dropping them.
+        if self.fsck.fix and drop_keys:
+            self.start_modification(self.node)
+            for key in drop_keys:
+                self.node.remove(key)
+            self.put_node(self.node)
 
 
 class CheckForest(WorkItem):
