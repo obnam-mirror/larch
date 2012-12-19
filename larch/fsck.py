@@ -53,6 +53,7 @@ class WorkItem(object):
         self.fsck.error('ERROR: %s: %s' % (self.name, msg))
 
     def get_node(self, node_id):
+        tracing.trace('node_id=%s' % node_id)
         try:
             return self.fsck.forest.node_store.get_node(node_id)
         except larch.NodeMissing:
@@ -60,22 +61,59 @@ class WorkItem(object):
                 'forest %s: node %s is missing' %
                     (self.fsck.forest_name, node_id))
 
+    def start_modification(self, node):
+        self.fsck.forest.node_store.start_modification(node)
 
-class CheckNode(WorkItem):
+    def put_node(self, node):
+        tracing.trace('node.id=%s' % node.id)
+        return self.fsck.forest.node_store.put_node(node)
 
-    def __init__(self, fsck, node_id):
+
+class CheckIndexNode(WorkItem):
+
+    def __init__(self, fsck, node):
         self.fsck = fsck
-        self.node_id = node_id
-        self.name = 'node %s in %s' % (self.node_id, self.fsck.forest_name)
+        self.node = node
+        self.name = 'node %s in %s' % (self.node.id, self.fsck.forest_name)
 
     def do(self):
-        node = self.get_node(self.node_id)
-        if type(node) == larch.IndexNode:
-            for child_id in node.values():
-                seen_already = child_id in self.fsck.refcounts
-                self.fsck.count(child_id)
-                if not seen_already:
-                    yield CheckNode(self.fsck, child_id)
+        tracing.trace('node.id=%s' % self.node.id)
+
+        if type(self.node) != larch.IndexNode:
+            self.error(
+                'forest %s: node %s: '
+                'Expected to get an index node, got %s instead' %
+                    (self.fsck.forest_name, self.node.id, type(self.node)))
+            return
+
+        if len(self.node) == 0:
+            self.error('forest %s: index node %s: No children' %
+                (self.fsck.forest_name, self.node.id))
+            return
+
+        # Increase refcounts for all children, and check that the child
+        # nodes exist. If the children are index nodes, create work
+        # items to check those. Leaf nodes get no further checking.
+
+        drop_keys = []
+        for key in self.node:
+            child_id = self.node[key]
+            seen_already = child_id in self.fsck.refcounts
+            self.fsck.count(child_id)
+            if not seen_already:
+                child = self.get_node(child_id)
+                if child is None:
+                    drop_keys.append(key)
+                elif type(child) == larch.IndexNode:
+                    yield CheckIndexNode(self.fsck, child)
+
+        # Fix references to missing children by dropping them.
+        if self.fsck.fix and drop_keys:
+            self.start_modification(self.node)
+            for key in drop_keys:
+                self.node.remove(key)
+            self.put_node(self.node)
+
 
 class CheckForest(WorkItem):
 
@@ -86,7 +124,9 @@ class CheckForest(WorkItem):
     def do(self):
         for tree in self.fsck.forest.trees:
             self.fsck.count(tree.root.id)
-            yield CheckNode(self.fsck, tree.root.id)
+            root_node = self.get_node(tree.root.id)
+            tracing.trace('root_node.id=%s' % root_node.id)
+            yield CheckIndexNode(self.fsck, root_node)
 
 
 class CheckRefcounts(WorkItem):
