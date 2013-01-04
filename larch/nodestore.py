@@ -28,7 +28,7 @@ class NodeMissing(larch.Error):
             error_msg = (': %s: %s: %s' % 
                          (error.errno, error.strerror, error.filename))
         self.msg = ('Node %d cannot be found in the node store %s%s' % 
-                    (node_id, node_store, error_msg))
+                    (hex(node_id).lstrip("0x"), node_store, error_msg))
 
 
 class NodeTooBig(larch.Error):
@@ -45,7 +45,7 @@ class NodeExists(larch.Error):
     '''User tried to put a node that already exists in the store.'''
     
     def __init__(self, node_id):
-        self.msg = 'Node %d is already in the store' % node_id
+        self.msg = 'Node %d is already in the store' % hex(node_id).lstrip("0x")
         
         
 class NodeCannotBeModified(larch.Error):
@@ -53,7 +53,7 @@ class NodeCannotBeModified(larch.Error):
     '''User called start_modification on node that cannot be modified.'''
     
     def __init__(self, node_id):
-        self.msg = 'Node %d cannot be modified' % node_id
+        self.msg = 'Node %d cannot be modified' % hex(node_id).lstrip("0x")
         
         
 class NodeStore(object): # pragma: no cover
