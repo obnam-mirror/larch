@@ -9,6 +9,8 @@ Version UNRELEASED
 
 * Fsck now check for missing nodes, and optionally fixes them by
   deleting references to them.
+* Node numbers are now reported in hexadecimal, to make it easier to find
+  on disk. Patch by Damien Couroussé.
 
 Version 1.20121216
 ------------------
