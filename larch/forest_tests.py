@@ -26,7 +26,7 @@ class ForestTests(unittest.TestCase):
 
     def setUp(self):
         self.codec = larch.NodeCodec(3)
-        self.ns = larch.NodeStoreMemory(64, self.codec)
+        self.ns = larch.NodeStoreMemory(allow_writes=True, node_size=64, codec=self.codec)
         self.forest = larch.Forest(self.ns)
 
     def test_new_node_ids_grow(self):

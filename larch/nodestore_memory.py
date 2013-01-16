@@ -26,8 +26,8 @@ class NodeStoreMemory(larch.NodeStore):
     
     '''
     
-    def __init__(self, node_size, codec):
-        larch.NodeStore.__init__(self, node_size, codec)
+    def __init__(self,allow_writes, node_size, codec):
+        larch.NodeStore.__init__(self, allow_writes=allow_writes, node_size=node_size, codec=codec)
         self.nodes = dict()
         self.refcounts = dict()
         self.metadata = dict()

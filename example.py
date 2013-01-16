@@ -33,11 +33,11 @@ def compute(filename):
     return md5.hexdigest()
 
 
-def open_tree(dirname):
+def open_tree(allow_writes, dirname):
     key_size = len(compute('/dev/null'))
     node_size = 4096
     
-    forest = larch.open_forest(key_size=key_size, node_size=node_size,
+    forest = larch.open_forest(allow_writes=allow_writes, key_size=key_size, node_size=node_size,
                                dirname=dirname)
     if forest.trees:
         tree = forest.trees[0]
@@ -47,7 +47,7 @@ def open_tree(dirname):
 
 
 def add(filenames):
-    forest, tree = open_tree('example.tree')
+    forest, tree = open_tree(allow_writes=True, dirname='example.tree')
     for filename in filenames:
         checksum = compute(filename)
         tree.insert(checksum, filename)
@@ -55,17 +55,17 @@ def add(filenames):
 
 
 def find(checksums):
-    forest, tree = open_tree('example.tree')
+    forest, tree = open_tree(allow_writes=False, dirname='example.tree')
     for checksum in checksums:
         filename = tree.lookup(checksum)
         print checksum, filename
 
 
 def list_checksums():
-    forest, tree = open_tree('example.tree')
+    forest, tree = open_tree(allow_writes=False, dirname='example.tree')
     key_size = len(compute('/dev/null'))
-    minkey = '00' * key_size
-    maxkey = 'ff' * key_size
+    minkey = '0' * key_size
+    maxkey = 'f' * key_size
     for checksum, filename in tree.lookup_range(minkey, maxkey):
         print checksum, filename
 
