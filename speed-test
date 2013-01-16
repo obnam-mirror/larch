@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Excercise my B-tree implementation, for simple benchmarking purposes.
-# The benchmark gets a location and an operation count as command line
-# arguments.
+# The benchmark gets a location and nb of keys to use as command line
+# arguments --location=LOCATION and --keys=KEYS.
 #
 # If the location is the empty string, an in-memory node store is used.
 # Otherwise it must be a non-existent directory name.
@@ -73,13 +73,13 @@ class SpeedTest(cliapp.Application):
             raise Exception('You must set number of keys with --keys')
         
         if not location:
-            forest = larch.open_forest(key_size=key_size, node_size=node_size,
+            forest = larch.open_forest(allow_writes=True, key_size=key_size, node_size=node_size,
                                        node_store=larch.NodeStoreMemory)
         else:
             if os.path.exists(location):
                 raise Exception('%s exists already' % location)
             os.mkdir(location)
-            forest = larch.open_forest(key_size=key_size, node_size=node_size,
+            forest = larch.open_forest(allow_writes=True, key_size=key_size, node_size=node_size,
                                        dirname=location)
 
         tree = forest.new_tree()
