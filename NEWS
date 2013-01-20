@@ -11,6 +11,10 @@ Version UNRELEASED
   deleting references to them.
 * Node numbers are now reported in hexadecimal, to make it easier to find
   on disk. Patch by Damien Couroussé.
+* The `speed-test` script now works again. The initialiser API for
+  `NodeStore` and `NodeStoreMemory` now have a new first argument,
+  `allow_writes`, to make them compatible with the `NodeStoreDisk`
+  initialiser. Patch by Antoine Brenner.
 
 Version 1.20121216
 ------------------

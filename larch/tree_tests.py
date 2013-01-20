@@ -67,7 +67,8 @@ class BTreeTests(unittest.TestCase):
         # We use a small node size so that all code paths are traversed
         # during testing. Use coverage.py to make sure they do.
         self.codec = larch.NodeCodec(3)
-        self.ns = DummyNodeStore(64, self.codec)
+        self.ns = DummyNodeStore(
+            allow_writes=True, node_size=64, codec=self.codec)
         self.forest = DummyForest()
         self.tree = larch.BTree(self.forest, self.ns, None)
         self.dump = False
@@ -549,7 +550,8 @@ class BTreeDecrementTests(unittest.TestCase):
         # We use a small node size so that all code paths are traversed
         # during testing. Use coverage.py to make sure they do.
         self.codec = larch.NodeCodec(3)
-        self.ns = DummyNodeStore(64, self.codec)
+        self.ns = DummyNodeStore(
+            allow_writes=True, node_size=64, codec=self.codec)
         self.forest = DummyForest()
         self.tree = larch.BTree(self.forest, self.ns, None)
         self.tree.insert('foo', 'bar')
@@ -574,7 +576,8 @@ class BTreeDecrementTests(unittest.TestCase):
 class BTreeBalanceTests(unittest.TestCase):
 
     def setUp(self):
-        ns = DummyNodeStore(4096, larch.NodeCodec(2))
+        ns = DummyNodeStore(
+            allow_writes=True, node_size=4096, codec=larch.NodeCodec(2))
         forest = DummyForest()
         self.tree = larch.BTree(forest, ns, None)
         self.keys = ['%02d' % i for i in range(10)]

@@ -98,7 +98,8 @@ class NodeStore(object): # pragma: no cover
     
     '''
     
-    def __init__(self, node_size, codec):
+    def __init__(self, allow_writes, node_size, codec):
+        self.allow_writes = allow_writes
         self.node_size = node_size
         self.codec = codec
         self.max_value_size = (node_size / 2) - codec.leaf_header.size

@@ -117,7 +117,8 @@ class NodeStoreDisk(larch.NodeStore):
         if format is not None:
             tracing.trace('forcing format_base: %s', format)
             self.format_base = format
-        larch.NodeStore.__init__(self, node_size, codec)
+        larch.NodeStore.__init__(
+            self, allow_writes=allow_writes, node_size=node_size, codec=codec)
         self.dirname = dirname
         self.metadata_name = os.path.join(dirname, 'metadata')
         self.metadata = None

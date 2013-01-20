@@ -25,5 +25,6 @@ class NodeStoreMemoryTests(unittest.TestCase, larch.NodeStoreTests):
     def setUp(self):
         self.node_size = 4096
         self.codec = larch.NodeCodec(self.key_bytes)
-        self.ns = nodestore_memory.NodeStoreMemory(self.node_size, self.codec)
+        self.ns = nodestore_memory.NodeStoreMemory(
+            allow_writes=True, node_size=self.node_size, codec=self.codec)
 
