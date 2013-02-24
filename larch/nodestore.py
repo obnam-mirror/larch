@@ -21,10 +21,8 @@ class NodeMissing(larch.Error):
 
     '''A node cannot be found from a NodeStore.'''
     
-    def __init__(self, node_store, node_id, error=None):
-        if error is None:
-            error_msg = ''
-        else:
+    def __init__(self, node_store, node_id, error=None, error_msg=''):
+        if error is not None:
             error_msg = (': %s: %s: %s' % 
                          (error.errno, error.strerror, error.filename))
         self.msg = ('Node %s cannot be found in the node store %s%s' % 

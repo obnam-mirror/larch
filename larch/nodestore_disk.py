@@ -258,7 +258,11 @@ class NodeStoreDisk(larch.NodeStore):
         if self.journal.exists(name):
             self.journal.remove(name)
         elif not got_it:
-            raise larch.NodeMissing(self.dirname, node_id)
+            raise larch.NodeMissing(
+                self.dirname, 
+                node_id, 
+                error_msg='attempted to remove node that is not '
+                    'in journal or in upload queue')
         
     def list_nodes(self):
         queued = self.upload_queue.list_ids()

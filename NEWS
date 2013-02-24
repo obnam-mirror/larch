@@ -15,6 +15,7 @@ Version UNRELEASED
   `NodeStore` and `NodeStoreMemory` now have a new first argument,
   `allow_writes`, to make them compatible with the `NodeStoreDisk`
   initialiser. Patch by Antoine Brenner.
+* Improved error messages for nodes that seem to be missing.
 
 Version 1.20121216
 ------------------
