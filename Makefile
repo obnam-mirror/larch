@@ -27,9 +27,13 @@ check:
 	./insert-remove-test tempdir 100
 	rm -r tempdir larch.log
 	cmdtest tests
+	./codec-speed -n1000
+	./idpath-speed 1 t.idspeed-test 10 5 1 && rm -r t.idspeed-test
+	./refcount-speed --refs=100
+	./speed-test --location t.speed-test --keys 1000
 	
 clean:
 	rm -f .coverage *.py[co] larch/*.py[co] insert.prof lookup.prof
-	rm -rf build tempdir larch.log example.tree
+	rm -rf build tempdir larch.log example.tree t.idspeed-test t.speed-test
 	rm -f fsck-larch.1
 	$(MAKE) -C doc clean
