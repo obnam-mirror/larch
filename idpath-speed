@@ -19,7 +19,7 @@ import os
 import sys
 import time
 
-import obnamlib
+import larch
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
     bits = int(sys.argv[4])
     skip = int(sys.argv[5])
     
-    idpath = obnamlib.IdPath(dirname, depth, bits, skip)
+    idpath = larch.IdPath(dirname, depth, bits, skip)
     start = time.time()
     for i in xrange(n):
         path = idpath.convert(i)
