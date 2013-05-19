@@ -29,7 +29,7 @@ check:
 	cmdtest tests
 	./codec-speed -n1000
 	./idpath-speed 1 t.idspeed-test 10 5 1 && rm -r t.idspeed-test
-	./refcount-speed --refs=100
+	./refcount-speed --refs=1000
 	./speed-test --location t.speed-test --keys 1000
 	
 clean:
