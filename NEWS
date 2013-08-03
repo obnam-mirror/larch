@@ -4,6 +4,14 @@ NEWS for larch
 These are the release notes for larch, a Python implementation of a
 copy-on-write B-tree, designed by Ohad Rodeh.
 
+Version UNRELEASED
+------------------
+
+* Bug fix in how Larch handles partly-comitted B-tree journals
+  in read-only mode. Previously, this would result in a crash
+  if, say, a node had been removed, but the B-tree metadata
+  hadn't been committed.
+
 Version 1.20130316
 ------------------
 
