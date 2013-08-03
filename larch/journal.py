@@ -82,15 +82,19 @@ class Journal(object):
         self.flag_file = os.path.join(self.storedir, self.flag_basename)
         self.new_flag = os.path.join(self.newdir, self.flag_basename)
 
+        self.new_flag_seen = self.fs.exists(self.new_flag)
+        tracing.trace('self.new_flag_seen: %s' % self.new_flag_seen)
         if self.allow_writes:
-            if self.fs.exists(self.new_flag):
+            if self.new_flag_seen:
                 logging.debug('Automatically committing remaining changes')
                 self.commit()
             else:
                 logging.debug('Automatically rolling back remaining changes')
                 self.rollback()
-            self.new_files = set()
-            self.deleted_files = set()
+        else:
+            logging.debug('Not committing/rolling back since read-only')
+        self.new_files = set()
+        self.deleted_files = set()
 
     def _require_rw(self):
         '''Raise error if modifications are not allowed.'''
@@ -114,14 +118,20 @@ class Journal(object):
         '''Return real name for a file in a journal temporary directory.'''
         assert filename.startswith(journaldir)
         return os.path.join(self.storedir, filename[len(journaldir):])
-    
+
+    def _is_in_new(self, filename):
+        new = self._new(filename)
+        return new in self.new_files or self.fs.exists(new)
+
+    def _is_in_deleted(self, filename):
+        deleted = self._deleted(filename)
+        return deleted in self.deleted_files or self.fs.exists(deleted)
+
     def exists(self, filename):
-        if self.allow_writes:
-            new = self._new(filename)
-            deleted = self._deleted(filename)
-            if new in self.new_files:
+        if self.allow_writes or self.new_flag_seen:
+            if self._is_in_new(filename):
                 return True
-            elif deleted in self.deleted_files:
+            elif self._is_in_deleted(filename):
                 return False
         return self.fs.exists(filename)
         
@@ -140,16 +150,17 @@ class Journal(object):
         self.new_files.add(new)
 
     def cat(self, filename):
-        if self.allow_writes:
-            new = self._new(filename)
-            deleted = self._deleted(filename)
-            if new in self.new_files:
-                return self.fs.cat(new)
-            elif deleted in self.deleted_files:
+        tracing.trace('filename=%s' % filename)
+        tracing.trace('allow_writes=%s' % self.allow_writes)
+        tracing.trace('new_flag_seen=%s' % self.new_flag_seen)
+        if self.allow_writes or self.new_flag_seen:
+            if self._is_in_new(filename):
+                return self.fs.cat(self._new(filename))
+            elif self._is_in_deleted(filename):
                 raise OSError(
                     errno.ENOENT, os.strerror(errno.ENOENT), filename)
         return self.fs.cat(filename)
-            
+
     def remove(self, filename):
         tracing.trace(filename)
         self._require_rw()
@@ -176,7 +187,7 @@ class Journal(object):
         assert not dirname.startswith(self.newdir)
         assert not dirname.startswith(self.deletedir)
 
-        if self.allow_writes:
+        if self.allow_writes or self.new_flag_seen:
             if self.fs.exists(dirname):
                 for x in self.climb(dirname, files_only=True):
                     if self.exists(x):
