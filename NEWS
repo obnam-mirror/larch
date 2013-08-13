@@ -10,7 +10,8 @@ Version 1.20130808
 * Bug fix in how Larch handles partly-comitted B-tree journals
   in read-only mode. Previously, this would result in a crash
   if, say, a node had been removed, but the B-tree metadata
-  hadn't been committed.
+  hadn't been committed. Recipe for reproducing bug found by
+  Damien Couroussé.
 
 Version 1.20130316
 ------------------
