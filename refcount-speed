@@ -106,8 +106,18 @@ class RefcountSpeedTest(cliapp.Application):
         def helper():
             n = self.settings['times']
             log_memory_use('at start')
-            for i in xrange(n):
-                func()
+            finished = False
+            while not finished:
+                for i in xrange(n):
+                    func()
+                if time.clock() > start:
+                    # at least one time unit passed - this is enough
+                    finished = True
+                else:
+                    # Not a single time unit passed: we need more iterations.
+                    # Multiply 'times' by 10 and execute the remaining 9 loops.
+                    self.settings['times'] *= 10
+                    n *= 9
             log_memory_use('after calls')
 
         print 'measuring', profname
