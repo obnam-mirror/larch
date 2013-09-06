@@ -17,6 +17,9 @@
 # Excercise my B-tree implementation, for simple benchmarking purposes.
 # The benchmark gets a location and nb of keys to use as command line
 # arguments --location=LOCATION and --keys=KEYS.
+
+# To debug, one can create a tracing logfile by adding arguments like:
+# --trace=refcount --log=refcount.logfile
 #
 # If the location is the empty string, an in-memory node store is used.
 # Otherwise it must be a non-existent directory name.

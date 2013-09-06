@@ -14,10 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# To debug, one can create a tracing logfile by adding arguments like:
+# --trace=fsck --log=fsck.logfile
+
 
 import cliapp
 import logging
 import sys
+
 import tracing
 import ttystatus
 
@@ -34,36 +38,31 @@ class Fsck(cliapp.Application):
     def process_args(self, args):
         for pattern in self.settings['trace']:
             tracing.trace_add_pattern(pattern)
-    
-        self.ts = ttystatus.TerminalStatus(period=0.1)
-        self.ts['check'] = 0
-        self.ts['checks'] = 0
-        self.ts['checkname'] = ''
-        self.ts.add(ttystatus.PercentDone('check', 'checks', decimals=2))
-        self.ts.add(ttystatus.Literal(' '))
-        self.ts.add(ttystatus.RemainingTime('check', 'checks'))
-        self.ts.add(ttystatus.Literal(' remaining; now: '))
-        self.ts.add(ttystatus.String('checkname'))
 
-        self.errors = False
+        at_least_one_error = False
         for dirname in args:
+            self.errors = False
+            forest = larch.open_forest(
+                allow_writes=self.settings['fix'], dirname=dirname)
+            self.ts = ttystatus.TerminalStatus(period=0.1)
+            self.ts['item'] = None
+            self.ts['items'] = 0
+            self.ts['last_id'] = forest.last_id
+            self.ts.format(
+                'Checking %Counter(item)/%Integer(last_id): %String(item)')
             self.ts.notify('fsck-larch for %s' % dirname)
-            forest = larch.open_forest(dirname=dirname)
             fsck = larch.fsck.Fsck(forest, self.warning, self.error, 
                                    self.settings['fix'])
-            all_work = list(fsck.find_work())
-            
-            self.ts['checks'] = len(all_work)
-            self.ts['check'] = 0
-            for work in all_work:
-                self.ts['check'] += 1
-                self.ts['checkname'] = str(work)
-                work.do()
-
-        self.ts.finish()
+            fsck.run_fsck( ts = self.ts )
+            self.ts.finish()
+            if self.errors:
+                at_least_one_error = True
+            else:
+                print 'fsck-larch for %s: No errors found' % dirname
         
         if self.errors:
             sys.exit(1)
+
 
     def error(self, msg):
         self.errors = True
