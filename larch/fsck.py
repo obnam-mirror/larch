@@ -46,6 +46,9 @@ class WorkItem(object):
     def do(self):
         pass
 
+    def __iter__(self):
+        return iter([self])
+
     def warning(self, msg):
         self.fsck.warning('warning: %s: %s' % (self.name, msg))
 
@@ -74,7 +77,7 @@ class CheckIndexNode(WorkItem):
     def __init__(self, fsck, node):
         self.fsck = fsck
         self.node = node
-        self.name = 'node %s in %s' % (self.node.id, self.fsck.forest_name)
+        self.name = 'CheckIndexNode: checking index node %s in %s' % (self.node.id, self.fsck.forest_name)
 
     def do(self):
         tracing.trace('node.id=%s' % self.node.id)
@@ -94,7 +97,6 @@ class CheckIndexNode(WorkItem):
         # Increase refcounts for all children, and check that the child
         # nodes exist. If the children are index nodes, create work
         # items to check those. Leaf nodes get no further checking.
-
         drop_keys = []
         for key in self.node:
             child_id = self.node[key]
@@ -112,6 +114,8 @@ class CheckIndexNode(WorkItem):
             self.start_modification(self.node)
             for key in drop_keys:
                 self.node.remove(key)
+                self.warning('index node %s: dropped key %s' %
+                    (self.node.id, key))
             self.put_node(self.node)
 
 
@@ -119,9 +123,10 @@ class CheckForest(WorkItem):
 
     def __init__(self, fsck):
         self.fsck = fsck
-        self.name = 'forest %s' % self.fsck.forest_name
+        self.name = 'CheckForest: forest %s' % self.fsck.forest_name
 
     def do(self):
+        tracing.trace("CheckForest: checking forest %s" % self.name )
         for tree in self.fsck.forest.trees:
             self.fsck.count(tree.root.id)
             root_node = self.get_node(tree.root.id)
@@ -133,10 +138,12 @@ class CheckRefcounts(WorkItem):
 
     def __init__(self, fsck):
         self.fsck = fsck
-        self.name = 'refcounts in %s' % self.fsck.forest_name
+        self.name = 'CheckRefcounts: refcounts in %s' % self.fsck.forest_name
 
     def do(self):
+        tracing.trace('CheckRefcounts : %s nodes to check' % len(self.fsck.refcounts) )
         for node_id in self.fsck.refcounts:
+            tracing.trace('CheckRefcounts checking node %s' % node_id)
             refcount = self.fsck.forest.node_store.get_refcount(node_id)
             if refcount != self.fsck.refcounts[node_id]:
                 self.error(
@@ -148,13 +155,15 @@ class CheckRefcounts(WorkItem):
                 if self.fsck.fix:
                     self.fsck.forest.node_store.set_refcount(
                         node_id, self.fsck.refcounts[node_id])
+                    self.warning('node %s: refcount was set to %s' %
+                        (node_id, self.fsck.refcounts[node_id]))
 
 
 class CommitForest(WorkItem):
 
     def __init__(self, fsck):
         self.fsck = fsck
-        self.name = 'committing fixes to %s' % self.fsck.forest_name
+        self.name = 'CommitForest: committing fixes to %s' % self.fsck.forest_name
 
     def do(self):
         tracing.trace('committing changes to %s' % self.fsck.forest_name)
@@ -182,4 +191,40 @@ class Fsck(object):
 
     def count(self, node_id):
         self.refcounts[node_id] = self.refcounts.get(node_id, 0) + 1
+
+
+    def run_work(self, work_generators, ts=None):
+        """run work_generator.do() recursively as needed
+
+        work_generators : list of generators (eg list( self.find_work() ))
+                          who return objects with .do() methods that
+                          either return None or other generators.
+
+        if a ttystatus.TerminalStatus instance is passed as ts,
+        report fsck progress via ts
+        """
+        while work_generators:
+            work_generator = work_generators.pop(0)
+            for work in work_generator:
+                if ts:
+                    ts.increase('items', 1)
+                    ts['item'] = work
+                generator_or_none = work.do()
+                if generator_or_none:
+                    # Run new work before carrying-on with work_generators (required for proper refcount check)
+                    work_generators.insert(0,generator_or_none)
+
+    def run_fsck(self, ts=None):
+        """Runs full fsck
+
+        if a ttystatus.TerminalStatus instance is passed as ts,
+        report fsck progress via ts item/items updates
+        """
+        # Make sure that we pass list( self.find_work() ) and not
+        # [ self.find_work() ] so that when CheckForest.do() returns
+        # work generators, the work generators are actually called
+        # before the CheckRefcounts check.
+        work_generators = list( self.find_work() )
+        self.run_work(work_generators, ts=ts)
+
 
