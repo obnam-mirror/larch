@@ -77,7 +77,9 @@ class CheckIndexNode(WorkItem):
     def __init__(self, fsck, node):
         self.fsck = fsck
         self.node = node
-        self.name = 'CheckIndexNode: checking index node %s in %s' % (self.node.id, self.fsck.forest_name)
+        self.name = (
+            'CheckIndexNode: checking index node %s in %s' %
+            (self.node.id, self.fsck.forest_name))
 
     def do(self):
         tracing.trace('node.id=%s' % self.node.id)
@@ -141,7 +143,9 @@ class CheckRefcounts(WorkItem):
         self.name = 'CheckRefcounts: refcounts in %s' % self.fsck.forest_name
 
     def do(self):
-        tracing.trace('CheckRefcounts : %s nodes to check' % len(self.fsck.refcounts) )
+        tracing.trace(
+            'CheckRefcounts : %s nodes to check' % 
+            len(self.fsck.refcounts) )
         for node_id in self.fsck.refcounts:
             tracing.trace('CheckRefcounts checking node %s' % node_id)
             refcount = self.fsck.forest.node_store.get_refcount(node_id)
@@ -163,7 +167,8 @@ class CommitForest(WorkItem):
 
     def __init__(self, fsck):
         self.fsck = fsck
-        self.name = 'CommitForest: committing fixes to %s' % self.fsck.forest_name
+        self.name = ('CommitForest: committing fixes to %s' % 
+                     self.fsck.forest_name)
 
     def do(self):
         tracing.trace('committing changes to %s' % self.fsck.forest_name)
@@ -211,7 +216,8 @@ class Fsck(object):
                     ts['item'] = work
                 generator_or_none = work.do()
                 if generator_or_none:
-                    # Run new work before carrying-on with work_generators (required for proper refcount check)
+                    # Run new work before carrying-on with work_generators
+                    # (required for proper refcount check)
                     work_generators.insert(0,generator_or_none)
 
     def run_fsck(self, ts=None):

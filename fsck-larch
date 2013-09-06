@@ -42,7 +42,8 @@ class Fsck(cliapp.Application):
         at_least_one_error = False
         for dirname in args:
             self.errors = False
-            forest = larch.open_forest(allow_writes=self.settings['fix'],dirname=dirname)
+            forest = larch.open_forest(
+                allow_writes=self.settings['fix'], dirname=dirname)
             self.ts = ttystatus.TerminalStatus(period=0.1)
             self.ts['item'] = None
             self.ts['items'] = 0
