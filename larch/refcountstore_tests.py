@@ -91,8 +91,8 @@ class RefcountStoreTests(unittest.TestCase):
         refs = range(2048)
         for ref in refs:
             self.rs.set_refcount(ref, ref)
-        encoded = larch.refcountstore.encode_refcounts(self.rs.refcounts, 
-                                                       0, 1024)
+        encoded = larch.refcountstore.encode_refcounts(
+            self.rs.refcounts, 0, 1024, range(1024))
         decoded = larch.refcountstore.decode_refcounts(encoded)
         self.assertEqual(decoded, [(x, x) for x in refs[:1024]])
 

@@ -72,12 +72,14 @@ class RefcountSpeedTest(cliapp.Application):
         # Calibrate.
         looptime = self.measure(nop, 'calibrate')
         
-        encode = self.measure(lambda:
-                                larch.refcountstore.encode_refcounts(refcounts,
-                                                           0, len(refcounts)),
-                              'encode')
-        encoded = larch.refcountstore.encode_refcounts(refcounts, 0, 
-                                                       len(refcounts))
+        num_refcounts = len(refcounts)
+        keys = refcounts.keys()
+        encode = self.measure(
+            lambda: larch.refcountstore.encode_refcounts(
+                refcounts, 0, num_refcounts, keys),
+            'encode')
+        encoded = larch.refcountstore.encode_refcounts(
+            refcounts, 0, num_refcounts, keys)
         decode = self.measure(lambda: 
                                 larch.refcountstore.decode_refcounts(encoded),
                               'decode')
