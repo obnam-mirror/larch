@@ -68,17 +68,6 @@ class RefcountStoreTests(unittest.TestCase):
         self.rs.set_refcount(123, 1)
         self.assertEqual(self.rs.get_refcount(123), 1)
 
-    def test_does_not_set_refcount_if_zero(self):
-        self.rs.set_refcount(123, 0)
-        self.assertFalse(123 in self.rs.refcounts)
-        self.assertEqual(self.rs.get_refcount(123), 0)
-
-    def test_removes_refcount_that_drops_to_zero(self):
-        self.rs.set_refcount(123, 1)
-        self.rs.set_refcount(123, 0)
-        self.assertFalse(123 in self.rs.refcounts)
-        self.assertEqual(self.rs.get_refcount(123), 0)
-
     def test_updates_refcount(self):
         self.rs.set_refcount(123, 1)
         self.rs.set_refcount(123, 2)
