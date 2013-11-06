@@ -7,6 +7,15 @@ copy-on-write B-tree, designed by Ohad Rodeh.
 Version 1.UNRELEASED
 ------------------
 
+* Serious bug fixed: the "KeyError" crash for reference counts. This
+  was false memory use optimisation, which triggered a rare bug in
+  related code. Repeatable test case by Rob Kendrick, and helpful
+  analysis by Itamar Turing-Trauring.
+
+* Serious bug fixed: another "node missing" bug. This crash was
+  caused by a bug that overwrote on-disk reference count groups
+  with zeroes. Repeatable test case by Rob Kendrick.
+
 * Fixes to fsck from Antoine Brenner.
 
 Version 1.20130808
