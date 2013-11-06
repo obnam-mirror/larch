@@ -24,12 +24,10 @@ import tracing
 import larch
 
 
-def encode_refcounts(refcounts, start_id, how_many):
+def encode_refcounts(refcounts, start_id, how_many, keys):
     fmt = '!QH' + 'H' * how_many
     args = [start_id, how_many] + ([0] * how_many)
-    keys = set(refcounts.keys())
-    wanted = set(range(start_id, start_id + how_many))
-    for key in wanted.intersection(keys):
+    for key in keys:
         args[2 + key - start_id] = refcounts[key]
     return struct.pack(fmt, *args)
     
@@ -78,11 +76,7 @@ class RefcountStore(object):
     def set_refcount(self, node_id, refcount):
         '''Set the reference count for a given node.'''
         tracing.trace('setting refcoutn for %s to %s' % (node_id, refcount))
-        if refcount == 0:
-            if node_id in self.refcounts:
-                del self.refcounts[node_id]
-        else:
-            self.refcounts[node_id] = refcount
+        self.refcounts[node_id] = refcount
         self.dirty.add(node_id)
 
     def save_refcounts(self):
@@ -95,13 +89,19 @@ class RefcountStore(object):
             if not self.node_store.journal.exists(dirname):
                 self.node_store.journal.makedirs(dirname)
             ids = sorted(self.dirty)
+            all_ids_in_memory = set(self.refcounts.keys())
             for start_id in range(self._start_id(ids[0]), 
                                   self._start_id(ids[-1]) + 1, 
                                   self.per_group):
-                encoded = encode_refcounts(self.refcounts, start_id, 
-                                           self.per_group)
-                filename = self._group_filename(start_id)
-                self.node_store.journal.overwrite_file(filename, encoded)
+
+                all_ids_in_group = set(
+                    range(start_id, start_id + self.per_group))
+                keys = all_ids_in_group.intersection(all_ids_in_memory)
+                if keys:
+                    encoded = encode_refcounts(
+                        self.refcounts, start_id, self.per_group, keys)
+                    filename = self._group_filename(start_id)
+                    self.node_store.journal.overwrite_file(filename, encoded)
 
         # We re-initialize these so that they don't grow indefinitely.
         self.refcounts = dict()
@@ -119,4 +119,3 @@ class RefcountStore(object):
 
     def _start_id(self, node_id):
         return (node_id / self.per_group) * self.per_group
-
