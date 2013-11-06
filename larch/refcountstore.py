@@ -75,7 +75,7 @@ class RefcountStore(object):
 
     def set_refcount(self, node_id, refcount):
         '''Set the reference count for a given node.'''
-        tracing.trace('setting refcoutn for %s to %s' % (node_id, refcount))
+        tracing.trace('setting refcount for %s to %s' % (node_id, refcount))
         self.refcounts[node_id] = refcount
         self.dirty.add(node_id)
 
