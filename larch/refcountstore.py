@@ -84,7 +84,6 @@ class RefcountStore(object):
         tracing.trace('saving refcounts (len(dirty) = %s)' % 
                             (len(self.dirty)))
         if self.dirty:
-            level = logging.getLogger().getEffectiveLevel()
             dirname = os.path.join(self.node_store.dirname, self.refcountdir)
             if not self.node_store.journal.exists(dirname):
                 self.node_store.journal.makedirs(dirname)
