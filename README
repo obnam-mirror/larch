@@ -30,7 +30,7 @@ also be useful. (Help and feedback and prodding welcome!)
 See the file example.py for an example.
 
 * Homepage: <http://liw.fi/larch/>
-* Version control: `bzr get http://code.liw.fi/larch/bzr/trunk/`
+* Version control: `git clone git://git.liw.fi/larch`
 * Rodeh paper: <http://liw.fi/larch/ohad-btrees-shadowing-clones.pdf>
 
 
@@ -98,8 +98,8 @@ You may want to run either or both before and after making any changes,
 to see if you're making things better or worse.
 
 If you have any patches, please send them to me (<mailto:liw@liw.fi>).
-Bzr bundles preferred, but plain diffs are always OK. Or set up a bzr
-branch of your own and send me a URL, and I'll merge from that.
+I prefer to merge from git repositories, but `git format-patch` or
+just plain diffs are always OK.
 
 
 Bugs and other things to hack
@@ -116,7 +116,7 @@ to see where time is wasted.
 Legalese
 --------
 
-Copyright 2010, 2011, 2012  Lars Wirzenius
+Copyright 2010, 2011, 2012, 2013  Lars Wirzenius
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -130,4 +130,3 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
