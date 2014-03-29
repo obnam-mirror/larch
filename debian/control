@@ -1,8 +1,9 @@
 Source: python-larch
 Maintainer: Lars Wirzenius <liw@liw.fi>
+Homepage: http://liw.fi/larch/
 Section: python
 Priority: optional
-Standards-Version: 3.9.3
+Standards-Version: 3.9.5
 Build-Depends: debhelper (>= 7.3.8), python (>= 2.6.6-3~),
     python-coverage-test-runner, python-tracing, python-sphinx,
     python-cliapp (>= 0.14), python-ttystatus, cmdtest

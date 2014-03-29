@@ -1,3 +1,12 @@
+python-larch (1.XXXXX-1) UNRELEASED; urgency=low
+
+  * New upstream version.
+  * debian/control: Add Homepage: to source stanza.
+  * debian/control: Update Standards-Version to 3.9.5. No further
+    changes required.
+
+ -- Lars Wirzenius <liw@liw.fi>  Sat, 29 Mar 2014 12:42:21 +0000
+
 python-larch (1.20131130-1) unstable; urgency=low
 
   * New upstream release.
