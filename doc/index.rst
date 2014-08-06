@@ -79,7 +79,7 @@ Alternatively, to clone an existing tree if one exists::
 
 To insert some data into the tree::
 
-    for key in ['abc', 'foo', bar']:
+    for key in ['abc', 'foo', 'bar']:
         tree.insert(key, key.upper())
 
 To look up value for one key::
