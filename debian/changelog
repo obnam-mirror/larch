@@ -4,6 +4,7 @@ python-larch (1.XXXXX-1) UNRELEASED; urgency=low
   * debian/control: Add Homepage: to source stanza.
   * debian/control: Update Standards-Version to 3.9.5. No further
     changes required.
+  * Change source format to 3.0 (quilt).
 
  -- Lars Wirzenius <liw@liw.fi>  Sat, 29 Mar 2014 12:42:21 +0000
 
