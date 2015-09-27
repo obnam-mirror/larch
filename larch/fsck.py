@@ -117,7 +117,7 @@ class CheckIndexNode(WorkItem):
             for key in drop_keys:
                 self.node.remove(key)
                 self.warning('index node %s: dropped key %s' %
-                    (self.node.id, key))
+                    (self.node.id, key.encode('hex')))
             self.put_node(self.node)
 
 

@@ -141,7 +141,10 @@ class FsckTests(unittest.TestCase):
         cin = larch.fsck.CheckIndexNode(Ffsck, index_node_missing_reference )
         for work in cin.do():
            work.do() # Expect dropped keys path
-        self.failUnless('index node %s: dropped key %s' % (id_index_node, mkey) in self.logged_warnings[0], self.logged_warnings[0] )
+        self.failUnless(
+            'index node %s: dropped key %s' %
+            (id_index_node, mkey.encode('hex')) in self.logged_warnings[0],
+            self.logged_warnings[0] )
         # We have a "node %d is missing" error as well:
         self.failUnless( 'node %s is missing' % id_node_to_remove in  self.logged_errors[0], self.logged_errors[0] )
 
