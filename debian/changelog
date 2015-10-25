@@ -1,4 +1,4 @@
-python-larch (1.XXXXX-1) UNRELEASED; urgency=low
+python-larch (1.20151025-1) unstable; urgency=low
 
   * New upstream version.
   * debian/control: Add Homepage: to source stanza.
@@ -6,7 +6,7 @@ python-larch (1.XXXXX-1) UNRELEASED; urgency=low
     changes required.
   * Change source format to 3.0 (quilt).
 
- -- Lars Wirzenius <liw@liw.fi>  Sat, 29 Mar 2014 12:42:21 +0000
+ -- Lars Wirzenius <liw@liw.fi>  Sun, 25 Oct 2015 12:32:05 +0200
 
 python-larch (1.20131130-1) unstable; urgency=low
 
